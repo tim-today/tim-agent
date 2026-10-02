@@ -1,0 +1,112 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Multi-Platform Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            output: tim-agent-linux-amd64
+            tags: nocgo
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            output: tim-agent-linux-arm64
+            tags: nocgo
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            output: tim-agent-windows-amd64.exe
+            tags: nocgo
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            output: tim-agent-darwin-arm64
+            tags: ""
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            output: tim-agent-darwin-amd64
+            tags: ""
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Install Dependencies
+        run: go mod download
+
+      - name: Build Binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: ${{ matrix.tags == 'nocgo' && '0' || '1' }}
+        shell: bash
+        run: |
+          mkdir -p dist
+          TAG_FLAG=""
+          if [ -n "${{ matrix.tags }}" ]; then
+            TAG_FLAG="-tags ${{ matrix.tags }}"
+          fi
+          go build $TAG_FLAG -ldflags="-s -w" -o dist/${{ matrix.output }} .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output }}
+          path: dist/${{ matrix.output }}
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-release
+
+      - name: Prepare Release Assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          find dist-release -type f -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-assets/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true

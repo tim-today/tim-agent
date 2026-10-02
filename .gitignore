@@ -1,0 +1,21 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Configuration / sensitive data
+config.json
+
+# Logs & temp
+*.log
+tmp/
+.DS_Store
+dev.md
+修改记录.md
+
+# IDE
+.idea/
+.vscode/
