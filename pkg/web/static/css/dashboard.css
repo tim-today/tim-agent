@@ -1,0 +1,515 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.dark-body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.app-layout {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #21262d;
+  margin-bottom: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+
+.badge {
+  font-size: 11px;
+  background-color: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.4);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-switch-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.lang-select-top {
+  background: transparent;
+  border: none;
+  color: #f0f6fc;
+  font-size: 13px;
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .config-card {
+    grid-column: span 2;
+  }
+}
+
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #21262d;
+  padding-bottom: 10px;
+}
+
+.card-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.sub-hint {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+/* 二维码区域 */
+.qrcode-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (min-width: 500px) {
+  .qrcode-content {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.qr-preview-box {
+  width: 170px;
+  height: 170px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.qr-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qr-loading {
+  color: #24292f;
+  font-size: 13px;
+}
+
+.network-selector {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.form-select, .form-input {
+  background: #0d1117;
+  color: #f0f6fc;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.form-select:focus, .form-input:focus {
+  outline: none;
+  border-color: #58a6ff;
+}
+
+.current-url-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.url-text {
+  font-family: monospace;
+  font-size: 13px;
+  color: #58a6ff;
+  word-break: break-all;
+  flex: 1;
+}
+
+.card-tip {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.6;
+}
+
+/* 会话信息列表 */
+.session-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.session-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+@media (min-width: 680px) {
+  .session-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.session-details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.session-badge {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.status-green {
+  background: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+  border: 1px solid #2ea043;
+}
+
+.status-blue {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid #0284c7;
+}
+
+.dim-text {
+  font-size: 12px;
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.session-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.session-actions .btn {
+  padding: 7px 14px;
+  font-size: 13px;
+  white-space: normal;
+  text-align: center;
+  border-radius: 6px;
+  line-height: 1.3;
+}
+
+/* 独立行内复选框规范 */
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2ea043;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.checkbox-inline label {
+  cursor: pointer;
+  color: #f0f6fc;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* 表单设置 */
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-item label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #c9d1d9;
+}
+
+.form-item small {
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #21262d;
+}
+
+.save-tip {
+  font-size: 13px;
+  color: #3fb950;
+}
+
+/* 按钮规范 */
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background: #238636;
+  color: white;
+}
+.btn-primary:hover { background: #2ea043; }
+
+.btn-secondary {
+  background: #21262d;
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+.btn-secondary:hover { background: #30363d; }
+
+.btn-outline {
+  background: transparent;
+  color: #58a6ff;
+  border-color: #58a6ff;
+}
+.btn-outline:hover { background: rgba(88, 166, 255, 0.1); }
+
+.btn-danger {
+  background: rgba(248, 81, 73, 0.1);
+  color: #f85149;
+  border-color: rgba(248, 81, 73, 0.4);
+}
+.btn-danger:hover { background: #f85149; color: white; }
+
+/* 开关组件 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #30363d;
+  transition: .3s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2ea043;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* 版本与页脚样式 */
+.version-badge {
+  font-size: 11px;
+  background-color: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 500;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.btn-icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.app-footer {
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid #21262d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #8b949e;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-link {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+}
+
+.dot-sep {
+  color: #30363d;
+}
+
+.update-tip {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.update-tip.has-new {
+  color: #f0883e;
+  font-weight: 600;
+}
+
+.update-tip.is-latest {
+  color: #3fb950;
+}

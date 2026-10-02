@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title data-i18n="term_page_title">Tim-Agent Terminal</title>
+  <link rel="stylesheet" href="/css/xterm.css">
+  <link rel="stylesheet" href="/css/terminal.css">
+</head>
+<body class="dark-theme">
+  <!-- 顶部状态栏与工具条 -->
+  <header class="top-bar">
+    <div class="status-indicator">
+      <span class="status-dot online" id="statusDot"></span>
+      <span class="session-name" id="sessionTitle" data-i18n="term_session_title">Terminal</span>
+      <button class="agent-badge-btn" id="btnSwitchAgent" title="Switch Agent">
+        🤖 <span id="agentNameText">Claude</span> ▾
+      </button>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnRedrawScreen" title="Redraw Screen">🔄</button>
+      <button class="icon-btn" id="btnThemeModal" title="Themes">🎨</button>
+      <button class="icon-btn" id="btnInputHelper" title="Prompt / Text Input Helper">✏️</button>
+      <button class="icon-btn" id="btnZoomOut" title="Zoom Out">A-</button>
+      <button class="icon-btn" id="btnZoomIn" title="Zoom In">A+</button>
+      <button class="icon-btn" id="btnToggleKeyboard" title="Toggle Soft Keyboard">⌨️</button>
+      <button class="icon-btn" id="btnAboutModal" title="About / Version Info">⚙️</button>
+    </div>
+  </header>
+
+  <!-- xterm 终端主视口 -->
+  <main class="terminal-container" id="terminalContainer">
+    <div id="terminal"></div>
+  </main>
+
+  <!-- 手机端定制虚拟键盘工具栏 -->
+  <footer class="mobile-keyboard" id="mobileKeyboard">
+    <!-- Vibe Coding 专属快捷操作胶囊条 (横向滑动，大拇指一触即发) -->
+    <div class="key-row key-row-vibe" id="vibeRow">
+      <button class="vibe-pill vibe-yes" data-vibe="y" title="快速确认/允许 (y)">✅ Yes</button>
+      <button class="vibe-pill vibe-no" data-vibe="n" title="快速拒绝 (n)">❌ No</button>
+      <button class="vibe-pill vibe-primary" data-vibe="继续" title="让AI继续执行">▶️ 继续</button>
+      <button class="vibe-pill vibe-accent" data-vibe="帮我修复上面的报错并自测" title="一键修复报错">⚡ 修复</button>
+      <button class="vibe-pill vibe-accent" data-vibe="帮我编译构建当前项目并汇报结果" title="编译构建项目">🛠️ 编译</button>
+      <button class="vibe-pill vibe-primary" data-vibe="帮我部署当前项目并检查运行状态" title="部署发布项目">🚀 部署</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/model" title="切换模型 (/model)">🤖 /model</button>
+      <button class="vibe-pill vibe-secondary" data-vibe="运行测试并汇报结果" title="跑测试">🧪 测试</button>
+      <button class="vibe-pill vibe-secondary" data-vibe="帮我用简明commit message提交当前修改" title="提交代码">📝 提交</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/review" title="代码审查">🔍 Review</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/compact" title="压缩上下文">🧹 Compact</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/cost" title="Token开销">📊 Cost</button>
+    </div>
+
+    <!-- 控制、导航与快捷键排布 (保留上下箭头、加入反斜线/、放大删除与回车) -->
+    <div class="key-row key-row-nav">
+      <button class="key-btn" data-key="Escape">ESC</button>
+      <button class="key-btn" data-key="Tab">TAB</button>
+      <button class="key-btn ctrl-picker-btn" id="btnCtrlPicker" title="点击展开选择字母输入 Ctrl+ 组合键">Ctrl+ ▾</button>
+      <button class="key-btn toggle-key" id="keyAlt">Alt</button>
+      <button class="key-btn arrow-btn" data-key="ArrowUp">↑</button>
+      <button class="key-btn arrow-btn" data-key="ArrowDown">↓</button>
+      <button class="key-btn cmd-slash-btn" id="btnSlashCmd" data-cmd="/" title="常用斜杠命令 (/)">/</button>
+      <button class="key-btn key-delete" data-key="Backspace" title="退格删除">⌫</button>
+      <button class="key-btn key-action" data-key="Enter" title="回车换行/执行">↵</button>
+    </div>
+  </footer>
+
+  <!-- 大段文字/Prompt输入助手抽屉模态框 -->
+  <div class="modal-backdrop" id="inputModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="modal_prompt_title">Prompt / Input Helper</h3>
+        <button class="close-btn" id="btnCloseModal">×</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="helperText" placeholder="Enter multi-line prompt, code or paste here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnPasteClipboard" data-i18n="btn_paste_clipboard">📋 Paste Clipboard</button>
+        <button class="btn btn-secondary" id="btnClearHelper" data-i18n="btn_clear_helper">Clear</button>
+        <button class="btn btn-primary" id="btnSendWithEnter" data-i18n="btn_send_enter">Send & Execute (Enter)</button>
+        <button class="btn btn-outline" id="btnSendOnly" data-i18n="btn_send_only">Send Only</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 切换 Agent 弹窗 -->
+  <div class="modal-backdrop" id="agentModal" style="display: none;">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 data-i18n="modal_agent_title">Select CLI Agent Preset</h3>
+        <button class="close-btn" id="btnCloseAgentModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-tip" data-i18n="modal_agent_tip">Switching will restart session and launch selected Agent in bound workdir</p>
+        <div class="agent-list-group" id="agentListGroup">
+          <!-- 动态加载 agent 选项 -->
+        </div>
+        <div class="form-group checkbox-group" style="padding: 8px 0 0 0; border-top: 1px solid #30363d; margin-top: 8px;">
+          <input type="checkbox" id="modalAutoApprove">
+          <label for="modalAutoApprove" style="cursor: pointer; color: #f0f6fc; font-weight: 500; font-size: 13px;" data-i18n="label_auto_approve">
+            ⚡ Auto-Approve / Bypass Sandbox
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ctrl+ 组合键快捷选择弹窗 -->
+  <div class="modal-backdrop" id="ctrlModal" style="display: none;">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 data-i18n="modal_ctrl_title">⌨️ Ctrl+ Shortcuts</h3>
+        <button class="close-btn" id="btnCloseCtrlModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-tip" data-i18n="modal_ctrl_tip">Click to send shortcut immediately and close modal:</p>
+
+        <!-- 高频快捷功能卡片 -->
+        <div class="ctrl-presets-grid">
+          <button class="ctrl-preset-card ctrl-hotkey-danger" data-ctrl="c">
+            <span class="ctrl-key-title">Ctrl+C</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_c_desc">Interrupt</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="d">
+            <span class="ctrl-key-title">Ctrl+D</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_d_desc">EOF / Exit</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="z">
+            <span class="ctrl-key-title">Ctrl+Z</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_z_desc">Suspend</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="l">
+            <span class="ctrl-key-title">Ctrl+L</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_l_desc">Redraw</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="r">
+            <span class="ctrl-key-title">Ctrl+R</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_r_desc">Search</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="a">
+            <span class="ctrl-key-title">Ctrl+A</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_a_desc">Line Start</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="e">
+            <span class="ctrl-key-title">Ctrl+E</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_e_desc">Line End</span>
+          </button>
+          <button class="ctrl-preset-card" data-ctrl="u">
+            <span class="ctrl-key-title">Ctrl+U</span>
+            <span class="ctrl-key-desc" data-i18n="ctrl_u_desc">Delete Line</span>
+          </button>
+        </div>
+
+        <!-- 全字母 A-Z 快速点选键盘 -->
+        <div class="ctrl-alpha-section">
+          <div class="ctrl-alpha-title" data-i18n="ctrl_alpha_title">Other Letters (Ctrl + A~Z):</div>
+          <div class="ctrl-alpha-grid" id="ctrlAlphaGrid">
+            <!-- 动态生成 26 个字母按钮 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 切换配色方案弹窗 -->
+  <div class="modal-backdrop" id="themeModal" style="display: none;">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 data-i18n="modal_theme_title">🎨 Terminal Theme</h3>
+        <button class="close-btn" id="btnCloseThemeModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-tip" data-i18n="modal_theme_tip">Select comfortable theme for mobile and dark coding:</p>
+        <div class="theme-grid" id="themeGrid">
+          <!-- 动态加载配色方案卡片 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 软件信息与版本号弹窗 -->
+  <div class="modal-backdrop" id="aboutModal" style="display: none;">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 data-i18n="modal_about_title">ℹ️ 关于软件</h3>
+        <button class="close-btn" id="btnCloseAboutModal">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 20px 16px;">
+        <div style="font-size: 38px; margin-bottom: 8px;">🚀</div>
+        <h2 style="margin: 0 0 6px 0; font-size: 20px; color: #58a6ff;">Tim-Agent</h2>
+        <div style="display: inline-block; padding: 2px 10px; background: rgba(56,139,253,0.15); border: 1px solid #388bfd; border-radius: 12px; font-size: 13px; font-weight: 600; color: #58a6ff; margin-bottom: 12px;">
+          <span id="appVersionText">v1.0.0</span>
+        </div>
+        <p style="font-size: 13px; color: #8b949e; line-height: 1.5; margin: 0 0 16px 0;" data-i18n="about_desc">
+          Native GUI Terminal Agent & Mobile Vibe Coding Hub
+        </p>
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid #30363d; border-radius: 8px; padding: 10px; text-align: left; font-size: 12px; color: #c9d1d9; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: #8b949e;" data-i18n="about_status">守护状态:</span>
+            <span style="color: #3fb950; font-weight: 600;" id="aboutDaemonStatus">运行正常 (Active)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #8b949e;" data-i18n="about_uptime">已运行:</span>
+            <span id="aboutUptime">-</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: center;">
+          <a href="https://github.com/tim-today/tim-agent" target="_blank" class="btn btn-secondary" style="font-size: 12px; text-decoration: none; padding: 6px 12px;">GitHub</a>
+          <button class="btn btn-primary" id="btnCheckUpdateTerminal" style="font-size: 12px; padding: 6px 12px;" data-i18n="btn_check_update">检查更新</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/xterm.js"></script>
+  <script src="/js/addon-fit.js"></script>
+  <script src="/js/terminal.js"></script>
+</body>
+</html>

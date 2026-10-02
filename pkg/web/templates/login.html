@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tim-Agent 身份验证</title>
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <style>
+    .login-container {
+      max-width: 380px;
+      margin: 10vh auto;
+      padding: 30px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    .login-logo {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+    .login-title {
+      font-size: 20px;
+      color: #f0f6fc;
+      margin-bottom: 6px;
+    }
+    .login-subtitle {
+      font-size: 13px;
+      color: #8b949e;
+      margin-bottom: 24px;
+    }
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #f0f6fc;
+      font-size: 15px;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #238636;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .submit-btn:hover {
+      background: #2ea043;
+    }
+    .error-msg {
+      color: #f85149;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body class="dark-body">
+  <div class="login-container">
+    <div class="login-logo">🔒</div>
+    <h2 class="login-title" id="loginTitle">Tim-Agent Terminal Access</h2>
+    <p class="login-subtitle" id="loginSubtitle">Protected by password. Automatically remembered in browser.</p>
+    <form id="loginForm">
+      <input type="password" id="passwordInput" class="input-field" placeholder="Password" autofocus required>
+      <div style="margin-bottom: 14px; font-size: 12px; color: #3fb950; text-align: left;" id="loginHint">
+        ✓ Remember login state automatically
+      </div>
+      <button type="submit" class="submit-btn" id="btnLogin">Unlock & Enter Terminal</button>
+      <div id="errorMsg" class="error-msg">Incorrect password, please try again</div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const pwd = document.getElementById('passwordInput');
+    const err = document.getElementById('errorMsg');
+
+    const LOGIN_I18N = {
+      en: {
+        title: "Tim-Agent Terminal Access",
+        sub: "Protected by password. Automatically remembered in browser.",
+        placeholder: "Enter access password",
+        hint: "✓ Remember login state automatically",
+        btn: "Unlock & Enter Terminal",
+        err_pwd: "Incorrect password, please try again",
+        err_net: "Network connection error"
+      },
+      zh: {
+        title: "Tim-Agent 终端访问",
+        sub: "此服务已开启密码保护，输入一次浏览器自动永久保存",
+        placeholder: "请输入访问密码",
+        hint: "✓ 浏览器已启用自动保存登录状态",
+        btn: "解锁进入终端",
+        err_pwd: "密码错误，请重试",
+        err_net: "网络连接异常"
+      },
+      'zh-TW': {
+        title: "Tim-Agent 終端存取",
+        sub: "此服務已開啟密碼保護，輸入一次瀏覽器自動永久保存",
+        placeholder: "請輸入存取密碼",
+        hint: "✓ 瀏覽器已啟用自動保存登入狀態",
+        btn: "解鎖進入終端",
+        err_pwd: "密碼錯誤，請重試",
+        err_net: "網路連線異常"
+      },
+      ja: {
+        title: "Tim-Agent 端末アクセス",
+        sub: "パスワードで保護されています。一度入力するとブラウザに保存されます。",
+        placeholder: "アクセスパスワードを入力",
+        hint: "✓ ログイン状態を自動保存",
+        btn: "ロック解除して端末を開く",
+        err_pwd: "パスワードが間違っています",
+        err_net: "ネットワーク接続エラー"
+      },
+      ko: {
+        title: "Tim-Agent 터미널 접속",
+        sub: "비밀번호로 보호되어 있습니다. 최초 입력 시 브라우저에 자동 저장됩니다.",
+        placeholder: "접속 비밀번호 입력",
+        hint: "✓ 로그인 상태 자동 기억",
+        btn: "잠금 해제 및 터미널 접속",
+        err_pwd: "비밀번호가 올바르지 않습니다",
+        err_net: "네트워크 연결 오류"
+      },
+      de: {
+        title: "Tim-Agent Terminal-Zugriff",
+        sub: "Passwortgeschützt. Nach Ersteingabe im Browser gespeichert.",
+        placeholder: "Zugriffskennwort eingeben",
+        hint: "✓ Anmeldestatus automatisch speichern",
+        btn: "Entsperren & Terminal öffnen",
+        err_pwd: "Falsches Kennwort, bitte erneut versuchen",
+        err_net: "Netzwerkverbindungsfehler"
+      }
+    };
+
+    const lang = localStorage.getItem('tim_lang') || 'en';
+    const dict = LOGIN_I18N[lang] || LOGIN_I18N.en;
+    document.getElementById('loginTitle').textContent = dict.title;
+    document.getElementById('loginSubtitle').textContent = dict.sub;
+    pwd.placeholder = dict.placeholder;
+    document.getElementById('loginHint').textContent = dict.hint;
+    document.getElementById('btnLogin').textContent = dict.btn;
+    err.textContent = dict.err_pwd;
+
+    // 自动读取之前已保存的密码
+    const saved = localStorage.getItem('tim_saved_password');
+    if (saved) {
+      pwd.value = saved;
+    }
+
+    form.onsubmit = async function(e) {
+      e.preventDefault();
+      err.style.display = 'none';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd.value })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          localStorage.setItem('tim_saved_password', pwd.value);
+          const redirect = new URLSearchParams(window.location.search).get('redirect') || '/terminal';
+          window.location.href = redirect;
+        } else {
+          err.textContent = data.message || dict.err_pwd;
+          err.style.display = 'block';
+        }
+      } catch (e) {
+        err.textContent = dict.err_net;
+        err.style.display = 'block';
+      }
+    };
+  </script>
+</body>
+</html>
