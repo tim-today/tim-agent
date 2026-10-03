@@ -513,3 +513,60 @@ input:checked + .slider:before {
 .update-tip.is-latest {
   color: #3fb950;
 }
+
+/* 远程管理访问行 (卡片2) */
+.remote-access-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.remote-access-info {
+  flex: 1;
+}
+
+.remote-access-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #f0f6fc;
+}
+
+.remote-access-icon {
+  font-size: 15px;
+}
+
+.remote-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.remote-disabled {
+  background: rgba(139, 148, 158, 0.15);
+  color: #8b949e;
+  border: 1px solid #30363d;
+}
+
+.remote-enabled {
+  background: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+  border: 1px solid #2ea043;
+}
+
+.remote-access-hint {
+  font-size: 12px;
+  color: #8b949e;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+

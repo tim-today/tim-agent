@@ -17,7 +17,7 @@ import (
 
 const Version = config.AppVersion
 
-func printBanner(port int, token, workDir, agent, password string) {
+func printBanner(port int, token, workDir, agent, password string, remoteAccess bool) {
 	fmt.Println("================================================================")
 	fmt.Printf("   🚀 Tim-Agent 在线终端服务 (%s)\n", Version)
 	fmt.Println("   兼容 macOS (Apple Silicon & Intel) / Windows / Linux")
@@ -40,7 +40,11 @@ func printBanner(port int, token, workDir, agent, password string) {
 	}
 
 	fmt.Println("----------------------------------------------------------------")
-	fmt.Printf("  控制面板地址: http://127.0.0.1:%d/\n", port)
+	remoteTip := "仅限本机127.0.0.1访问"
+	if remoteAccess {
+		remoteTip = "已开启外部IP远程管理(需密码)"
+	}
+	fmt.Printf("  控制面板地址: http://127.0.0.1:%d/ (%s)\n", port, remoteTip)
 	fmt.Println("  已常驻托盘监听与守护自愈，关闭终端窗口或断网保持永不中断")
 	fmt.Println("================================================================")
 }
@@ -56,6 +60,7 @@ func main() {
 	flagDir := flag.String("dir", "", "绑定工作目录 (默认当前目录)")
 	flagAgent := flag.String("agent", "", "默认代理命令 (如 claude, codex, opcode, pi, gemini)")
 	flagAutoApprove := flag.Bool("auto-approve", false, "自动确认/关闭沙箱 (Claude/Codex免手动交互确认)")
+	flagRemote := flag.Bool("remote", false, "允许远程访问管理面板 (默认仅限本机127.0.0.1/localhost访问，开启需密码)")
 	flagNoOpen := flag.Bool("no-open", false, "启动后不自动打开浏览器")
 	flagDaemon := flag.Bool("daemon", false, "以独立 Supervisor 守护进程模式运行 (主进程自动监控与自愈重启)")
 	flagVersion := flag.Bool("version", false, "查看版本号")
@@ -96,12 +101,15 @@ func main() {
 	if *flagAutoApprove {
 		cfg.AutoApprove = true
 	}
+	if *flagRemote {
+		cfg.RemoteAccess = true
+	}
 
 	currentCfg := cfg.Get()
 	initCmd := cfg.GetAgentCommand(currentCfg.SelectedAgent, currentCfg.AutoApprove)
 
 	// 2. 打印控制台横幅
-	printBanner(currentCfg.Port, currentCfg.AuthToken, currentCfg.WorkDir, currentCfg.SelectedAgent, currentCfg.Password)
+	printBanner(currentCfg.Port, currentCfg.AuthToken, currentCfg.WorkDir, currentCfg.SelectedAgent, currentCfg.Password, currentCfg.RemoteAccess)
 
 	// 3. 预初始化主会话并绑定目录与拉起 Agent
 	mgr := session.GetManager()
@@ -176,7 +184,7 @@ func main() {
 		OnLanguageChange: func(newLang string) {
 			c := cfg.Get()
 			if c.Language != newLang {
-				_ = cfg.Update(c.Port, c.Password, c.Shell, c.WorkDir, c.SelectedAgent, c.Theme, newLang, c.AutoApprove, c.KeepAlive, nil)
+				_ = cfg.Update(c.Port, c.Password, c.Shell, c.WorkDir, c.SelectedAgent, c.Theme, newLang, c.AutoApprove, c.KeepAlive, c.RemoteAccess, nil)
 				log.Printf("[TimAgent] 语言已通过托盘切换为: %s\n", newLang)
 			}
 		},

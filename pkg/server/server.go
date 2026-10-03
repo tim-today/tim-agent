@@ -130,20 +130,17 @@ func (s *Server) Start() error {
 	publicMux.Handle("/css/", http.FileServer(web.GetStaticFS()))
 	publicMux.Handle("/js/", http.FileServer(web.GetStaticFS()))
 
-	// 外部访问根路径自动跳转到终端登录页，防止外部探测或越权管理
-	publicMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		http.Redirect(w, r, "/terminal", http.StatusFound)
-	})
-
+	// 外部终端共享服务
+	publicMux.HandleFunc("/", s.handleDashboard)
 	publicMux.HandleFunc("/terminal", s.handleTerminal)
 	publicMux.HandleFunc("/login", s.handleLogin)
 	publicMux.HandleFunc("/api/login", s.handleAPILogin)
 	publicMux.HandleFunc("/api/status", s.handleAPIStatus)
 	publicMux.HandleFunc("/api/qrcode", s.handleAPIQRCode)
+	publicMux.HandleFunc("/api/config", s.handleAPIConfig)
+	publicMux.HandleFunc("/api/password/regenerate", s.handleAPIRegeneratePassword)
+	publicMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
+	publicMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
 	publicMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
 	cfg := s.cfg.Get()
@@ -162,7 +159,7 @@ func (s *Server) Start() error {
 		if err == nil {
 			if port != cfg.Port {
 				// 若递增了端口，同步更新配置中的当前实际端口
-				_ = s.cfg.Update(port, cfg.Password, cfg.Shell, cfg.WorkDir, cfg.SelectedAgent, cfg.Theme, cfg.Language, cfg.AutoApprove, cfg.KeepAlive, nil)
+				_ = s.cfg.Update(port, cfg.Password, cfg.Shell, cfg.WorkDir, cfg.SelectedAgent, cfg.Theme, cfg.Language, cfg.AutoApprove, cfg.KeepAlive, cfg.RemoteAccess, nil)
 			}
 			break
 		}
@@ -223,13 +220,60 @@ func (s *Server) isAuthenticated(r *http.Request) bool {
 	return false
 }
 
+// isLocalRequest 判断请求是否来自本机回环地址 (127.0.0.1 / ::1 / localhost)
+func isLocalRequest(r *http.Request) bool {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	ip := net.ParseIP(host)
+	if ip != nil {
+		return ip.IsLoopback()
+	}
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
+}
+
+// requireAdminAuth 远程管理 API 权限校验：
+// 1. 本机 127.0.0.1 / localhost 访问直接免密放行；
+// 2. 外部 IP 访问：若未开启 remote_access 返回 403 Forbidden；若已开启但未认证返回 401 Unauthorized。
+func (s *Server) requireAdminAuth(w http.ResponseWriter, r *http.Request) bool {
+	if isLocalRequest(r) {
+		return true
+	}
+	cfg := s.cfg.Get()
+	if !cfg.RemoteAccess {
+		http.Error(w, "Forbidden: Remote management is disabled", http.StatusForbidden)
+		return false
+	}
+	if !s.isAuthenticated(r) {
+		http.Error(w, "Unauthorized: Please login with access password", http.StatusUnauthorized)
+		return false
+	}
+	return true
+}
+
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
 
-	// 本地控制面板限制127.0.0.1随机端口访问，无需输入密码，直接打开控制面板
+	cfg := s.cfg.Get()
+	if !isLocalRequest(r) {
+		// 外部 IP 请求
+		if !cfg.RemoteAccess {
+			// 未开启远程管理时，重定向至终端页面
+			http.Redirect(w, r, "/terminal", http.StatusFound)
+			return
+		}
+		// 开启了远程管理，必须经过密码鉴权
+		if !s.isAuthenticated(r) {
+			http.Redirect(w, r, "/login?redirect=/", http.StatusFound)
+			return
+		}
+	}
+
+	// 本机直接免密，或者远程鉴权成功
 	if err := s.tmpl.ExecuteTemplate(w, "index.html", nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -307,6 +351,9 @@ func (s *Server) handleAPIRegeneratePassword(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
 
 	newPwd := s.cfg.RegeneratePassword()
 	w.Header().Set("Content-Type", "application/json")
@@ -335,6 +382,13 @@ func (s *Server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 			"is_running":    defaultSess.IsRunning,
 			"clients_count": len(defaultSess.ListClients()),
 		}
+	}
+
+	// 敏感信息保护：非本机且未经鉴权的访问，隐藏密码与鉴权 Token
+	isAuthed := isLocalRequest(r) || s.isAuthenticated(r)
+	if !isAuthed {
+		cfg.Password = "******"
+		cfg.AuthToken = ""
 	}
 
 	res := map[string]any{
@@ -438,6 +492,9 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
 
 	var req struct {
 		Port          int    `json:"port"`
@@ -449,6 +506,7 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 		Language      string `json:"language"`
 		AutoApprove   bool   `json:"auto_approve"`
 		KeepAlive     bool   `json:"keep_alive"`
+		RemoteAccess  bool   `json:"remote_access"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -466,7 +524,7 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 		targetLang = oldCfg.Language
 	}
 
-	err := s.cfg.Update(req.Port, req.Password, req.Shell, req.WorkDir, req.SelectedAgent, req.Theme, targetLang, req.AutoApprove, req.KeepAlive, nil)
+	err := s.cfg.Update(req.Port, req.Password, req.Shell, req.WorkDir, req.SelectedAgent, req.Theme, targetLang, req.AutoApprove, req.KeepAlive, req.RemoteAccess, nil)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
@@ -502,6 +560,10 @@ func (s *Server) handleAPISessionRestart(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !isLocalRequest(r) && !s.isAuthenticated(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	var req struct {
 		Agent       string `json:"agent"`
@@ -526,7 +588,7 @@ func (s *Server) handleAPISessionRestart(w http.ResponseWriter, r *http.Request)
 		autoApprove = *req.AutoApprove
 	}
 
-	_ = s.cfg.Update(cfg.Port, cfg.Password, cfg.Shell, workDir, agentID, cfg.Theme, cfg.Language, autoApprove, cfg.KeepAlive, nil)
+	_ = s.cfg.Update(cfg.Port, cfg.Password, cfg.Shell, workDir, agentID, cfg.Theme, cfg.Language, autoApprove, cfg.KeepAlive, cfg.RemoteAccess, nil)
 
 	initCmd := s.cfg.GetAgentCommand(agentID, autoApprove)
 	mgr := session.GetManager()

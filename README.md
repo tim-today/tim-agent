@@ -75,6 +75,7 @@ tim-agent -agent claude
 | `-password` | `string` | Auto-gen | Web terminal password protection (cached after first login) |
 | `-shell` | `string` | System `$SHELL` | Custom shell executable (`/bin/zsh`, `/bin/bash`, `powershell.exe`) |
 | `-no-open` | `bool` | `false` | Do not automatically pop up local dashboard in browser on start |
+| `-remote` | `bool` | `false` | Enable remote access to web dashboard (default localhost only, requires password) |
 | `-daemon` | `bool` | `false` | Run with supervisor watchdog for auto-recovery, ensuring 24/7 port uptime |
 | `-version` | `bool` | `false` | Print version information and exit |
 
@@ -129,6 +130,7 @@ tim-agent -agent claude
 | `-password` | `string` | 自动生成强密码 | 终端访问密码保护（浏览器输入一次自动记住持久凭证） |
 | `-shell` | `string` | 环境变量 `$SHELL` | 指定 Shell 解释器路径 (如 `/bin/zsh`, `powershell.exe`) |
 | `-no-open` | `bool` | `false` | 启动后不自动在本地浏览器弹出控制面板 |
+| `-remote` | `bool` | `false` | 允许外部IP远程访问控制面板（默认仅限本机 127.0.0.1/localhost 访问，开启需密码鉴权） |
 | `-daemon` | `bool` | `false` | 开启独立 Supervisor 守护监控，异常崩溃秒级自愈重启，保证端口常驻 |
 | `-version` | `bool` | `false` | 查看版本信息并退出 |
 
@@ -173,6 +175,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 - `-password`: 終端訪問密碼（瀏覽器輸入一次自動記住）
 - `-shell`: 指定 Shell 路徑（如 `/bin/zsh`, `powershell.exe`）
 - `-no-open`: 啟動時不自動彈出瀏覽器
+- `-remote`: 允許外部IP遠端存取控制台（預設僅限本機 127.0.0.1/localhost 存取，開啟需密碼驗證）
 - `-daemon`: 以 Supervisor 守護行程模式運作（自動監控與異常自愈重啟）
 - `-version`: 查看版本資訊
 
@@ -214,6 +217,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 - `-password`: Web ターミナル接続パスワード（自動生成または指定）
 - `-shell`: 使用するシェルパス（`/bin/zsh`, `powershell.exe` など）
 - `-no-open`: 起動時にブラウザを自動で開かない
+- `-remote`: 管理ダッシュボードのリモートアクセスを許可（デフォルト無効、有効時はパスワード認証必須）
 - `-daemon`: スーパーバイザー常駐監視モード（異常終了時の自動リカバリ起動）
 - `-version`: バージョン情報を表示
 
@@ -255,6 +259,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 - `-password`: 터미널 접근 보호 비밀번호
 - `-shell`: 실행 셸 경로 지정 (`/bin/zsh`, `powershell.exe` 등)
 - `-no-open`: 실행 시 브라우저 자동 팝업 비활성화
+- `-remote`: 관리 대시보드 원격 접속 허용 (기본값 로컬 전용, 활성화 시 비밀번호 인증 필요)
 - `-daemon`: 데몬 슈퍼바이저 감시 모드 실행 (비정상 종료 시 자동 복구 재시작)
 - `-version`: 현재 버전 확인
 
@@ -296,6 +301,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 - `-password`: Passwortschutz für das Web-Terminal
 - `-shell`: Shell-Pfad (`/bin/zsh`, `powershell.exe` etc.)
 - `-no-open`: Browser nicht automatisch beim Start öffnen
+- `-remote`: Fernzugriff auf das Web-Dashboard erlauben (Standard nur 127.0.0.1/localhost, erfordert Passwort)
 - `-daemon`: Supervisor-Daemon-Modus (automatische Wiederherstellung bei Abstürzen)
 - `-version`: Versionsinformationen anzeigen
 

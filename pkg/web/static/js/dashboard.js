@@ -57,6 +57,10 @@
       check_failed: "Update check failed",
       click_to_update: "Click to download update",
       footer_releases: "Releases & Changelog",
+      label_remote_access: "Remote Management (Web Dashboard):",
+      hint_remote_access: "Default off (127.0.0.1/localhost only). When enabled, external IPs can access dashboard with password.",
+      badge_remote_off: "Localhost Only",
+      badge_remote_on: "Remote Allowed",
     },
     zh: {
       app_title: "Tim-Agent 控制面板",
@@ -111,6 +115,10 @@
       restart_success: "终端已重启，并已拉起指定 Agent！",
       restart_fail: "重启失败: ",
       net_error: "网络错误",
+      label_remote_access: "远程管理链接 (控制面板):",
+      hint_remote_access: "默认关闭 (仅限本机 127.0.0.1/localhost 访问)。开启后允许外部 IP 输入密码访问控制面板。",
+      badge_remote_off: "仅限本机",
+      badge_remote_on: "允许外部IP",
     },
     'zh-TW': {
       app_title: "Tim-Agent 控制面板",
@@ -165,6 +173,10 @@
       check_failed: "檢查更新失敗",
       click_to_update: "點擊前往下載新版本",
       footer_releases: "版本發布與更新日誌",
+      label_remote_access: "遠端管理連結 (控制面板):",
+      hint_remote_access: "預設關閉 (僅限本機 127.0.0.1/localhost 存取)。開啟後允許外部 IP 輸入密碼存取控制面板。",
+      badge_remote_off: "僅限本機",
+      badge_remote_on: "允許外部IP",
     },
     ja: {
       app_title: "Tim-Agent コントロールセンター",
@@ -219,6 +231,10 @@
       restart_success: "端末セッションが再起動しAgentが起動しました！",
       restart_fail: "再起動に失敗しました: ",
       net_error: "ネットワークエラー",
+      label_remote_access: "リモート管理 (ダッシュボード):",
+      hint_remote_access: "デフォルト無効 (127.0.0.1/localhost のみ)。有効にすると外部IPからパスワード認証で管理可能。",
+      badge_remote_off: "ローカル専用",
+      badge_remote_on: "外部許可",
     },
     ko: {
       app_title: "Tim-Agent 제어 센터",
@@ -273,6 +289,10 @@
       restart_success: "터미널 세션이 재시작되고 Agent가 실행되었습니다!",
       restart_fail: "재시작 실패: ",
       net_error: "네트워크 오류",
+      label_remote_access: "원격 관리 (대시보드):",
+      hint_remote_access: "기본 비활성화 (127.0.0.1/localhost 전용). 활성화 시 외부 IP에서 비밀번호로 접속 가능.",
+      badge_remote_off: "로컬 전용",
+      badge_remote_on: "외부 허용",
     },
     de: {
       app_title: "Tim-Agent Kontrollzentrum",
@@ -327,6 +347,10 @@
       restart_success: "Terminal neu gestartet und Agent ausgeführt!",
       restart_fail: "Neustart fehlgeschlagen: ",
       net_error: "Netzwerkfehler",
+      label_remote_access: "Fernverwaltung (Dashboard):",
+      hint_remote_access: "Standardmäßig aus (nur 127.0.0.1/localhost). Wenn aktiviert, können externe IPs mit Passwort zugreifen.",
+      badge_remote_off: "Nur Lokal",
+      badge_remote_on: "Extern Erlaubt",
     }
   };
 
@@ -442,12 +466,57 @@
   const cfgWorkDir = document.getElementById('cfgWorkDir');
   const cfgAgent = document.getElementById('cfgAgent');
   const cfgAutoApprove = document.getElementById('cfgAutoApprove');
+  const cfgRemoteAccess = document.getElementById('cfgRemoteAccess');
+  const remoteAccessBadge = document.getElementById('remoteAccessBadge');
   const cfgTheme = document.getElementById('cfgTheme');
   const sessAgent = document.getElementById('sessAgent');
   const sessWorkDir = document.getElementById('sessWorkDir');
 
+  function updateRemoteAccessBadge(enabled) {
+    if (!remoteAccessBadge) return;
+    if (enabled) {
+      remoteAccessBadge.textContent = I18N[currentLang].badge_remote_on || '允许外部IP';
+      remoteAccessBadge.className = 'remote-badge remote-enabled';
+    } else {
+      remoteAccessBadge.textContent = I18N[currentLang].badge_remote_off || '仅限本机';
+      remoteAccessBadge.className = 'remote-badge remote-disabled';
+    }
+  }
+
+  if (cfgRemoteAccess) {
+    cfgRemoteAccess.addEventListener('change', async function () {
+      const enabled = this.checked;
+      updateRemoteAccessBadge(enabled);
+      if (currentStatus && currentStatus.config) {
+        const cfg = currentStatus.config;
+        try {
+          await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              port: cfg.port,
+              password: cfg.password,
+              shell: cfg.shell,
+              work_dir: cfg.work_dir,
+              selected_agent: cfg.selected_agent,
+              theme: cfg.theme,
+              language: cfg.language || currentLang,
+              auto_approve: cfg.auto_approve,
+              keep_alive: cfg.keep_alive,
+              remote_access: enabled
+            })
+          });
+          currentStatus.config.remote_access = enabled;
+        } catch (e) {
+          console.error('更新远程管理设置失败', e);
+        }
+      }
+    });
+  }
+
   function onLanguageChange(newLang) {
     applyLanguage(newLang);
+    updateRemoteAccessBadge(cfgRemoteAccess ? cfgRemoteAccess.checked : false);
     // 异步快速保存语言偏好至服务器
     if (currentStatus && currentStatus.config) {
       const cfg = currentStatus.config;
@@ -463,7 +532,8 @@
           theme: cfg.theme,
           language: newLang,
           auto_approve: cfg.auto_approve,
-          keep_alive: cfg.keep_alive
+          keep_alive: cfg.keep_alive,
+          remote_access: cfg.remote_access
         })
       }).catch(() => {});
     }
@@ -488,6 +558,10 @@
     const lang = cfg.language || currentLang || 'en';
     applyLanguage(lang);
     cfgKeepAlive.checked = cfg.keep_alive;
+    if (cfgRemoteAccess) {
+      cfgRemoteAccess.checked = !!cfg.remote_access;
+      updateRemoteAccessBadge(!!cfg.remote_access);
+    }
 
     // 填充 Agent 选项
     if (cfg.agents && cfg.agents.length > 0) {
@@ -578,7 +652,8 @@
       auto_approve: cfgAutoApprove.checked,
       theme: cfgTheme ? cfgTheme.value : 'github-dark',
       language: cfgLanguage ? cfgLanguage.value : currentLang,
-      keep_alive: cfgKeepAlive.checked
+      keep_alive: cfgKeepAlive.checked,
+      remote_access: cfgRemoteAccess ? cfgRemoteAccess.checked : false
     };
 
     try {

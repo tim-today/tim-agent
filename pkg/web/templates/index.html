@@ -12,7 +12,7 @@
     <header class="app-header">
       <div class="brand">
         <span class="logo-icon">⚡</span>
-        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v1.0.2</span></h1>
+        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v1.0.3</span></h1>
       </div>
       <div class="header-right">
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="btn btn-secondary btn-icon-only" title="GitHub Official Repository" id="btnGitHubLink">
@@ -68,6 +68,25 @@
             </div>
           </div>
         </div>
+
+        <!-- 远程链接选项 (在 Terminal Session 下方) -->
+        <div class="remote-access-row">
+          <div class="remote-access-info">
+            <div class="remote-access-label">
+              <span class="remote-access-icon">🌐</span>
+              <strong data-i18n="label_remote_access">远程链接 (Remote Management):</strong>
+              <span id="remoteAccessBadge" class="remote-badge remote-disabled" data-i18n="badge_remote_off">仅限本机</span>
+            </div>
+            <p class="remote-access-hint" data-i18n="hint_remote_access">
+              默认关闭（仅限 127.0.0.1 或 localhost 访问）。开启后允许外部 IP 访问控制面板，需输入访问密码验证。
+            </p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="cfgRemoteAccess">
+            <span class="slider"></span>
+          </label>
+        </div>
+
         <p class="card-tip" data-i18n="card2_tip">🔒 Session Keep-Alive Active: Background shell process continues even if phone locks or browser closes!</p>
       </section>
 
@@ -163,7 +182,7 @@
     <!-- 底部页脚 -->
     <footer class="app-footer">
       <div class="footer-left">
-        <span>Tim-Agent <span id="footerVersionText">v1.0.2</span></span>
+        <span>Tim-Agent <span id="footerVersionText">v1.0.3</span></span>
         <span class="dot-sep">•</span>
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="footer-link">GitHub Repository</a>
         <span class="dot-sep">•</span>

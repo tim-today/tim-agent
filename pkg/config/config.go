@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	AppVersion     = "v1.0.2"
+	AppVersion     = "v1.0.3"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"
@@ -40,6 +40,7 @@ type ConfigData struct {
 	WorkDir        string        `json:"work_dir"`
 	SelectedAgent  string        `json:"selected_agent"`
 	AutoApprove    bool          `json:"auto_approve"` // 自动确认(关闭沙箱)，默认false
+	RemoteAccess   bool          `json:"remote_access"` // 远程管理访问(开启后允许外部IP访问管理面板，需密码鉴权)，默认false
 	Theme          string        `json:"theme"`          // 终端配色方案
 	Language       string        `json:"language"`       // 界面语言: "en" (默认) 或 "zh"
 	KeepAlive      bool          `json:"keep_alive"`
@@ -154,6 +155,7 @@ func DefaultConfig() *Config {
 			WorkDir:       cwd,
 			SelectedAgent: "claude", // 默认选用常用 claude
 			AutoApprove:   false,
+			RemoteAccess:  false, // 默认仅限本机访问
 			Theme:         "github-dark", // 默认配色方案
 			Language:      "en",            // 默认语言为英文
 			KeepAlive:     true,
@@ -310,7 +312,7 @@ func (c *Config) Save() error {
 	return os.WriteFile(c.filePath, data, 0644)
 }
 
-func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme, language string, autoApprove, keepAlive bool, commands []CommandItem) error {
+func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme, language string, autoApprove, keepAlive, remoteAccess bool, commands []CommandItem) error {
 	c.mu.Lock()
 	if port > 0 && port < 65536 {
 		c.Port = port
@@ -337,6 +339,7 @@ func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme
 	}
 	c.AutoApprove = autoApprove
 	c.KeepAlive = keepAlive
+	c.RemoteAccess = remoteAccess
 	if commands != nil {
 		c.CustomCommands = commands
 	}
