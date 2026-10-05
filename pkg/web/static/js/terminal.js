@@ -68,6 +68,9 @@
       status_online: "Online",
       status_connecting: "Reconnecting...",
       status_offline: "Offline",
+      btn_install_pwa: "📲 Install as App (PWA)",
+      pwa_ios_tip: "iOS Install: Tap Safari Share button ⎋ at bottom, then choose 'Add to Home Screen'!",
+      pwa_installed_tip: "Open browser menu and select 'Install App' or 'Add to Home Screen'.",
       vibes: {
         '帮我修复上面的报错并自测': { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
         '继续': { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
@@ -122,6 +125,9 @@
       status_online: "在线正常",
       status_connecting: "正在重连...",
       status_offline: "已离线",
+      btn_install_pwa: "📲 安装为本地应用 (PWA)",
+      pwa_ios_tip: "iOS 安装方法：点击 Safari 底部「分享」按钮 ⎋，然后选择「添加到主屏幕」即可安装为独立 App！",
+      pwa_installed_tip: "可通过浏览器右上角菜单选择「安装应用」或「添加到主屏幕」将终端保存至桌面",
       vibes: {}
     },
     'zh-TW': {
@@ -169,6 +175,9 @@
       status_online: "連線正常",
       status_connecting: "重新連線中...",
       status_offline: "已離線",
+      btn_install_pwa: "📲 安裝為本機應用程式 (PWA)",
+      pwa_ios_tip: "iOS 安裝方式：點擊 Safari 底部「分享」按鈕 ⎋，然後選擇「加入主畫面」即可安裝為獨立 App！",
+      pwa_installed_tip: "可透過瀏覽器選單選擇「安裝應用程式」或「加入主畫面」將終端儲存至桌面",
       vibes: {
         '帮我修复上面的报错并自测': { text: '⚡ 修復', prompt: '幫我修復上面的報錯並自測', title: '一鍵修復' },
         '继续': { text: '▶️ 繼續', prompt: '繼續', title: '繼續執行' },
@@ -223,6 +232,9 @@
       status_online: "オンライン",
       status_connecting: "再接続中...",
       status_offline: "オフライン",
+      btn_install_pwa: "📲 ホーム画面に追加 (PWA)",
+      pwa_ios_tip: "iOS インストール: Safari 画面下の共有ボタン ⎋ をタップし、「ホーム画面に追加」を選択してください。",
+      pwa_installed_tip: "ブラウザのメニューから「アプリをインストール」または「ホーム画面に追加」を選択してください。",
       vibes: {
         '帮我修复上面的报错并自测': { text: '⚡ 修正', prompt: 'エラーを修正してテストしてください', title: 'エラー修正' },
         '继续': { text: '▶️ 続行', prompt: '続行してください', title: '続行' },
@@ -277,6 +289,9 @@
       status_online: "온라인",
       status_connecting: "재연결 중...",
       status_offline: "오프라인",
+      btn_install_pwa: "📲 앱으로 설치 (PWA)",
+      pwa_ios_tip: "iOS 설치: Safari 하단 공유 버튼 ⎋ 을 누른 후 '홈 화면에 추가'를 선택하세요.",
+      pwa_installed_tip: "브라우저 메뉴에서 '앱 설치' 또는 '홈 화면에 추가'를 선택하여 설치할 수 있습니다.",
       vibes: {
         '帮我修复上面的报错并自测': { text: '⚡ 수정', prompt: '오류를 수정하고 자체 테스트를 수행하세요', title: '오류 수정' },
         '继续': { text: '▶️ 계속', prompt: '계속 실행하세요', title: '계속' },
@@ -331,6 +346,9 @@
       status_online: "Online",
       status_connecting: "Verbinde neu...",
       status_offline: "Offline",
+      btn_install_pwa: "📲 Als App installieren (PWA)",
+      pwa_ios_tip: "iOS-Installation: Tippen Sie in Safari unten auf Teilen ⎋ und wählen Sie 'Zum Home-Bildschirm'.",
+      pwa_installed_tip: "Öffnen Sie das Browsermenü und wählen Sie 'App installieren' oder 'Zum Startbildschirm hinzufügen'.",
       vibes: {
         '帮我修复上面的报错并自测': { text: '⚡ Reparieren', prompt: 'Fehler oben beheben und überprüfen', title: 'Fehler beheben' },
         '继续': { text: '▶️ Weiter', prompt: 'Weiter ausführen', title: 'Weiter' },
@@ -1357,6 +1375,18 @@
   function openAboutModal() {
     if (aboutModal) {
       aboutModal.style.display = 'flex';
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (btnInstallPwaModal) {
+        btnInstallPwaModal.style.display = 'block';
+        if (isStandalone) {
+          btnInstallPwaModal.textContent = '✓ 已作为本地应用运行';
+          btnInstallPwaModal.disabled = true;
+          btnInstallPwaModal.style.opacity = '0.7';
+        } else {
+          btnInstallPwaModal.disabled = false;
+          btnInstallPwaModal.style.opacity = '1';
+        }
+      }
       fetch('/api/status')
         .then(res => res.json())
         .then(data => {
@@ -1418,6 +1448,132 @@
         alert('无法连接到 GitHub 版本检测服务');
         btnCheckUpdateTerminal.textContent = '检查更新';
         btnCheckUpdateTerminal.disabled = false;
+      }
+    });
+  }
+
+  // ========================================================
+  // PWA (Progressive Web App) 支持与防陈旧缓存自动更新机制
+  // 核心：Network-First 策略，自动版本检测与 Controller 更新热接管
+  // ========================================================
+  const btnInstallPwaTop = document.getElementById('btnInstallPwaTop');
+  const btnInstallPwaModal = document.getElementById('btnInstallPwaModal');
+  let deferredInstallPrompt = null;
+
+  // 1. 监听浏览器 beforeinstallprompt 事件 (Chrome, Edge, Android 等)
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (btnInstallPwaTop) btnInstallPwaTop.style.display = 'inline-flex';
+    if (btnInstallPwaModal) {
+      btnInstallPwaModal.style.display = 'block';
+      btnInstallPwaModal.disabled = false;
+      btnInstallPwaModal.style.opacity = '1';
+    }
+  });
+
+  // 2. 监听 appinstalled 事件
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if (btnInstallPwaTop) btnInstallPwaTop.style.display = 'none';
+    if (btnInstallPwaModal) {
+      btnInstallPwaModal.textContent = '✓ 已成功安装为本地应用';
+      btnInstallPwaModal.disabled = true;
+      btnInstallPwaModal.style.opacity = '0.7';
+    }
+    console.log('[PWA] 应用已成功安装到本地');
+  });
+
+  // 3. 点击安装应用处理
+  async function triggerInstallPwa() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) {
+      alert('当前已作为本地 PWA 独立应用运行！');
+      return;
+    }
+
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        if (btnInstallPwaTop) btnInstallPwaTop.style.display = 'none';
+        if (btnInstallPwaModal) {
+          btnInstallPwaModal.textContent = '✓ 已成功安装为本地应用';
+          btnInstallPwaModal.disabled = true;
+          btnInstallPwaModal.style.opacity = '0.7';
+        }
+      }
+      deferredInstallPrompt = null;
+    } else {
+      // 针对未触发原生 prompt (如 Android 纯 HTTP 局域网访问或 iOS Safari) 给出精准指引
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+
+      if (isIOS) {
+        alert(dict.pwa_ios_tip || 'iOS 安装方法：点击 Safari 底部「分享」按钮 ⎋，然后选择「添加到主屏幕」即可安装为独立 App！');
+      } else if (isAndroid) {
+        alert(
+          '📱 Android Chrome 安装指引：\n' +
+          '1. 点击 Chrome 右上角三个点「⋮」菜单\n' +
+          '2. 选择「添加到主屏幕」或「安装应用」\n' +
+          '💡 荣耀 MagicOS / 华为系统提醒：请确保在手机【设置 -> 应用管理 -> Chrome】中已开启「创建桌面快捷方式」权限！\n\n' +
+          '💡 局域网专属提示：因浏览器安全策略，纯 HTTP 局域网地址默认限制自动安装弹窗。若需开启原生 PWA 弹窗，可在 Chrome 访问 chrome://flags/#unsafely-treat-insecure-origin-as-secure 将当前连接地址设为信任。'
+        );
+      } else {
+        alert(dict.pwa_installed_tip || '可通过浏览器右上角菜单选择「安装应用」或「添加到主屏幕」将终端保存至桌面');
+      }
+    }
+  }
+
+  if (btnInstallPwaTop) {
+    btnInstallPwaTop.addEventListener('click', triggerInstallPwa);
+  }
+  if (btnInstallPwaModal) {
+    btnInstallPwaModal.addEventListener('click', triggerInstallPwa);
+  }
+
+  // 4. 注册 Service Worker 并设立防陈旧缓存自动更新监听
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then(reg => {
+          // 监听新 Service Worker 下载与准备阶段
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            if (installingWorker) {
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[PWA] 检测到服务端新版本，通知 Service Worker 立即接管...');
+                  installingWorker.postMessage({ action: 'skipWaiting' });
+                }
+              };
+            }
+          };
+        })
+        .catch(err => {
+          console.warn('[PWA] ServiceWorker 注册异常 (非致命):', err);
+        });
+
+      // 当新版本 Service Worker 激活并取得控制权时，热刷新当前页面以无感同步最新版本
+      let swRefreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!swRefreshing) {
+          swRefreshing = true;
+          console.log('[PWA] 新版本 Controller 接管成功，正在刷新以保持最新版本一致...');
+          window.location.reload();
+        }
+      });
+    });
+
+    // 页面切回前台时，主动触发一次 update() 检查服务端 Service Worker 字节变更
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg) {
+            reg.update().catch(() => {});
+          }
+        });
       }
     });
   }

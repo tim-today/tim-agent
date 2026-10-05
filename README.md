@@ -46,6 +46,7 @@ Traditional remote terminal setups are frustrating on mobile touchscreens and br
 3. 🔄 **Seamless Cross-Device Relay (Phone ↔ PC)**: Start a task at your desk, continue on your phone while walking away; approve changes on mobile, and pick up right where you left off when back at your PC.
 4. ⚡ **Resilient to Network Jitter & Drops**: Decoupled from fragile SSH pipes. The host PC daemon continues executing builds, tests, and AI agent reasoning uninterrupted in the background. Whether you switch from Wi-Fi to 5G or step into an elevator, reconnecting instantly resumes the live session without any disruption to ongoing tasks.
 5. 🤖 **Powered by Official First-Party AI Agents**: Directly drives official tools like Anthropic Claude Code CLI, OpenAI Codex CLI, and Google Gemini CLI. Avoids underpowered third-party wrappers, ensuring state-of-the-art reasoning quality and zero update delay.
+6. 📲 **Progressive Web App (PWA) & Instant Auto-Updates**: Install as a standalone native app on mobile home screens or desktop docks with one tap. Features a Network-First anti-stale caching engine ensuring your PWA receives instant updates automatically with zero cache lock-in.
 
 ### ⚡ Quick Start (Zero Download)
 Run instantly via Go without cloning or manual binary downloads:
@@ -101,6 +102,7 @@ Tim-Agent serves the shared terminal on port `20996`. For remote mobile access, 
 3. 🔄 **手机 ↔ PC 多端无缝接力与双向协同**：真正实现“电脑工作做一半，出门手机继续完成；手机审批或输入一半，回工位电脑无缝接力”。所有端状态毫秒级实时同步，跨端协作一气呵成。
 4. ⚡ **无视网络抖动，电脑 Agent 独立常驻后台**：彻底告别传统 SSH 在地铁、电梯或网络切换时 Broken Pipe 导致任务中断的痛点。电脑端守护进程持续运行，长任务与 AI 推理从不间断；手机断网重连后瞬间恢复交互，完全不影响正在进行的工作。
 5. 🤖 **采用顶级官方原生 Agent**：原生直接驱动 Anthropic 官方 Claude Code CLI、OpenAI 官方 Codex CLI、Google Gemini CLI 等原生工具。坚决摒弃第三方套壳或能力孱弱的二次封装智能体，保障最强的推理智商与官方最新特性支持。
+6. 📲 **支持 PWA 本地应用安装与防陈旧缓存自愈更新**：除浏览器访问外，支持一键安装为手机/电脑桌面独立 App（PWA），全屏沉浸操作。内置 Network-First 网络优先防陈旧缓存引擎，既具备离线韧性，又能在版本升级时毫秒级自动热更新，彻底避免过重缓存导致版本脱节。
 
 ### ⚡ 快速开始（无需下载）
 只要安装了 Go (1.23+)，无需手动下载 Release 产物或 clone 仓库，直接在终端输入即可启动：
@@ -156,6 +158,7 @@ Tim-Agent 默认在电脑端监听 `20996` 端口。需要不在电脑旁随时�
 3. 🔄 **手機 ↔ 電腦無縫雙向接力**：實現「電腦做一半，出門手機接著做；手機審批或輸入一半，回座電腦無縫接力」，跨端狀態即時同步。
 4. ⚡ **無視網路抖動，電腦 Agent 獨立常駐背景**：告別切換網路或進出電梯時 SSH Broken Pipe 導致工作中斷的惡夢。電腦本機持續運算，重連後即時恢復互動，完全不影響既有任務。
 5. 🤖 **原生採用官方頂級 Agent**：直接驅動 Anthropic Claude Code、OpenAI Codex、Google Gemini 等原廠 CLI 智能體，避免第三方包裝工具能力低弱或更新延遲的問題。
+6. 📲 **支援 PWA 本機應用程式安裝與防過期快取自動更新**：除瀏覽器存取外，支援一鍵安裝為手機/電腦桌面獨立 App（PWA）。內建 Network-First 網路優先防過期快取引擎，版本升級時即時自動更新，徹底杜絕快取死鎖。
 
 ### ⚡ 快速開始（免下載直跑）
 只要電腦已安裝 Go (1.23+)，直接在終端機輸入：
@@ -199,6 +202,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 3. 🔄 **スマホ ↔ PC のシームレスな作業リレー**: 「PC で進めていた作業の続きを外出先からスマホで継続」「スマホでの確認・承認の続きをデスクの PC で再開」が可能です。
 4. ⚡ **ネットワーク切断に強く、作業を中断させない常駐実行**: 電車やエレベーターでの電波途切れや Wi-Fi 切り替え時も SSH のような切断（Broken pipe）は起きません。PC 上で常駐プロセスが安全に作業を継続し、再接続時に即座に同期されます。
 5. 🤖 **公式ファーストパーティ Agent を直接駆動**: Anthropic Claude Code、OpenAI Codex、Google Gemini などの公式 CLI ツールを直接呼び出し、サードパーティ製ラッパーによる機能低下や遅延を回避します。
+6. 📲 **PWA ネイティブアプリ化とキャッシュ遅延のない即時自動更新**: ブラウザ利用に加え、スマホのホーム画面やデスクトップに独立した PWA アプリとしてインストール可能。Network-First（ネットワーク優先）キャッシュ制御により、肥大化した古いキャッシュによるバージョン不整合を防ぎ、最新バージョンを即座に自動反映します。
 
 ### ⚡ クイックスタート（インストール不要）
 ```bash
@@ -241,6 +245,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 3. 🔄 **스마트폰 ↔ PC 무중단 작업 릴레이**: "PC에서 작업하던 내용을 이동 중 스마트폰으로 이어가고, 스마트폰에서 승인하던 작업을 다시 PC에서 이어받아 완료"할 수 있습니다.
 4. ⚡ **네트워크 흔들림 무시 & 무중단 백그라운드 실행**: 지하철이나 엘리베이터 등 통신 환경 변화에도 세션이 끊기지 않습니다. PC 상주 데몬이 빌드와 AI 작업을 백그라운드에서 계속 진행하며, 재접속 시 작업 중단 없이 즉시 복원됩니다.
 5. 🤖 **공식 정품 AI Agent 직접 구동**: Anthropic Claude Code, OpenAI Codex, Google Gemini 등 공식 CLI 툴을 직접 실행하여, 서드파티 래퍼의 성능 부족이나 기능 지연 문제를 완벽히 방지합니다.
+6. 📲 **PWA 로컬 앱 설치 및 캐시 고착 방지 자동 업데이트**: 브라우저 접속 외에도 모바일 홈 화면이나 데스크톱에 독립 실행형 PWA 앱으로 1초 설치 가능. Network-First 네트워크 우선 캐싱 엔진을 탑재하여 버전 업그레이드 시 캐시 고착 없이 최신 버전을 자동으로 동기화합니다.
 
 ### ⚡ 빠른 시작 (다운로드 불필요)
 ```bash
@@ -283,6 +288,7 @@ Schluss mit unhandlichen Terminal-Verbindungen auf Mobilgeräten. Tim-Agent verw
 3. 🔄 **Nahtlose Geräte-Staffel (Smartphone ↔ PC)**: Eine Aufgabe am Schreibtisch starten, unterwegs auf dem Handy überprüfen oder fortführen, und zurück am Arbeitsplatz direkt am PC nahtlos weitermachen.
 4. ⚡ **Resistent gegen Netzwerk-Schwankungen & Dauerbetrieb**: Keine abgebrochenen SSH-Verbindungen beim Wechsel zwischen Funkzellen oder im Fahrstuhl. Der PC-Hintergrundprozess arbeitet autark weiter, und die Sitzung wird bei erneuter Verbindung nahtlos fortgesetzt.
 5. 🤖 **Direkte Anbindung offizieller First-Party KI-Agenten**: Nutzt direkt die offiziellen CLI-Tools von Anthropic Claude Code, OpenAI Codex und Google Gemini. Keine schwachen Drittanbieter-Wrapper, immer maximale Modell-Leistung und sofortige Updates.
+6. 📲 **Progressive Web App (PWA) & Stale-Cache-sichere Auto-Updates**: Neben dem Browser-Zugriff lässt sich Tim-Agent mit einem Klick als native PWA auf Smartphone oder Desktop installieren. Ein Network-First-Caching-System stellt sicher, dass Aktualisierungen sofort übernommen werden, ohne durch alte Cache-Bestände blockiert zu werden.
 
 ### ⚡ Schnellstart (Ohne Download)
 ```bash

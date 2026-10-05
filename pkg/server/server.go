@@ -104,6 +104,10 @@ func (s *Server) Start() error {
 	adminMux := http.NewServeMux()
 	adminMux.Handle("/css/", http.FileServer(web.GetStaticFS()))
 	adminMux.Handle("/js/", http.FileServer(web.GetStaticFS()))
+	adminMux.Handle("/img/", http.FileServer(web.GetStaticFS()))
+	adminMux.HandleFunc("/manifest.json", s.handleManifest)
+	adminMux.HandleFunc("/sw.js", s.handleServiceWorker)
+	adminMux.HandleFunc("/favicon.ico", s.handleFavicon)
 	adminMux.HandleFunc("/", s.handleDashboard) // 本机直开控制面板，无需密码
 	adminMux.HandleFunc("/terminal", s.handleTerminal)
 	adminMux.HandleFunc("/api/status", s.handleAPIStatus)
@@ -129,6 +133,10 @@ func (s *Server) Start() error {
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/css/", http.FileServer(web.GetStaticFS()))
 	publicMux.Handle("/js/", http.FileServer(web.GetStaticFS()))
+	publicMux.Handle("/img/", http.FileServer(web.GetStaticFS()))
+	publicMux.HandleFunc("/manifest.json", s.handleManifest)
+	publicMux.HandleFunc("/sw.js", s.handleServiceWorker)
+	publicMux.HandleFunc("/favicon.ico", s.handleFavicon)
 
 	// 外部终端共享服务
 	publicMux.HandleFunc("/", s.handleDashboard)
@@ -277,6 +285,44 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	if err := s.tmpl.ExecuteTemplate(w, "index.html", nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// handleManifest 返回 PWA Web App Manifest
+func (s *Server) handleManifest(w http.ResponseWriter, r *http.Request) {
+	data, err := web.GetStaticFile("manifest.json")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/manifest+json")
+	w.Header().Set("Cache-Control", "no-cache")
+	_, _ = w.Write(data)
+}
+
+// handleServiceWorker 返回 PWA Service Worker 脚本 (严格禁用浏览器 HTTP 缓存，防止死锁旧版本)
+func (s *Server) handleServiceWorker(w http.ResponseWriter, r *http.Request) {
+	data, err := web.GetStaticFile("sw.js")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+	_, _ = w.Write(data)
+}
+
+// handleFavicon 返回网站/PWA应用图标
+func (s *Server) handleFavicon(w http.ResponseWriter, r *http.Request) {
+	data, err := web.GetStaticFile("img/icon.png")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handleTerminal(w http.ResponseWriter, r *http.Request) {

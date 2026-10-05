@@ -1,0 +1,32 @@
+{
+  "name": "Tim-Agent Terminal",
+  "short_name": "TimAgent",
+  "description": "Native GUI Terminal Agent & Mobile Vibe Coding Hub for Claude Code, Codex, Opcode, Pi & Gemini",
+  "start_url": "/terminal",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1117",
+  "theme_color": "#161b22",
+  "categories": ["utilities", "developer", "productivity"],
+  "icons": [
+    {
+      "src": "/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/icon.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
