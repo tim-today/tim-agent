@@ -37,16 +37,17 @@ body.dark-theme {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 10px;
+  padding: 8px 12px;
   background-color: var(--header-bg);
   border-bottom: 1px solid var(--border-color);
-  padding-top: max(6px, env(safe-area-inset-top));
+  padding-top: max(8px, env(safe-area-inset-top, 8px));
   flex-shrink: 0;
   flex-wrap: nowrap;
   white-space: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   gap: 8px;
+  z-index: 50;
 }
 
 .top-bar::-webkit-scrollbar {
@@ -185,15 +186,25 @@ body.dark-theme {
   position: relative;
   overflow: hidden;
   background-color: #000000;
+  box-sizing: border-box;
 }
 
 #terminal {
   width: 100%;
   height: 100%;
+  touch-action: pan-y;
 }
 
 .xterm {
   padding: 4px;
+  touch-action: pan-y;
+}
+
+.xterm .xterm-viewport {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 /* 手机端定制虚拟键盘工具栏 */
@@ -360,6 +371,15 @@ body.dark-theme {
   background: #f85149 !important;
   color: #ffffff !important;
   transform: scale(0.92);
+}
+
+/* 魔法长按全清行触发动效 (高亮闪耀) */
+.key-delete.magic-clearing {
+  background: #ff7b72 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(255, 123, 114, 0.9) !important;
+  transform: scale(1.12) !important;
+  transition: all 0.15s ease !important;
 }
 
 .hotkey-danger {

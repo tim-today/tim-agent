@@ -32,7 +32,7 @@
       <button class="icon-btn" id="btnZoomOut" title="Zoom Out">A-</button>
       <button class="icon-btn" id="btnZoomIn" title="Zoom In">A+</button>
       <button class="icon-btn" id="btnToggleKeyboard" title="Toggle Vibe / Virtual Keyboard">✨</button>
-      <button class="icon-btn" id="btnOpenInputMethodTop" title="Open Soft Keyboard">⌨️</button>
+      <button class="icon-btn" id="btnToggleFullscreen" title="Toggle Fullscreen / 网页全屏">⛶</button>
       <button class="icon-btn" id="btnAboutModal" title="About / Version Info">⚙️</button>
     </div>
   </header>
@@ -52,6 +52,7 @@
       <button class="vibe-pill vibe-accent" data-vibe="帮我修复上面的报错并自测" title="一键修复报错">⚡ 修复</button>
       <button class="vibe-pill vibe-accent" data-vibe="帮我编译构建当前项目并汇报结果" title="编译构建项目">🛠️ 编译</button>
       <button class="vibe-pill vibe-primary" data-vibe="帮我部署当前项目并检查运行状态" title="部署发布项目">🚀 部署</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/resume" title="恢复会话 (/resume)">🔄 /resume</button>
       <button class="vibe-pill vibe-cmd" data-vibe="/model" title="切换模型 (/model)">🤖 /model</button>
       <button class="vibe-pill vibe-secondary" data-vibe="运行测试并汇报结果" title="跑测试">🧪 测试</button>
       <button class="vibe-pill vibe-secondary" data-vibe="帮我用简明commit message提交当前修改" title="提交代码">📝 提交</button>
@@ -67,8 +68,7 @@
       <button class="key-btn ctrl-picker-btn" id="btnCtrlPicker" title="点击展开选择字母输入 Ctrl+ 组合键">Ctrl+ ▾</button>
       <button class="key-btn arrow-btn" data-key="ArrowUp">↑</button>
       <button class="key-btn arrow-btn" data-key="ArrowDown">↓</button>
-      <button class="key-btn cmd-slash-btn" id="btnSlashCmd" data-cmd="/" title="常用斜杠命令 (/)">/</button>
-      <button class="key-btn key-delete" data-key="Backspace" title="退格删除">⌫</button>
+      <button class="key-btn key-delete" id="btnKeyBackspace" data-key="Backspace" title="退格删除 (长按连续删除 / 长按1秒一键清空整行)">⌫</button>
       <button class="key-btn key-action" data-key="Enter" title="回车换行/执行">↵</button>
     </div>
   </footer>
@@ -223,7 +223,7 @@
         <div style="font-size: 38px; margin-bottom: 8px;">🚀</div>
         <h2 style="margin: 0 0 6px 0; font-size: 20px; color: #58a6ff;">Tim-Agent</h2>
         <div style="display: inline-block; padding: 2px 10px; background: rgba(56,139,253,0.15); border: 1px solid #388bfd; border-radius: 12px; font-size: 13px; font-weight: 600; color: #58a6ff; margin-bottom: 12px;">
-          <span id="appVersionText">v1.0.4</span>
+          <span id="appVersionText">v1.0.5</span>
         </div>
         <p style="font-size: 13px; color: #8b949e; line-height: 1.5; margin: 0 0 16px 0;" data-i18n="about_desc">
           Native GUI Terminal Agent & Mobile Vibe Coding Hub

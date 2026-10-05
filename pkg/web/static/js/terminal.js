@@ -633,16 +633,11 @@
     term.focus();
   }
 
+  // 移动端点击终端视口唤起输入法
   if (terminalEl) {
     terminalEl.addEventListener('click', function () {
       triggerSystemKeyboard();
     });
-    // 监听移动端 touch 事件，确保用户点击终端时立即唤起输入法
-    terminalEl.addEventListener('touchend', function (e) {
-      if (!e.touches || e.touches.length <= 1) {
-        triggerSystemKeyboard();
-      }
-    }, { passive: true });
   }
 
   // 监听 Visual Viewport 动态计算软键盘弹出高度，实现虚拟键盘栏贴合输入法键盘顶部
@@ -1058,16 +1053,17 @@
     });
   }
 
-  // 虚拟按键点击映射
+  // 虚拟按键点击映射 (除 Backspace 由独立长按/魔法清空处理器接管外)
   document.querySelectorAll('[data-key]').forEach(function (btn) {
+    const key = btn.getAttribute('data-key');
+    if (key === 'Backspace') return; // 由独立的长按/连删/魔法清空处理器接管
+
     btn.addEventListener('click', function (e) {
       e.preventDefault();
-      const key = this.getAttribute('data-key');
       switch (key) {
         case 'Escape': sendInput('\x1b'); break;
         case 'Tab': sendInput('\t'); break;
         case 'Enter': sendInput('\r'); break;
-        case 'Backspace': sendInput('\x7f'); break;
         case 'ArrowUp': sendInput('\x1b[A'); break;
         case 'ArrowDown': sendInput('\x1b[B'); break;
         case 'ArrowRight': sendInput('\x1b[C'); break;
@@ -1076,6 +1072,88 @@
       term.focus();
     });
   });
+
+  // 退格删除键 (Backspace) 魔法增强：
+  // 1. 单击：删除单个字符 (\x7f)
+  // 2. 长按持续 (>300ms)：开启连续高速删除，每60ms删除一个字符并逐渐加快
+  // 3. 魔法长按不放 (>850ms)：触发一键全清魔法！自动发送 Ctrl+U (\x15) 清空当前行所有输入内容，并伴随按键震动与微光视觉反馈
+  const btnKeyBackspace = document.getElementById('btnKeyBackspace') || document.querySelector('[data-key="Backspace"]');
+  if (btnKeyBackspace) {
+    let bsTimer = null;
+    let bsInterval = null;
+    let bsMagicTimer = null;
+    let isLongPress = false;
+    let isMagicCleared = false;
+
+    function startBackspaceHold(e) {
+      if (e) e.preventDefault();
+      isLongPress = false;
+      isMagicCleared = false;
+
+      // 立即触发首次单击删除
+      sendInput('\x7f');
+      term.focus();
+
+      // 300ms 后开始连续退格删除
+      bsTimer = setTimeout(function () {
+        isLongPress = true;
+        let speed = 70; // 连删初始间隔 70ms
+        bsInterval = setInterval(function () {
+          if (!isMagicCleared) {
+            sendInput('\x7f');
+          }
+        }, speed);
+      }, 300);
+
+      // 850ms: 魔法长按触发！一键清空光标前/当前整行全部字符 (Ctrl+U)
+      bsMagicTimer = setTimeout(function () {
+        isMagicCleared = true;
+        isLongPress = true;
+        if (bsInterval) {
+          clearInterval(bsInterval);
+          bsInterval = null;
+        }
+        // 发送终端通用行清空指令: Ctrl+U (\x15) 及后备退格补充
+        sendInput('\x15');
+        // 手机震动反馈 (支持的设备)
+        if (navigator.vibrate) {
+          try { navigator.vibrate([40, 30, 40]); } catch (e) {}
+        }
+        // 界面魔法视觉动效反馈
+        btnKeyBackspace.classList.add('magic-clearing');
+        setTimeout(function () {
+          btnKeyBackspace.classList.remove('magic-clearing');
+        }, 350);
+      }, 850);
+    }
+
+    function stopBackspaceHold(e) {
+      if (bsTimer) {
+        clearTimeout(bsTimer);
+        bsTimer = null;
+      }
+      if (bsInterval) {
+        clearInterval(bsInterval);
+        bsInterval = null;
+      }
+      if (bsMagicTimer) {
+        clearTimeout(bsMagicTimer);
+        bsMagicTimer = null;
+      }
+      btnKeyBackspace.classList.remove('magic-clearing');
+      term.focus();
+    }
+
+    // 支持触摸与鼠标全场景事件
+    btnKeyBackspace.addEventListener('pointerdown', startBackspaceHold);
+    btnKeyBackspace.addEventListener('pointerup', stopBackspaceHold);
+    btnKeyBackspace.addEventListener('pointerleave', stopBackspaceHold);
+    btnKeyBackspace.addEventListener('pointercancel', stopBackspaceHold);
+    // 阻止原生 click 避免 pointerdown 已经触发后重复触发
+    btnKeyBackspace.addEventListener('click', function (e) {
+      e.preventDefault();
+    });
+  }
 
   // 斜杠常用命令按键与常用命令绑定
   const btnSlashCmd = document.getElementById('btnSlashCmd');
@@ -1363,6 +1441,35 @@
     mobileKeyboard.classList.toggle('collapsed');
     scheduleResize(true, 250);
   });
+
+  // 全屏模式切换 (保留顶部工具栏，调用浏览器标准全屏扩展可视区域)
+  const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
+
+  function toggleBrowserFullscreen() {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+    scheduleResize(true, 150);
+  }
+
+  if (btnToggleFullscreen) {
+    btnToggleFullscreen.addEventListener('click', toggleBrowserFullscreen);
+  }
+
+  // 清除旧版本可能残留的 tim_immersive 缓存，确保顶栏绝对可见
+  try {
+    localStorage.removeItem('tim_immersive');
+  } catch (e) {}
 
   // 手机端右上角齿轮：关于软件与版本信息弹窗
   const btnAboutModal = document.getElementById('btnAboutModal');

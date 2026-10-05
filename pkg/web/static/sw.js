@@ -1,7 +1,7 @@
 // Tim-Agent 轻量自愈 Service Worker
 // 核心设计原则: 极简防陈旧缓存，网络优先(Network-First)，即时更新接管，确保多端版本实时一致
 
-const CACHE_VERSION = 'v1.0.4';
+const CACHE_VERSION = 'v1.0.5';
 const CACHE_NAME = 'tim-agent-cache-' + CACHE_VERSION;
 
 // 仅预缓存必须的终端基础库文件
