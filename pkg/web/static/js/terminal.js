@@ -4,7 +4,8 @@
 
   // 解析 URL 参数
   const urlParams = new URLSearchParams(window.location.search);
-  const sessionId = urlParams.get('session') || 'default';
+  let currentSessionId = urlParams.get('session') || 'default';
+  let currentProjectName = '';
   const token = urlParams.get('token') || '';
 
   // 状态与 DOM 元素
@@ -392,7 +393,11 @@
       });
     }
 
-    sessionTitle.textContent = sessionId === 'default' ? dict.term_session_title : sessionId;
+    if (currentProjectName) {
+      sessionTitle.textContent = currentProjectName;
+    } else {
+      sessionTitle.textContent = currentSessionId === 'default' ? dict.term_session_title : currentSessionId;
+    }
   }
 
   applyTerminalLanguage(currentUiLang);
@@ -771,7 +776,7 @@
     updateStatus('connecting');
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/terminal?session=${encodeURIComponent(sessionId)}&token=${encodeURIComponent(token)}`;
+    const wsUrl = `${protocol}//${window.location.host}/ws/terminal?session=${encodeURIComponent(currentSessionId)}&token=${encodeURIComponent(token)}`;
 
     try {
       ws = new WebSocket(wsUrl);
@@ -798,6 +803,22 @@
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'pong') return;
+          if (msg.type === 'session_info') {
+            if (msg.id) currentSessionId = msg.id;
+            if (msg.name) {
+              currentProjectName = msg.name;
+              sessionTitle.textContent = msg.name;
+            }
+            if (msg.active_agent) {
+              currentActiveAgent = msg.active_agent;
+            }
+            if (typeof msg.auto_approve === 'boolean') {
+              currentAutoApprove = msg.auto_approve;
+              if (modalAutoApprove) modalAutoApprove.checked = currentAutoApprove;
+            }
+            updateAgentUI();
+            return;
+          }
         } catch (e) {
           term.write(event.data);
         }
@@ -1215,7 +1236,12 @@
     });
   });
 
-  // Agent 切换与专属快捷键加载
+  // 项目与 Agent 切换及专属快捷键加载
+  const btnSwitchProject = document.getElementById('btnSwitchProject');
+  const projectSwitchModal = document.getElementById('projectSwitchModal');
+  const btnCloseProjectSwitchModal = document.getElementById('btnCloseProjectSwitchModal');
+  const projectSwitchListGroup = document.getElementById('projectSwitchListGroup');
+
   const btnSwitchAgent = document.getElementById('btnSwitchAgent');
   const agentNameText = document.getElementById('agentNameText');
   const agentModal = document.getElementById('agentModal');
@@ -1224,6 +1250,7 @@
   const modalAutoApprove = document.getElementById('modalAutoApprove');
 
   let currentAgents = [];
+  let currentProjectsStatus = [];
   let currentActiveAgent = 'claude';
   let currentAutoApprove = false;
 
@@ -1233,8 +1260,33 @@
       const data = await res.json();
       if (data && data.config) {
         currentAgents = data.config.agents || [];
-        currentActiveAgent = data.session && data.session.active_agent ? data.session.active_agent : data.config.selected_agent;
-        currentAutoApprove = !!data.config.auto_approve;
+        currentProjectsStatus = data.projects_status || [];
+
+        // 查找当前会话对应的项目状态
+        let matchedProj = null;
+        if (currentProjectsStatus.length > 0) {
+          if (currentSessionId && currentSessionId !== 'default') {
+            matchedProj = currentProjectsStatus.find(p => p.id === currentSessionId);
+          }
+          if (!matchedProj && data.active_project_id) {
+            matchedProj = currentProjectsStatus.find(p => p.id === data.active_project_id);
+          }
+          if (!matchedProj) {
+            matchedProj = currentProjectsStatus[0];
+          }
+        }
+
+        if (matchedProj) {
+          currentSessionId = matchedProj.id;
+          currentProjectName = matchedProj.name;
+          sessionTitle.textContent = matchedProj.name;
+          currentActiveAgent = matchedProj.active_agent || matchedProj.agent || data.config.selected_agent;
+          currentAutoApprove = !!matchedProj.auto_approve;
+        } else {
+          currentActiveAgent = data.session && data.session.active_agent ? data.session.active_agent : data.config.selected_agent;
+          currentAutoApprove = !!data.config.auto_approve;
+        }
+
         if (modalAutoApprove) {
           modalAutoApprove.checked = currentAutoApprove;
         }
@@ -1247,7 +1299,7 @@
         updateAgentUI();
       }
     } catch (e) {
-      console.warn('获取Agent信息失败', e);
+      console.warn('获取Agent与项目信息失败', e);
     }
   }
 
@@ -1256,6 +1308,120 @@
     const name = found ? found.name : currentActiveAgent;
     const approveBadge = currentAutoApprove ? (currentUiLang === 'zh' ? ' [⚡免确认]' : ' [⚡Auto]') : '';
     agentNameText.textContent = name + approveBadge;
+  }
+
+  function closeProjectSwitchModal() {
+    if (projectSwitchModal) projectSwitchModal.style.display = 'none';
+  }
+
+  if (btnCloseProjectSwitchModal) {
+    btnCloseProjectSwitchModal.addEventListener('click', closeProjectSwitchModal);
+  }
+
+  if (projectSwitchModal) {
+    projectSwitchModal.addEventListener('click', function (e) {
+      if (e.target === projectSwitchModal) closeProjectSwitchModal();
+    });
+  }
+
+  function renderProjectSwitchList() {
+    if (!projectSwitchListGroup) return;
+    projectSwitchListGroup.innerHTML = '';
+
+    if (!currentProjectsStatus || currentProjectsStatus.length === 0) {
+      projectSwitchListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">暂无已配置项目，请前往控制面板添加项目。</div>';
+      return;
+    }
+
+    currentProjectsStatus.forEach(proj => {
+      const isCurrent = proj.id === currentSessionId;
+      const btn = document.createElement('div');
+      btn.className = 'agent-item-btn' + (isCurrent ? ' active' : '');
+
+      const foundAgent = currentAgents.find(a => a.id === (proj.active_agent || proj.agent));
+      const agentLabel = foundAgent ? foundAgent.name : (proj.active_agent || proj.agent || 'claude');
+      const autoText = proj.auto_approve ? ' ⚡免确认' : '';
+      const runBadge = proj.running
+        ? `<span class="proj-run-badge running">● 后台运行中 (PID:${proj.pid || '-'})</span>`
+        : `<span class="proj-run-badge idle">○ 待机 (点击启动)</span>`;
+      const currentTag = isCurrent ? `<span style="color:#58a6ff;font-size:12px;margin-left:6px;">[当前会话]</span>` : '';
+
+      btn.innerHTML = `
+        <div class="agent-item-title">📂 ${proj.name} ${runBadge} ${currentTag}</div>
+        <div class="agent-item-desc" style="margin-top:2px;">🤖 ${agentLabel}${autoText}</div>
+        <div class="agent-item-desc" style="font-family:monospace;color:#8b949e;word-break:break-all;">📁 ${proj.work_dir}</div>
+      `;
+
+      btn.onclick = async function () {
+        if (isCurrent) {
+          closeProjectSwitchModal();
+          return;
+        }
+        await switchProjectSession(proj);
+      };
+      projectSwitchListGroup.appendChild(btn);
+    });
+  }
+
+  async function switchProjectSession(proj) {
+    try {
+      const res = await fetch('/api/projects/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: proj.id })
+      });
+      const resData = await res.json();
+      if (!resData.ok) {
+        alert('切换项目失败: ' + (resData.message || '未知错误'));
+        return;
+      }
+
+      currentSessionId = proj.id;
+      currentProjectName = proj.name;
+      sessionTitle.textContent = proj.name;
+      currentActiveAgent = proj.active_agent || proj.agent || currentActiveAgent;
+      currentAutoApprove = !!proj.auto_approve;
+      if (modalAutoApprove) modalAutoApprove.checked = currentAutoApprove;
+      updateAgentUI();
+      closeProjectSwitchModal();
+
+      // 同步更新浏览器地址栏参数（不刷新页面），方便后续重连或刷新保持当前项目
+      try {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('session', proj.id);
+        window.history.replaceState({}, '', newUrl.toString());
+      } catch (e) {}
+
+      // 清空当前本地屏幕缓冲并重连到新项目的 WebSocket 会话（原项目后台会话保持运行）
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      stopHeartbeat();
+      term.reset();
+      term.clear();
+      lastCols = 0;
+      lastRows = 0;
+
+      if (ws) {
+        try {
+          ws.onclose = null;
+          ws.onerror = null;
+          ws.close();
+        } catch (e) {}
+        ws = null;
+      }
+      isConnecting = false;
+      connect();
+      term.focus();
+    } catch (err) {
+      alert('切换项目网络异常: ' + err.message);
+    }
+  }
+
+  if (btnSwitchProject) {
+    btnSwitchProject.addEventListener('click', async function () {
+      await fetchAgentInfo();
+      renderProjectSwitchList();
+      if (projectSwitchModal) projectSwitchModal.style.display = 'flex';
+    });
   }
 
   // 配色方案弹窗与实时切换
@@ -1333,7 +1499,11 @@
           const res = await fetch('/api/sessions/restart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ agent: a.id, auto_approve: autoApprove })
+            body: JSON.stringify({
+              project_id: currentSessionId,
+              agent: a.id,
+              auto_approve: autoApprove
+            })
           });
           const resData = await res.json();
           if (resData.ok) {

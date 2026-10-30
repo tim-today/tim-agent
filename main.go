@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/tim-today/tim-agent/pkg/appbundle"
 	"github.com/tim-today/tim-agent/pkg/config"
 	"github.com/tim-today/tim-agent/pkg/daemon"
 	"github.com/tim-today/tim-agent/pkg/network"
@@ -54,7 +55,10 @@ func main() {
 	// 确保在 macOS / Linux 下双击打开后关掉 Terminal 窗口时，服务依然在后台稳固运行，绝不闪退
 	daemon.IgnoreHangupSignals()
 
-	flagPort := flag.Int("port", 0, "监听端口 (默认使用配置文件或 8080)")
+	// 初始化 GUI 桌面启动环境 (自动适配 Windows 双击无黑框、补全 macOS/Linux .app/.desktop 的 PATH 环境变量与工作目录)
+	appbundle.InitGUIEnvironment()
+
+	flagPort := flag.Int("port", 0, "监听端口 (默认使用配置文件或 20996)")
 	flagPassword := flag.String("password", "", "访问密码 (可选)")
 	flagShell := flag.String("shell", "", "Shell路径 (如 /bin/zsh, powershell.exe)")
 	flagDir := flag.String("dir", "", "绑定工作目录 (默认当前目录)")
@@ -63,11 +67,48 @@ func main() {
 	flagRemote := flag.Bool("remote", false, "允许远程访问管理面板 (默认仅限本机127.0.0.1/localhost访问，开启需密码)")
 	flagNoOpen := flag.Bool("no-open", false, "启动后不自动打开浏览器")
 	flagDaemon := flag.Bool("daemon", false, "以独立 Supervisor 守护进程模式运行 (主进程自动监控与自愈重启)")
+	flagInstallApp := flag.Bool("install-app", false, "一键生成并安装本机桌面 GUI 应用程序 (支持鼠标直接点开)")
+	flagPackMacApp := flag.String("pack-mac-app", "", "将可执行程序打包为 macOS .app 应用程序包 (指定输出 .app 路径)")
+	flagPackLinuxApp := flag.String("pack-linux-app", "", "将可执行程序打包为 Linux 桌面 GUI 应用目录 (指定输出目录路径)")
+	flagPackBin := flag.String("pack-bin", "", "打包 GUI 应用时指定源二进制路径 (默认使用当前可执行文件)")
 	flagVersion := flag.Bool("version", false, "查看版本号")
 	flag.Parse()
 
 	if *flagVersion {
 		fmt.Printf("tim-agent version %s\n", Version)
+		return
+	}
+
+	if *flagPackMacApp != "" {
+		srcBin := *flagPackBin
+		if srcBin == "" {
+			srcBin, _ = os.Executable()
+		}
+		if err := appbundle.PackageMacApp(srcBin, *flagPackMacApp); err != nil {
+			log.Fatalf("打包 macOS .app 失败: %v", err)
+		}
+		fmt.Printf("✅ 已生成 macOS GUI 应用程序: %s\n", *flagPackMacApp)
+		return
+	}
+
+	if *flagPackLinuxApp != "" {
+		srcBin := *flagPackBin
+		if srcBin == "" {
+			srcBin, _ = os.Executable()
+		}
+		if err := appbundle.PackageLinuxBundle(srcBin, *flagPackLinuxApp); err != nil {
+			log.Fatalf("打包 Linux 桌面应用失败: %v", err)
+		}
+		fmt.Printf("✅ 已生成 Linux GUI 应用程序包: %s\n", *flagPackLinuxApp)
+		return
+	}
+
+	if *flagInstallApp {
+		installedPath, err := appbundle.InstallDesktopApp()
+		if err != nil {
+			log.Fatalf("安装桌面 GUI 应用失败: %v", err)
+		}
+		fmt.Printf("✅ 已成功生成桌面 GUI 应用程序 (可直接用鼠标点开): %s\n", installedPath)
 		return
 	}
 
@@ -106,16 +147,25 @@ func main() {
 	}
 
 	currentCfg := cfg.Get()
-	initCmd := cfg.GetAgentCommand(currentCfg.SelectedAgent, currentCfg.AutoApprove)
+
+	// 若用户通过鼠标再次双击桌面图标，且本机已有实例正在运行，则直接唤醒打开控制面板并退出当前重复进程
+	if !daemon.IsWorkerProcess() && appbundle.WakeExistingInstance(currentCfg.Port) {
+		return
+	}
+
+	activeProj := cfg.GetActiveProject()
+	initCmd := cfg.GetAgentCommand(activeProj.Agent, activeProj.AutoApprove)
 
 	// 2. 打印控制台横幅
-	printBanner(currentCfg.Port, currentCfg.AuthToken, currentCfg.WorkDir, currentCfg.SelectedAgent, currentCfg.Password, currentCfg.RemoteAccess)
+	printBanner(currentCfg.Port, currentCfg.AuthToken, activeProj.WorkDir, activeProj.Agent, currentCfg.Password, currentCfg.RemoteAccess)
 
-	// 3. 预初始化主会话并绑定目录与拉起 Agent
+	// 3. 预初始化当前活跃项目会话并绑定目录与拉起 Agent
 	mgr := session.GetManager()
-	_, err = mgr.GetOrCreate("default", "主会话", currentCfg.Shell, currentCfg.WorkDir, currentCfg.SelectedAgent, initCmd, currentCfg.Language)
+	sess, err := mgr.GetOrCreateForDir(activeProj.ID, activeProj.Name, currentCfg.Shell, activeProj.WorkDir, activeProj.Agent, initCmd, currentCfg.Language)
 	if err != nil {
 		log.Printf("警告: 预创建终端会话失败: %v", err)
+	} else if sess != nil {
+		sess.AutoApprove = activeProj.AutoApprove
 	}
 
 	// 4. 启动 HTTP & WebSocket 服务 (带自愈守护循环，绝不因单一错误崩溃退出)
@@ -197,9 +247,13 @@ func main() {
 		},
 		OnRestartPty: func() {
 			c := cfg.Get()
-			agentCmd := cfg.GetAgentCommand(c.SelectedAgent, c.AutoApprove)
-			_, _ = mgr.Restart("default", "主会话", c.Shell, c.WorkDir, c.SelectedAgent, agentCmd, c.Language)
-			log.Println("[TimAgent] 终端主会话已重启")
+			proj := cfg.GetActiveProject()
+			agentCmd := cfg.GetAgentCommand(proj.Agent, proj.AutoApprove)
+			s, err := mgr.Restart(proj.ID, proj.Name, c.Shell, proj.WorkDir, proj.Agent, agentCmd, c.Language)
+			if err == nil && s != nil {
+				s.AutoApprove = proj.AutoApprove
+			}
+			log.Printf("[TimAgent] 终端项目会话 [%s] 已重启\n", proj.Name)
 		},
 		OnExit: func() {
 			log.Println("[TimAgent] 正在退出服务...")

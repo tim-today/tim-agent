@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Multi-Platform Binaries
+    name: Build Multi-Platform CLI & GUI Applications
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -23,27 +23,32 @@ jobs:
             goos: linux
             goarch: amd64
             output: tim-agent-linux-amd64
-            tags: nocgo
+            gui_output: TimAgent-linux-amd64-gui.tar.gz
+            cgo: "0"
           - os: ubuntu-latest
             goos: linux
             goarch: arm64
             output: tim-agent-linux-arm64
-            tags: nocgo
+            gui_output: TimAgent-linux-arm64-gui.tar.gz
+            cgo: "0"
           - os: windows-latest
             goos: windows
             goarch: amd64
             output: tim-agent-windows-amd64.exe
-            tags: nocgo
+            gui_output: TimAgent-windows-amd64-gui.exe
+            cgo: "0"
           - os: macos-latest
             goos: darwin
             goarch: arm64
             output: tim-agent-darwin-arm64
-            tags: ""
+            gui_output: TimAgent-macos-arm64.app.zip
+            cgo: "1"
           - os: macos-latest
             goos: darwin
             goarch: amd64
             output: tim-agent-darwin-amd64
-            tags: ""
+            gui_output: TimAgent-macos-amd64.app.zip
+            cgo: "1"
 
     steps:
       - name: Checkout Code
@@ -58,25 +63,33 @@ jobs:
       - name: Install Dependencies
         run: go mod download
 
-      - name: Build Binary
+      - name: Build CLI & GUI Applications
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: ${{ matrix.tags == 'nocgo' && '0' || '1' }}
+          CGO_ENABLED: ${{ matrix.cgo }}
         shell: bash
         run: |
           mkdir -p dist
-          TAG_FLAG=""
-          if [ -n "${{ matrix.tags }}" ]; then
-            TAG_FLAG="-tags ${{ matrix.tags }}"
-          fi
-          go build $TAG_FLAG -ldflags="-s -w" -o dist/${{ matrix.output }} .
+          # 1. 构建标准命令行/双模可执行程序
+          go build -ldflags="-s -w" -o dist/${{ matrix.output }} .
 
-      - name: Upload Artifact
+          # 2. 构建各平台鼠标双击启动的原生 GUI Application
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -ldflags="-s -w -H=windowsgui" -o dist/${{ matrix.gui_output }} .
+          elif [ "${{ matrix.goos }}" = "darwin" ]; then
+            go run . -pack-mac-app dist/TimAgent.app -pack-bin dist/${{ matrix.output }}
+            cd dist && zip -r -q ${{ matrix.gui_output }} TimAgent.app && rm -rf TimAgent.app
+          elif [ "${{ matrix.goos }}" = "linux" ]; then
+            GOOS= GOARCH= CGO_ENABLED=0 go run . -pack-linux-app dist/TimAgent-linux-gui -pack-bin dist/${{ matrix.output }}
+            cd dist && tar -czf ${{ matrix.gui_output }} TimAgent-linux-gui && rm -rf TimAgent-linux-gui
+          fi
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.output }}
-          path: dist/${{ matrix.output }}
+          name: ${{ matrix.output }}-bundle
+          path: dist/*
 
   release:
     name: Create GitHub Release

@@ -2,6 +2,7 @@ package tray
 
 import (
 	"bytes"
+	"encoding/binary"
 	"image"
 	"image/color"
 	"image/png"
@@ -101,3 +102,59 @@ func GenerateTrayIcon() []byte {
 func GenerateAppIcon() []byte {
 	return GenerateTAIcon(256)
 }
+
+// GenerateICNS 生成 macOS 原生 .icns 多尺寸高清图标文件 (包含 128x128, 256x256, 512x512 PNG 块)
+func GenerateICNS() []byte {
+	type icnsChunk struct {
+		ostype string
+		data   []byte
+	}
+	chunks := []icnsChunk{
+		{ostype: "ic07", data: GenerateTAIcon(128)}, // 128x128
+		{ostype: "ic08", data: GenerateTAIcon(256)}, // 256x256
+		{ostype: "ic09", data: GenerateTAIcon(512)}, // 512x512
+	}
+
+	totalLen := uint32(8)
+	for _, c := range chunks {
+		totalLen += uint32(8 + len(c.data))
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("icns")
+	_ = binary.Write(&buf, binary.BigEndian, totalLen)
+
+	for _, c := range chunks {
+		buf.WriteString(c.ostype)
+		chunkLen := uint32(8 + len(c.data))
+		_ = binary.Write(&buf, binary.BigEndian, chunkLen)
+		buf.Write(c.data)
+	}
+	return buf.Bytes()
+}
+
+// GenerateICO 生成 Windows 原生 .ico 256x256 高清图标文件
+func GenerateICO() []byte {
+	pngData := GenerateTAIcon(256)
+	var buf bytes.Buffer
+
+	// ICONDIR Header (6 bytes)
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(0)) // Reserved
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(1)) // Type: 1 = Icon
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(1)) // Count: 1 image
+
+	// ICONDIRENTRY (16 bytes)
+	buf.WriteByte(0)                                                     // Width: 0 means 256px
+	buf.WriteByte(0)                                                     // Height: 0 means 256px
+	buf.WriteByte(0)                                                     // ColorCount
+	buf.WriteByte(0)                                                     // Reserved
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(1))               // Planes
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(32))              // BitCount (32-bit RGBA)
+	_ = binary.Write(&buf, binary.LittleEndian, uint32(len(pngData)))    // BytesInRes
+	_ = binary.Write(&buf, binary.LittleEndian, uint32(6+16))            // ImageOffset (22)
+
+	// PNG Image Data
+	buf.Write(pngData)
+	return buf.Bytes()
+}
+

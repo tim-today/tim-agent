@@ -19,13 +19,14 @@
     <header class="app-header">
       <div class="brand">
         <span class="logo-icon">⚡</span>
-        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v1.0.5</span></h1>
+        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v2.0.0</span></h1>
       </div>
       <div class="header-right">
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="btn btn-secondary btn-icon-only" title="GitHub Official Repository" id="btnGitHubLink">
           <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
           GitHub
         </a>
+        <button id="btnInstallDesktopApp" class="btn btn-secondary" title="一键生成本机桌面 GUI 应用程序 (鼠标双击启动)">🖥️ 生成桌面应用</button>
         <button id="btnCheckUpdate" class="btn btn-secondary" title="Check for updates on GitHub" data-i18n="btn_check_update">🚀 Update</button>
         <button id="btnRestartPty" class="btn btn-danger" title="Restart and launch selected Agent" data-i18n="btn_restart_agent">🔄 Restart & Launch Agent</button>
         <a href="/terminal" target="_blank" class="btn btn-primary" data-i18n="btn_enter_terminal">Open Terminal ↗</a>
@@ -95,6 +96,21 @@
         </div>
 
         <p class="card-tip" data-i18n="card2_tip">🔒 Session Keep-Alive Active: Background shell process continues even if phone locks or browser closes!</p>
+      </section>
+
+      <!-- 卡片2.5: 多项目管理 (支持多会话多项目后台并存与自由切换) -->
+      <section class="card projects-card">
+        <div class="card-header">
+          <div>
+            <h2 data-i18n="card_projects_title">📂 项目管理 (Multi-Project & Sessions)</h2>
+            <span class="sub-hint" data-i18n="card_projects_subtitle">配置多个独立项目工作目录与专属 Agent，远程默认进入最近操作的会话，切换项目后原会话继续在后台运行（同一目录不可属于不同项目）</span>
+          </div>
+          <button type="button" id="btnAddProject" class="btn btn-primary btn-sm" data-i18n="btn_add_project">+ 新增项目</button>
+        </div>
+
+        <div class="projects-list" id="projectsListContainer">
+          <!-- 动态渲染项目配置与会话控制列表 -->
+        </div>
       </section>
 
       <!-- 卡片3: 服务参数快速配置 -->
@@ -189,7 +205,7 @@
     <!-- 底部页脚 -->
     <footer class="app-footer">
       <div class="footer-left">
-        <span>Tim-Agent <span id="footerVersionText">v1.0.5</span></span>
+        <span>Tim-Agent <span id="footerVersionText">v2.0.0</span></span>
         <span class="dot-sep">•</span>
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="footer-link">GitHub Repository</a>
         <span class="dot-sep">•</span>
@@ -199,6 +215,53 @@
         <span id="updateStatusText" class="update-tip" data-i18n="checking_update">Checking for updates...</span>
       </div>
     </footer>
+  </div>
+
+  <!-- 新增/编辑项目弹窗 -->
+  <div class="dash-modal-backdrop" id="projectModal" style="display: none;">
+    <div class="dash-modal-dialog">
+      <div class="dash-modal-header">
+        <h3 id="projectModalTitle" data-i18n="modal_proj_add_title">📂 新增项目配置</h3>
+        <button type="button" class="dash-modal-close" id="btnCloseProjectModal">×</button>
+      </div>
+      <form id="projectForm" class="dash-modal-body">
+        <input type="hidden" id="projIdInput">
+        <div class="form-item">
+          <label for="projNameInput" data-i18n="label_proj_name">项目名称 (Project Name):</label>
+          <input type="text" id="projNameInput" class="form-input" placeholder="例如：Tim-Agent / 前端工程" required>
+        </div>
+        <div class="form-item">
+          <label for="projWorkDirInput" data-i18n="label_proj_workdir">项目工作目录 (WorkDir):</label>
+          <input type="text" id="projWorkDirInput" class="form-input" placeholder="/Users/username/Workspace/my-project" required>
+          <small data-i18n="hint_proj_workdir">⚠️ 每个项目必须使用独立目录，不能将同一个目录分配给不同项目</small>
+        </div>
+        <div class="form-item">
+          <label for="projAgentSelect" data-i18n="label_proj_agent">命令行 Agent 代理 (CLI Agent):</label>
+          <select id="projAgentSelect" class="form-select"></select>
+        </div>
+        <div class="form-item">
+          <div class="checkbox-inline" style="margin-top: 2px;">
+            <input type="checkbox" id="projAutoApproveCheck">
+            <label for="projAutoApproveCheck" data-i18n="label_proj_auto_approve">
+              ⚡ 自动确认 / 关闭沙箱 (Auto-Approve)
+            </label>
+          </div>
+        </div>
+        <div class="form-item">
+          <div class="checkbox-inline" style="margin-top: 2px;">
+            <input type="checkbox" id="projSetActiveCheck" checked>
+            <label for="projSetActiveCheck" data-i18n="label_proj_set_active">
+              设为当前默认活动项目 (远程链接默认进入)
+            </label>
+          </div>
+        </div>
+        <div id="projErrorMsg" class="proj-error-msg" style="display: none;"></div>
+        <div class="dash-modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelProjectModal" data-i18n="btn_cancel">取消</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveProjectModal" data-i18n="btn_save_project">保存项目</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script src="/js/dashboard.js"></script>

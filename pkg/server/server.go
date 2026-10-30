@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/skip2/go-qrcode"
 
+	"github.com/tim-today/tim-agent/pkg/appbundle"
 	"github.com/tim-today/tim-agent/pkg/config"
 	"github.com/tim-today/tim-agent/pkg/network"
 	"github.com/tim-today/tim-agent/pkg/session"
@@ -62,6 +63,13 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		},
 		startTime: time.Now(),
 	}
+
+	// 当用户在任一项目会话中进行输入或连接时，自动记录该项目为“最近操作的项目”
+	session.GetManager().SetOnActivityCallback(func(sessID string) {
+		if sessID != "" && sessID != "default" {
+			cfg.SetActiveProject(sessID)
+		}
+	})
 
 	return s, nil
 }
@@ -113,9 +121,13 @@ func (s *Server) Start() error {
 	adminMux.HandleFunc("/api/status", s.handleAPIStatus)
 	adminMux.HandleFunc("/api/qrcode", s.handleAPIQRCode)
 	adminMux.HandleFunc("/api/config", s.handleAPIConfig)
+	adminMux.HandleFunc("/api/projects/save", s.handleAPIProjectSave)
+	adminMux.HandleFunc("/api/projects/delete", s.handleAPIProjectDelete)
+	adminMux.HandleFunc("/api/projects/select", s.handleAPIProjectSelect)
 	adminMux.HandleFunc("/api/password/regenerate", s.handleAPIRegeneratePassword)
 	adminMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	adminMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
+	adminMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
 	adminMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
 	s.adminSrv = &http.Server{
@@ -146,9 +158,13 @@ func (s *Server) Start() error {
 	publicMux.HandleFunc("/api/status", s.handleAPIStatus)
 	publicMux.HandleFunc("/api/qrcode", s.handleAPIQRCode)
 	publicMux.HandleFunc("/api/config", s.handleAPIConfig)
+	publicMux.HandleFunc("/api/projects/save", s.handleAPIProjectSave)
+	publicMux.HandleFunc("/api/projects/delete", s.handleAPIProjectDelete)
+	publicMux.HandleFunc("/api/projects/select", s.handleAPIProjectSelect)
 	publicMux.HandleFunc("/api/password/regenerate", s.handleAPIRegeneratePassword)
 	publicMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	publicMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
+	publicMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
 	publicMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
 	cfg := s.cfg.Get()
@@ -409,25 +425,77 @@ func (s *Server) handleAPIRegeneratePassword(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+// resolveTargetProject 解析请求的目标项目：
+// 若传入具体项目ID则定位该项目；若为空或 "default"，则默认返回最近操作的一个项目会话
+func (s *Server) resolveTargetProject(requestedID string) config.ProjectConfig {
+	if requestedID != "" && requestedID != "default" && requestedID != "latest" {
+		if p, ok := s.cfg.GetProject(requestedID); ok {
+			return p
+		}
+	}
+
+	// 检查会话管理器中最近活跃的会话是否对应某个已配置项目
+	lastID := session.GetManager().LastActiveID()
+	if lastID != "" && lastID != "default" {
+		if p, ok := s.cfg.GetProject(lastID); ok {
+			return p
+		}
+	}
+
+	return s.cfg.GetActiveProject()
+}
+
 func (s *Server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 	cfg := s.cfg.Get()
 	networks := network.GetAvailableIPs(cfg.Port)
 
-	// 获取工作目录绑定的主会话状态
 	mgr := session.GetManager()
-	initCmd := s.cfg.GetAgentCommand(cfg.SelectedAgent, cfg.AutoApprove)
-	defaultSess, _ := mgr.GetOrCreateForDir("default", "主会话", cfg.Shell, cfg.WorkDir, cfg.SelectedAgent, initCmd, cfg.Language)
+	reqSessID := r.URL.Query().Get("session")
+	activeProj := s.resolveTargetProject(reqSessID)
+
+	// 确保当前默认/活动项目会话已准备就绪
+	initCmd := s.cfg.GetAgentCommand(activeProj.Agent, activeProj.AutoApprove)
+	defaultSess, _ := mgr.GetOrCreateForDir(activeProj.ID, activeProj.Name, cfg.Shell, activeProj.WorkDir, activeProj.Agent, initCmd, cfg.Language)
+	if defaultSess != nil {
+		defaultSess.AutoApprove = activeProj.AutoApprove
+	}
 
 	var sessInfo map[string]any
 	if defaultSess != nil {
 		sessInfo = map[string]any{
 			"id":            defaultSess.ID,
+			"name":          activeProj.Name,
 			"pid":           defaultSess.Pid,
 			"work_dir":      defaultSess.WorkDir,
 			"active_agent":  defaultSess.ActiveAgent,
+			"auto_approve":  activeProj.AutoApprove,
 			"is_running":    defaultSess.IsRunning,
 			"clients_count": len(defaultSess.ListClients()),
 		}
+	}
+
+	// 组装所有配置项目的会话运行状态列表
+	var projectsStatus []map[string]any
+	for _, p := range cfg.Projects {
+		ps := map[string]any{
+			"id":            p.ID,
+			"name":          p.Name,
+			"work_dir":      p.WorkDir,
+			"agent":         p.Agent,
+			"auto_approve":  p.AutoApprove,
+			"is_active":     p.ID == activeProj.ID,
+			"is_running":    false,
+			"pid":           0,
+			"clients_count": 0,
+		}
+		if existingSess := mgr.FindByProjectOrDir(p.ID, p.WorkDir); existingSess != nil && existingSess.IsRunning {
+			ps["is_running"] = true
+			ps["pid"] = existingSess.Pid
+			ps["active_agent"] = existingSess.ActiveAgent
+			ps["clients_count"] = existingSess.ClientsCount()
+			ps["last_active_at"] = existingSess.LastActiveAt
+		}
+		projectsStatus = append(projectsStatus, ps)
 	}
 
 	// 敏感信息保护：非本机且未经鉴权的访问，隐藏密码与鉴权 Token
@@ -438,14 +506,16 @@ func (s *Server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := map[string]any{
-		"version":      config.AppVersion,
-		"github_url":   config.GitHubRepoURL,
-		"releases_url": config.GitHubReleases,
-		"config":       cfg,
-		"networks":     networks,
-		"auth_token":   cfg.AuthToken,
-		"session":      sessInfo,
-		"uptime":       time.Since(s.startTime).String(),
+		"version":           config.AppVersion,
+		"github_url":        config.GitHubRepoURL,
+		"releases_url":      config.GitHubReleases,
+		"config":            cfg,
+		"networks":          networks,
+		"auth_token":        cfg.AuthToken,
+		"active_project_id": activeProj.ID,
+		"session":           sessInfo,
+		"projects_status":   projectsStatus,
+		"uptime":            time.Since(s.startTime).String(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -563,7 +633,7 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 	oldCfg := s.cfg.Get()
 	agentChanged := (req.SelectedAgent != "" && req.SelectedAgent != oldCfg.SelectedAgent)
 	workDirChanged := (req.WorkDir != "" && req.WorkDir != oldCfg.WorkDir)
-	autoApproveChanged := (req.AutoApprove != oldCfg.AutoApprove)
+	autoApproveChanged := (req.AutoApprove != oldCfg.AutoApprove && req.WorkDir != "")
 
 	targetLang := req.Language
 	if targetLang == "" {
@@ -579,17 +649,17 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 
 	restarted := false
 	if agentChanged || workDirChanged || autoApproveChanged {
-		targetWorkDir := req.WorkDir
-		if targetWorkDir == "" {
-			targetWorkDir = oldCfg.WorkDir
-		}
+		activeProj := s.cfg.GetActiveProject()
 		targetShell := req.Shell
 		if targetShell == "" {
 			targetShell = oldCfg.Shell
 		}
-		initCmd := s.cfg.GetAgentCommand(req.SelectedAgent, req.AutoApprove)
+		initCmd := s.cfg.GetAgentCommand(activeProj.Agent, activeProj.AutoApprove)
 		mgr := session.GetManager()
-		_, _ = mgr.Restart("default", "主会话", targetShell, targetWorkDir, req.SelectedAgent, initCmd, targetLang)
+		sess, _ := mgr.Restart(activeProj.ID, activeProj.Name, targetShell, activeProj.WorkDir, activeProj.Agent, initCmd, targetLang)
+		if sess != nil {
+			sess.AutoApprove = activeProj.AutoApprove
+		}
 		restarted = true
 	}
 
@@ -598,6 +668,184 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 		"ok":        true,
 		"restarted": restarted,
 		"agent":     req.SelectedAgent,
+	})
+}
+
+// handleAPIProjectSave 新增或修改项目配置（强制限制：不能同一个目录属于不同项目）
+func (s *Server) handleAPIProjectSave(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
+
+	var req struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		WorkDir     string `json:"work_dir"`
+		Agent       string `json:"agent"`
+		AutoApprove bool   `json:"auto_approve"`
+		SetActive   bool   `json:"set_active"`
+		RestartNow  bool   `json:"restart_now"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// 检查修改前该项目的旧配置，判断其运行中会话是否需要重启
+	var oldProj config.ProjectConfig
+	hadOld := false
+	if req.ID != "" {
+		oldProj, hadOld = s.cfg.GetProject(req.ID)
+	}
+
+	savedProj, err := s.cfg.UpsertProject(config.ProjectConfig{
+		ID:          req.ID,
+		Name:        req.Name,
+		WorkDir:     req.WorkDir,
+		Agent:       req.Agent,
+		AutoApprove: req.AutoApprove,
+	}, req.SetActive)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	cfg := s.cfg.Get()
+	mgr := session.GetManager()
+	existingSess := mgr.FindByProjectOrDir(savedProj.ID, oldProj.WorkDir)
+	restarted := false
+
+	if req.RestartNow || (hadOld && existingSess != nil && existingSess.IsRunning &&
+		(config.NormalizeWorkDir(oldProj.WorkDir) != config.NormalizeWorkDir(savedProj.WorkDir) ||
+			oldProj.Agent != savedProj.Agent ||
+			oldProj.AutoApprove != savedProj.AutoApprove)) {
+		// 如果该项目配置发生变化且正在运行（或显式要求启动/重启），仅重启该项目会话，不影响后台其他项目会话
+		if hadOld && config.NormalizeWorkDir(oldProj.WorkDir) != config.NormalizeWorkDir(savedProj.WorkDir) {
+			mgr.CloseSession(savedProj.ID, oldProj.WorkDir)
+		}
+		initCmd := s.cfg.GetAgentCommand(savedProj.Agent, savedProj.AutoApprove)
+		sess, err := mgr.Restart(savedProj.ID, savedProj.Name, cfg.Shell, savedProj.WorkDir, savedProj.Agent, initCmd, cfg.Language)
+		if err == nil && sess != nil {
+			sess.AutoApprove = savedProj.AutoApprove
+			restarted = true
+		}
+	} else if existingSess != nil {
+		existingSess.Name = savedProj.Name
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":        true,
+		"project":   savedProj,
+		"restarted": restarted,
+	})
+}
+
+// handleAPIProjectDelete 删除项目配置并清理其对应会话
+func (s *Server) handleAPIProjectDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
+
+	var req struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	proj, ok := s.cfg.GetProject(req.ID)
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": "未找到该项目"})
+		return
+	}
+
+	if err := s.cfg.DeleteProject(req.ID); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
+		return
+	}
+
+	session.GetManager().CloseSession(proj.ID, proj.WorkDir)
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":                true,
+		"active_project_id": s.cfg.GetActiveProject().ID,
+	})
+}
+
+// handleAPIProjectSelect 切换当前活跃项目会话（支持从终端或管理面板切换，原会话继续保持在后台运行）
+func (s *Server) handleAPIProjectSelect(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !isLocalRequest(r) && !s.isAuthenticated(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		ID        string `json:"id"`
+		ProjectID string `json:"project_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	targetID := req.ProjectID
+	if targetID == "" {
+		targetID = req.ID
+	}
+
+	proj, ok := s.cfg.SetActiveProject(targetID)
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": "项目不存在"})
+		return
+	}
+
+	cfg := s.cfg.Get()
+	initCmd := s.cfg.GetAgentCommand(proj.Agent, proj.AutoApprove)
+	sess, err := session.GetManager().GetOrCreateForDir(proj.ID, proj.Name, cfg.Shell, proj.WorkDir, proj.Agent, initCmd, cfg.Language)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
+		return
+	}
+	sess.AutoApprove = proj.AutoApprove
+	sess.Touch()
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":      true,
+		"project": proj,
+		"session": map[string]any{
+			"id":            sess.ID,
+			"name":          proj.Name,
+			"pid":           sess.Pid,
+			"work_dir":      sess.WorkDir,
+			"active_agent":  sess.ActiveAgent,
+			"auto_approve":  proj.AutoApprove,
+			"is_running":    sess.IsRunning,
+			"clients_count": sess.ClientsCount(),
+		},
 	})
 }
 
@@ -612,41 +860,49 @@ func (s *Server) handleAPISessionRestart(w http.ResponseWriter, r *http.Request)
 	}
 
 	var req struct {
+		ProjectID   string `json:"project_id"`
 		Agent       string `json:"agent"`
 		WorkDir     string `json:"work_dir"`
 		AutoApprove *bool  `json:"auto_approve"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&req)
 
-	cfg := s.cfg.Get()
-	workDir := cfg.WorkDir
+	targetProj := s.resolveTargetProject(req.ProjectID)
 	if req.WorkDir != "" {
-		workDir = req.WorkDir
+		targetProj.WorkDir = req.WorkDir
 	}
-
-	agentID := cfg.SelectedAgent
 	if req.Agent != "" {
-		agentID = req.Agent
+		targetProj.Agent = req.Agent
 	}
-
-	autoApprove := cfg.AutoApprove
 	if req.AutoApprove != nil {
-		autoApprove = *req.AutoApprove
+		targetProj.AutoApprove = *req.AutoApprove
 	}
 
-	_ = s.cfg.Update(cfg.Port, cfg.Password, cfg.Shell, workDir, agentID, cfg.Theme, cfg.Language, autoApprove, cfg.KeepAlive, cfg.RemoteAccess, nil)
-
-	initCmd := s.cfg.GetAgentCommand(agentID, autoApprove)
-	mgr := session.GetManager()
-	_, err := mgr.Restart("default", "主会话", cfg.Shell, workDir, agentID, initCmd, cfg.Language)
+	savedProj, err := s.cfg.UpsertProject(targetProj, true)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
 		return
 	}
 
+	cfg := s.cfg.Get()
+	initCmd := s.cfg.GetAgentCommand(savedProj.Agent, savedProj.AutoApprove)
+	mgr := session.GetManager()
+	sess, err := mgr.Restart(savedProj.ID, savedProj.Name, cfg.Shell, savedProj.WorkDir, savedProj.Agent, initCmd, cfg.Language)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
+		return
+	}
+	if sess != nil {
+		sess.AutoApprove = savedProj.AutoApprove
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":      true,
+		"project": savedProj,
+	})
 }
 
 func (s *Server) handleWSTerminal(w http.ResponseWriter, r *http.Request) {
@@ -661,20 +917,48 @@ func (s *Server) handleWSTerminal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessID := r.URL.Query().Get("session")
-	if sessID == "" {
-		sessID = "default"
-	}
+	reqSessID := r.URL.Query().Get("session")
+	targetProj := s.resolveTargetProject(reqSessID)
+	// 记录当前连接的项目为最近操作的会话
+	s.cfg.SetActiveProject(targetProj.ID)
 
 	cfg := s.cfg.Get()
-	initCmd := s.cfg.GetAgentCommand(cfg.SelectedAgent, cfg.AutoApprove)
-	sess, err := session.GetManager().GetOrCreateForDir(sessID, "会话-"+sessID, cfg.Shell, cfg.WorkDir, cfg.SelectedAgent, initCmd, cfg.Language)
+	initCmd := s.cfg.GetAgentCommand(targetProj.Agent, targetProj.AutoApprove)
+	sess, err := session.GetManager().GetOrCreateForDir(targetProj.ID, targetProj.Name, cfg.Shell, targetProj.WorkDir, targetProj.Agent, initCmd, cfg.Language)
 	if err != nil {
 		_ = conn.WriteMessage(websocket.TextMessage, []byte("启动终端失败: "+err.Error()))
 		_ = conn.Close()
 		return
 	}
+	sess.AutoApprove = targetProj.AutoApprove
 
 	// 挂载连接到会话
 	sess.Attach(conn)
 }
+
+// handleAPIAppInstall 一键在当前主机生成/安装桌面 GUI 应用程序 (macOS .app / Windows .lnk / Linux .desktop)
+func (s *Server) handleAPIAppInstall(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
+
+	installedPath, err := appbundle.InstallDesktopApp()
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":   true,
+		"path": installedPath,
+	})
+}
+

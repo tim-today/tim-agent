@@ -23,23 +23,26 @@ type WsMessage struct {
 
 // Session 代表一个独立常驻运行的终端会话
 type Session struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Shell       string    `json:"shell"`
-	WorkDir     string    `json:"work_dir"`
-	ActiveAgent string    `json:"active_agent"`
-	CreatedAt   time.Time `json:"created_at"`
-	Pid         int       `json:"pid"`
-	IsRunning   bool      `json:"is_running"`
-	Cols        uint16    `json:"cols"`
-	Rows        uint16    `json:"rows"`
-	Lang        string    `json:"lang"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Shell        string    `json:"shell"`
+	WorkDir      string    `json:"work_dir"`
+	ActiveAgent  string    `json:"active_agent"`
+	AutoApprove  bool      `json:"auto_approve"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastActiveAt time.Time `json:"last_active_at"`
+	Pid          int       `json:"pid"`
+	IsRunning    bool      `json:"is_running"`
+	Cols         uint16    `json:"cols"`
+	Rows         uint16    `json:"rows"`
+	Lang         string    `json:"lang"`
 
-	pty     PTYSession
-	buffer  *RingBuffer
-	clients map[*websocket.Conn]bool
-	mu      sync.RWMutex
-	stopCh  chan struct{}
+	pty        PTYSession
+	buffer     *RingBuffer
+	clients    map[*websocket.Conn]bool
+	mu         sync.RWMutex
+	stopCh     chan struct{}
+	onActivity func(sessID string)
 }
 
 func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*Session, error) {
@@ -61,22 +64,24 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 		return nil, fmt.Errorf("启动虚拟终端失败: %w", err)
 	}
 
+	now := time.Now()
 	s := &Session{
-		ID:          id,
-		Name:        name,
-		Shell:       shell,
-		WorkDir:     workDir,
-		ActiveAgent: activeAgent,
-		CreatedAt:   time.Now(),
-		Pid:         ptySess.Pid(),
-		IsRunning:   true,
-		Cols:        cols,
-		Rows:        rows,
-		Lang:        lang,
-		pty:         ptySess,
-		buffer:      NewRingBuffer(1024 * 1024), // 1MB 输出缓存
-		clients:     make(map[*websocket.Conn]bool),
-		stopCh:      make(chan struct{}),
+		ID:           id,
+		Name:         name,
+		Shell:        shell,
+		WorkDir:      workDir,
+		ActiveAgent:  activeAgent,
+		CreatedAt:    now,
+		LastActiveAt: now,
+		Pid:          ptySess.Pid(),
+		IsRunning:    true,
+		Cols:         cols,
+		Rows:         rows,
+		Lang:         lang,
+		pty:          ptySess,
+		buffer:       NewRingBuffer(1024 * 1024), // 1MB 输出缓存
+		clients:      make(map[*websocket.Conn]bool),
+		stopCh:       make(chan struct{}),
 	}
 
 	// 启动后台读取协程：读取 PTY 输出，写入 RingBuffer，并向所有 WebSocket 广播
@@ -163,13 +168,45 @@ func (s *Session) broadcast(msgType int, data []byte) {
 	}
 }
 
+// Touch 更新会话最近活跃时间，并触发活跃回调
+func (s *Session) Touch() {
+	s.mu.Lock()
+	s.LastActiveAt = time.Now()
+	cb := s.onActivity
+	id := s.ID
+	s.mu.Unlock()
+	if cb != nil {
+		cb(id)
+	}
+}
+
 // Attach 手机端或PC端连接该会话（支持断线重新连接并恢复现场）
 func (s *Session) Attach(conn *websocket.Conn) {
 	s.mu.Lock()
 	s.clients[conn] = true
+	s.LastActiveAt = time.Now()
+	cb := s.onActivity
+	sessID := s.ID
+	infoPayload := map[string]any{
+		"type":         "session_info",
+		"id":           s.ID,
+		"name":         s.Name,
+		"work_dir":     s.WorkDir,
+		"active_agent": s.ActiveAgent,
+		"auto_approve": s.AutoApprove,
+	}
 	s.mu.Unlock()
 
-	log.Printf("[Session %s] 客户端已连接 (当前连接数: %d)", s.ID, len(s.clients))
+	if cb != nil {
+		cb(sessID)
+	}
+
+	log.Printf("[Session %s (%s)] 客户端已连接 (当前连接数: %d)", s.ID, s.Name, s.ClientsCount())
+
+	// 0. 发送当前会话元信息 (前端据此同步顶部项目名与 Agent 状态)
+	if infoBytes, err := json.Marshal(infoPayload); err == nil {
+		_ = conn.WriteMessage(websocket.TextMessage, infoBytes)
+	}
 
 	// 1. 发送最近的历史输出回放，秒级恢复屏幕现场
 	snapshot := s.buffer.Snapshot()
@@ -182,7 +219,7 @@ func (s *Session) Attach(conn *websocket.Conn) {
 		termMsg := "\r\n\x1b[31m[TimAgent] Current session has ended, you can restart it in the control panel\x1b[0m\r\n"
 		switch s.Lang {
 		case "zh":
-			termMsg = "\r\n\x1b[31m[TimAgent] 当前会话已终止，可在控制台重启\x1b[0m\r\n"
+			termMsg = "\r\n\x1b[31m[TimAgent] 当前会话已终止，可在控制台或顶部切换中重启\x1b[0m\r\n"
 		case "zh-TW":
 			termMsg = "\r\n\x1b[31m[TimAgent] 目前會話已終止，可在控制台重新啟動\x1b[0m\r\n"
 		case "ja":
@@ -199,9 +236,10 @@ func (s *Session) Attach(conn *websocket.Conn) {
 	defer func() {
 		s.mu.Lock()
 		delete(s.clients, conn)
+		rem := len(s.clients)
 		s.mu.Unlock()
 		_ = conn.Close()
-		log.Printf("[Session %s] 客户端已断开 (剩余连接数: %d)", s.ID, len(s.clients))
+		log.Printf("[Session %s (%s)] 客户端已断开 (剩余连接数: %d)", s.ID, s.Name, rem)
 	}()
 
 	for {
@@ -215,6 +253,7 @@ func (s *Session) Attach(conn *websocket.Conn) {
 			if err := json.Unmarshal(p, &msg); err == nil {
 				switch msg.Type {
 				case "input":
+					s.Touch()
 					_, _ = s.pty.Write([]byte(msg.Data))
 				case "resize":
 					if msg.Cols >= 10 && msg.Rows >= 3 {
@@ -231,9 +270,11 @@ func (s *Session) Attach(conn *websocket.Conn) {
 				}
 			} else {
 				// 普通纯文本输入
+				s.Touch()
 				_, _ = s.pty.Write(p)
 			}
 		} else if messageType == websocket.BinaryMessage {
+			s.Touch()
 			_, _ = s.pty.Write(p)
 		}
 	}
@@ -273,10 +314,12 @@ func (s *Session) Close() error {
 	return s.pty.Close()
 }
 
-// Manager 全局终端会话管理器
+// Manager 全局终端会话管理器（支持多项目会话并行常驻后台）
 type Manager struct {
-	sessions map[string]*Session
-	mu       sync.RWMutex
+	sessions     map[string]*Session
+	lastActiveID string
+	onActiveFunc func(id string)
+	mu           sync.RWMutex
 }
 
 var globalManager = &Manager{
@@ -285,6 +328,30 @@ var globalManager = &Manager{
 
 func GetManager() *Manager {
 	return globalManager
+}
+
+// SetOnActivityCallback 注册会话活跃度变更回调（用于同步记录最近操作的项目）
+func (m *Manager) SetOnActivityCallback(fn func(id string)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onActiveFunc = fn
+}
+
+func (m *Manager) recordActivity(id string) {
+	m.mu.Lock()
+	m.lastActiveID = id
+	fn := m.onActiveFunc
+	m.mu.Unlock()
+	if fn != nil {
+		fn(id)
+	}
+}
+
+// LastActiveID 获取最近操作的会话 ID
+func (m *Manager) LastActiveID() string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.lastActiveID
 }
 
 // normalizePath 格式化并清理路径
@@ -301,43 +368,54 @@ func normalizePath(p string) string {
 }
 
 func (m *Manager) GetOrCreate(id, name, shell, workDir, activeAgent, initCmd, lang string) (*Session, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if s, exists := m.sessions[id]; exists && s.IsRunning {
-		return s, nil
-	}
-
-	s, err := newSession(id, name, shell, workDir, activeAgent, initCmd, lang)
-	if err != nil {
-		return nil, err
-	}
-	m.sessions[id] = s
-	return s, nil
+	return m.GetOrCreateForDir(id, name, shell, workDir, activeAgent, initCmd, lang)
 }
 
-// GetOrCreateForDir 针对相同工作目录确保复用同一个持久会话，实现多端/不同位置打开自动连入同一会话
+// GetOrCreateForDir 针对项目/工作目录确保复用同一个持久会话，切换到其他项目时原会话保持在后台运行
 func (m *Manager) GetOrCreateForDir(id, name, shell, workDir, activeAgent, initCmd, lang string) (*Session, error) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	targetDir := normalizePath(workDir)
 
-	// 1. 如果指定了非默认的独立会话且存在运行中，直接复用
+	// 1. 如果指定了具体的项目/会话 ID 且存在运行中，直接复用
 	if id != "" && id != "default" {
 		if s, exists := m.sessions[id]; exists && s.IsRunning {
+			if name != "" {
+				s.mu.Lock()
+				s.Name = name
+				s.LastActiveAt = time.Now()
+				s.mu.Unlock()
+			}
+			m.lastActiveID = s.ID
+			fn := m.onActiveFunc
+			m.mu.Unlock()
+			if fn != nil {
+				fn(s.ID)
+			}
 			return s, nil
 		}
 	}
 
-	// 2. 检查是否有针对相同工作目录的正在运行的会话，若有直接复用它，保证无论从哪个端连入都接入同一个工作现场
+	// 2. 检查是否有针对相同工作目录的正在运行的会话，若有直接复用它
 	for _, s := range m.sessions {
 		if s.IsRunning && normalizePath(s.WorkDir) == targetDir {
+			if name != "" {
+				s.mu.Lock()
+				s.Name = name
+				s.LastActiveAt = time.Now()
+				s.mu.Unlock()
+			}
+			m.lastActiveID = s.ID
+			fn := m.onActiveFunc
+			m.mu.Unlock()
+			if fn != nil {
+				fn(s.ID)
+			}
 			return s, nil
 		}
 	}
 
-	// 3. 如果没找到，确定会话 ID（默认用 "default" 或传入的 id）并创建新会话
+	// 3. 如果没找到，确定会话 ID 并创建新会话（之前其他项目的会话继续在后台运行，绝不关闭）
 	sessID := id
 	if sessID == "" {
 		sessID = "default"
@@ -345,10 +423,40 @@ func (m *Manager) GetOrCreateForDir(id, name, shell, workDir, activeAgent, initC
 
 	s, err := newSession(sessID, name, shell, workDir, activeAgent, initCmd, lang)
 	if err != nil {
+		m.mu.Unlock()
 		return nil, err
 	}
+	s.onActivity = m.recordActivity
 	m.sessions[sessID] = s
+	m.lastActiveID = sessID
+	fn := m.onActiveFunc
+	m.mu.Unlock()
+
+	if fn != nil {
+		fn(sessID)
+	}
 	return s, nil
+}
+
+// FindByProjectOrDir 查找指定项目或工作目录的当前会话（不自动新建），用于状态面板展示
+func (m *Manager) FindByProjectOrDir(id, workDir string) *Session {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if id != "" {
+		if s, ok := m.sessions[id]; ok {
+			return s
+		}
+	}
+	if workDir != "" {
+		targetDir := normalizePath(workDir)
+		for _, s := range m.sessions {
+			if normalizePath(s.WorkDir) == targetDir {
+				return s
+			}
+		}
+	}
+	return nil
 }
 
 func (m *Manager) Get(id string) *Session {
@@ -357,10 +465,10 @@ func (m *Manager) Get(id string) *Session {
 	return m.sessions[id]
 }
 
+// Restart 重启指定项目的会话（仅重启目标项目，其他项目的后台会话不受影响继续运行）
 func (m *Manager) Restart(id, name, shell, workDir, activeAgent, initCmd, lang string) (*Session, error) {
 	m.mu.Lock()
 	targetDir := normalizePath(workDir)
-	// 关闭并清理旧的该 ID 或该目录下所有旧会话
 	for sid, s := range m.sessions {
 		if sid == id || (targetDir != "" && normalizePath(s.WorkDir) == targetDir) {
 			_ = s.Close()
@@ -369,7 +477,21 @@ func (m *Manager) Restart(id, name, shell, workDir, activeAgent, initCmd, lang s
 	}
 	m.mu.Unlock()
 
-	return m.GetOrCreate(id, name, shell, workDir, activeAgent, initCmd, lang)
+	return m.GetOrCreateForDir(id, name, shell, workDir, activeAgent, initCmd, lang)
+}
+
+// CloseSession 停止并移除指定项目会话
+func (m *Manager) CloseSession(id, workDir string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	targetDir := normalizePath(workDir)
+	for sid, s := range m.sessions {
+		if (id != "" && sid == id) || (targetDir != "" && normalizePath(s.WorkDir) == targetDir) {
+			_ = s.Close()
+			delete(m.sessions, sid)
+		}
+	}
 }
 
 func (m *Manager) List() []*Session {

@@ -5,14 +5,14 @@
 </p>
 
 <p align="center">
-  <strong>Native GUI Terminal Agent & Mobile Vibe Coding Hub for Claude Code, Codex, Opcode, Pi & Gemini</strong>
+  <strong>Native GUI Terminal Agent, Multi-Project Session Hub & Mobile Vibe Coding Companion for Claude Code, Codex, Opcode, Pi & Gemini</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/tim-today/tim-agent/actions"><img src="https://img.shields.io/github/actions/workflow/status/tim-today/tim-agent/build.yml?branch=main&style=flat-square" alt="Build Status"></a>
   <a href="https://github.com/tim-today/tim-agent/releases"><img src="https://img.shields.io/github/v/release/tim-today/tim-agent?style=flat-square" alt="Release"></a>
   <img src="https://img.shields.io/badge/Language-Go%201.23%2B-blue?style=flat-square" alt="Language">
-  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-brightgreen?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/Platform-macOS%20(.app)%20%7C%20Windows%20(GUI)%20%7C%20Linux%20(GUI)-brightgreen?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/i18n-EN%20%7C%20ZH%20%7C%20JA%20%7C%20KO%20%7C%20DE-orange?style=flat-square" alt="i18n">
 </p>
 
@@ -38,18 +38,23 @@
 
 ### 🎯 Core Purpose & Philosophy
 **Tim-Agent is purpose-built for seamless bidirectional task collaboration between Mobile Phones and PC workstations.**  
-Traditional remote terminal setups are frustrating on mobile touchscreens and break connections when screens lock. Tim-Agent provides a zero-friction mobile companion terminal for your desktop workstation.
+Traditional remote terminal setups are frustrating on mobile touchscreens and break connections when screens lock. Tim-Agent provides a zero-friction mobile companion terminal and multi-project session hub for your desktop workstation.
 
 ### 🌟 Why Tim-Agent?
 1. 🛡️ **Zero API Token Setup & Zero Leakage Risk**: No need to provide, store, or proxy sensitive LLM API keys. Tim-Agent does not handle credentials, eliminating any risk of token leakage.
-2. 💻 **Inherits 100% of Native Host Environment**: Works directly inside your local project folders. Automatically utilizes your local Git credentials, SSH keys, compiler tools, virtual environments, and shell configs.
-3. 🔄 **Seamless Cross-Device Relay (Phone ↔ PC)**: Start a task at your desk, continue on your phone while walking away; approve changes on mobile, and pick up right where you left off when back at your PC.
-4. ⚡ **Resilient to Network Jitter & Drops**: Decoupled from fragile SSH pipes. The host PC daemon continues executing builds, tests, and AI agent reasoning uninterrupted in the background. Whether you switch from Wi-Fi to 5G or step into an elevator, reconnecting instantly resumes the live session without any disruption to ongoing tasks.
-5. 🤖 **Powered by Official First-Party AI Agents**: Directly drives official tools like Anthropic Claude Code CLI, OpenAI Codex CLI, and Google Gemini CLI. Avoids underpowered third-party wrappers, ensuring state-of-the-art reasoning quality and zero update delay.
-6. 📲 **Progressive Web App (PWA) & Instant Auto-Updates**: Install as a standalone native app on mobile home screens or desktop docks with one tap. Features a Network-First anti-stale caching engine ensuring your PWA receives instant updates automatically with zero cache lock-in.
+2. 📂 **Multi-Project & Multi-Session Hub**: Configure multiple projects in the Control Panel (each with its own Project Name, unique `WorkDir`, CLI Agent preset, and Auto-Approve mode). Remote connections default to your most recently active session; switching projects in the terminal top bar (`📂 Project ▾`) keeps previous project sessions running concurrently in the background.
+3. 🖥️ **Desktop GUI Application & CLI Dual Mode**: In addition to command-line startup, Tim-Agent provides native double-click GUI applications for **macOS (`TimAgent.app`)**, **Windows (`TimAgent-windows-amd64-gui.exe` without console window)**, and **Linux (`.desktop` GUI bundle)**. Or run `tim-agent -install-app` (or click `🖥️ Generate Desktop App` in the dashboard) to create a desktop app icon in one click.
+4. 💻 **Inherits 100% of Native Host Environment**: Works directly inside your local project folders. Automatically utilizes your local Git credentials, SSH keys, compiler tools, virtual environments, and shell configs.
+5. 🔄 **Seamless Cross-Device Relay (Phone ↔ PC)**: Start a task at your desk, continue on your phone while walking away; approve changes on mobile, and pick up right where you left off when back at your PC.
+6. ⚡ **Resilient to Network Jitter & Drops**: Decoupled from fragile SSH pipes. The host PC daemon continues executing builds, tests, and AI agent reasoning uninterrupted in the background.
+7. 🤖 **Powered by Official First-Party AI Agents**: Directly drives official tools like Anthropic Claude Code CLI, OpenAI Codex CLI, and Google Gemini CLI.
+8. 📲 **Progressive Web App (PWA) & Magic Mobile Keyboard**: Install as a standalone PWA on mobile, featuring a 2-row Vibe Coding toolbar (`/resume`, `/model`, magic long-press backspace to clear entire line, `0-9` & `Ctrl+` pickers) and Network-First auto-updates.
 
-### ⚡ Quick Start (Zero Download)
-Run instantly via Go without cloning or manual binary downloads:
+### ⚡ Quick Start (GUI App or CLI)
+**Option A: Mouse Double-Click GUI Application**
+Download the release package for your OS from [GitHub Releases](https://github.com/tim-today/tim-agent/releases) (`TimAgent-macos-*.app.zip`, `TimAgent-windows-amd64-gui.exe`, or `TimAgent-linux-*-gui.tar.gz`) and double-click to launch directly into the system tray and Control Panel.
+
+**Option B: Run Instantly via Go CLI**
 ```bash
 # 1. Run with defaults (launches dashboard & system tray)
 go run github.com/tim-today/tim-agent@latest
@@ -57,13 +62,8 @@ go run github.com/tim-today/tim-agent@latest
 # 2. Specify AI agent, directory, and port
 go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project -port 20996
 
-# 3. Enable auto-approve / bypass sandbox for AI tools
-go run github.com/tim-today/tim-agent@latest -agent codex -auto-approve
-```
-*Or install globally:*
-```bash
-go install github.com/tim-today/tim-agent@latest
-tim-agent -agent claude
+# 3. One-click install native Desktop GUI App (.app / .lnk / .desktop)
+go run github.com/tim-today/tim-agent@latest -install-app
 ```
 
 ### ⚙️ Command-Line Arguments
@@ -71,15 +71,15 @@ tim-agent -agent claude
 |---|---|---|---|
 | `-agent` | `string` | `""` (Shell) | Default AI Agent preset (`claude`, `codex`, `opcode`, `pi`, `gemini`) |
 | `-port` | `int` | `20996` | Terminal port (auto-increments if busy; admin dashboard on `20997`) |
-| `-dir` | `string` | Current dir | Working directory bound to the terminal session |
+| `-dir` | `string` | Current dir | Working directory bound to the initial project session |
 | `-auto-approve` | `bool` | `false` | Auto-approve prompts / bypass sandbox for Claude Code & Codex |
+| `-install-app` | `bool` | `false` | Generate and install native Desktop GUI Application icon for current OS |
 | `-password` | `string` | Auto-gen | Web terminal password protection (cached after first login) |
 | `-shell` | `string` | System `$SHELL` | Custom shell executable (`/bin/zsh`, `/bin/bash`, `powershell.exe`) |
 | `-no-open` | `bool` | `false` | Do not automatically pop up local dashboard in browser on start |
 | `-remote` | `bool` | `false` | Enable remote access to web dashboard (default localhost only, requires password) |
 | `-daemon` | `bool` | `false` | Run with supervisor watchdog for auto-recovery, ensuring 24/7 port uptime |
 | `-version` | `bool` | `false` | Print version information and exit |
-
 
 ### 🌐 Remote Access & Networking
 Tim-Agent serves the shared terminal on port `20996`. For remote mobile access, we recommend:
@@ -93,33 +93,34 @@ Tim-Agent serves the shared terminal on port `20996`. For remote mobile access, 
 ## 🇨🇳 简体中文
 
 ### 🎯 项目初衷与核心价值
-**Tim-Agent 重点解决「手机与 PC 之间的任务协同」问题。**  
-开发者经常需要在手机上监控或远程处理电脑端的长时间构建、测试任务，或与 AI 命令行 Agent（如 Claude Code CLI、Codex CLI）交互协同。传统远程终端连接方案不仅手机触屏极难操作，且断网重连与输入体验极差。Tim-Agent 让手机成为电脑端终端任务的最佳协同副屏。
+**Tim-Agent 重点解决「手机与 PC 之间的任务协同与多项目会话管理」问题。**  
+开发者经常需要在手机上监控或远程处理电脑端的多个项目构建、测试任务，或与 AI 命令行 Agent（如 Claude Code CLI、Codex CLI）交互协同。传统远程终端不仅手机触屏极难操作，且断网重连与多项目切换体验极差。Tim-Agent 让手机成为电脑端多项目终端任务的最佳协同副屏。
 
 ### 🌟 项目核心特点
 1. 🛡️ **无需配置 API Token，零泄密风险**：无需在网页或配置文件中填入任何大模型 API Key。Tim-Agent 本身不存储、不中转任何密钥凭据，彻底杜绝敏感信息外泄风险。
-2. 💻 **完全沿用电脑本机环境与配置**：直接工作在电脑本机的项目目录中，自动继承开发者的 Git 凭据、SSH Key、编译器、Python 虚拟环境及终端 Alias 配置，无需在云端或容器重新折腾环境。
-3. 🔄 **手机 ↔ PC 多端无缝接力与双向协同**：真正实现“电脑工作做一半，出门手机继续完成；手机审批或输入一半，回工位电脑无缝接力”。所有端状态毫秒级实时同步，跨端协作一气呵成。
-4. ⚡ **无视网络抖动，电脑 Agent 独立常驻后台**：彻底告别传统 SSH 在地铁、电梯或网络切换时 Broken Pipe 导致任务中断的痛点。电脑端守护进程持续运行，长任务与 AI 推理从不间断；手机断网重连后瞬间恢复交互，完全不影响正在进行的工作。
-5. 🤖 **采用顶级官方原生 Agent**：原生直接驱动 Anthropic 官方 Claude Code CLI、OpenAI 官方 Codex CLI、Google Gemini CLI 等原生工具。坚决摒弃第三方套壳或能力孱弱的二次封装智能体，保障最强的推理智商与官方最新特性支持。
-6. 📲 **支持 PWA 本地应用安装与防陈旧缓存自愈更新**：除浏览器访问外，支持一键安装为手机/电脑桌面独立 App（PWA），全屏沉浸操作。内置 Network-First 网络优先防陈旧缓存引擎，既具备离线韧性，又能在版本升级时毫秒级自动热更新，彻底避免过重缓存导致版本脱节。
+2. 📂 **多项目与多会话并行管理**：支持在后台配置界面添加多个独立项目（每个项目独立设置**项目名称**、**工作目录 `WorkDir`**、**CLI Agent 代理**、**是否自动确认**，并严格限制同一目录不可属于不同项目）。远程连接默认自动进入**最近操作的一个会话**，也可在终端顶部栏（`📂 项目名 ▾`）或控制面板一键切换到其它项目；切换后**原项目会话继续在后台保持运行**，随时切回无缝接力。
+3. 🖥️ **原生桌面 GUI 应用程序（鼠标双击即开）+ 命令行双模式**：除命令行直接启动外，原生支持生成 **macOS (`TimAgent.app`)**、**Windows (`TimAgent-windows-amd64-gui.exe` 无黑框窗口)**、**Linux (`.desktop` 桌面应用)** 图形程序，鼠标双击图标直接启动常驻托盘并打开控制面板；二次双击图标会自动唤醒已运行实例的控制面板。同时支持通过 `-install-app` 参数或控制面板顶部的「🖥️ 生成桌面应用」按钮一键生成桌面应用图标。
+4. 💻 **完全沿用电脑本机环境与配置**：直接工作在电脑本机的项目目录中，自动继承开发者的 Git 凭据、SSH Key、Homebrew/nvm 环境变量、编译器及终端配置。
+5. 🔄 **手机 ↔ PC 多端无缝接力与双向协同**：真正实现“电脑工作做一半，出门手机继续完成；手机审批或输入一半，回工位电脑无缝接力”。
+6. ⚡ **无视网络抖动，电脑多项目 Agent 独立常驻后台**：彻底告别传统 SSH 在地铁、电梯或网络切换时 Broken Pipe 导致任务中断的痛点。
+7. 🤖 **采用顶级官方原生 Agent**：原生直接驱动 Anthropic 官方 Claude Code CLI、OpenAI 官方 Codex CLI、Google Gemini CLI 等原生工具。
+8. 📲 **PWA 本地应用与手机端定制虚拟键盘**：支持一键安装为手机桌面独立 App（PWA），适配刘海屏安全区域确保顶栏始终可见；配备双排 Vibe Coding 快捷胶囊（含 `/resume` 恢复会话、`/model`、退格键长按连续加速删除及长按一键清空整行魔法功能）。
 
-### ⚡ 快速开始（无需下载）
-只要安装了 Go (1.23+)，无需手动下载 Release 产物或 clone 仓库，直接在终端输入即可启动：
+### ⚡ 快速开始（GUI 鼠标点开 / 命令行启动）
+**方式一：鼠标双击 GUI 应用程序启动**
+- 从 [GitHub Releases](https://github.com/tim-today/tim-agent/releases) 下载对应系统的 GUI 应用包（macOS 为 `TimAgent-macos-*.app.zip`，Windows 为 `TimAgent-windows-amd64-gui.exe`，Linux 为 `TimAgent-linux-*-gui.tar.gz`），或在本机编译 `make app` 生成 `bin/TimAgent.app`，直接用鼠标双击即可无黑框启动。
+- 也可以在已运行的控制面板右上角点击 **「🖥️ 生成桌面应用」** 按钮，自动将程序安装到系统应用程序列表与桌面。
+
+**方式二：通过 Go 命令行直接运行**
 ```bash
-# 1. 默认直接运行 (自动打开控制面板并常驻后台)
+# 1. 默认直接运行 (自动打开控制面板并常驻系统托盘)
 go run github.com/tim-today/tim-agent@latest
 
-# 2. 传入任意参数启动 (指定 Agent、工作目录、端口)
+# 2. 传入参数启动 (指定 Agent、工作目录、端口)
 go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project -port 20996
 
-# 3. 开启自动确认 / 关闭沙箱
-go run github.com/tim-today/tim-agent@latest -agent codex -auto-approve
-```
-*也可以全局安装为命令行工具：*
-```bash
-go install github.com/tim-today/tim-agent@latest
-tim-agent -agent claude
+# 3. 一键在当前电脑生成并安装桌面 GUI 应用程序 (.app / .lnk / .desktop)
+go run github.com/tim-today/tim-agent@latest -install-app
 ```
 
 ### ⚙️ 运行参数列表
@@ -129,13 +130,13 @@ tim-agent -agent claude
 | `-port` | `int` | `20996` | 终端服务监听端口（冲突自动递增；本地控制面板自动分配 `20997`） |
 | `-dir` | `string` | 当前执行目录 | 绑定工作目录 (`pwd`) |
 | `-auto-approve` | `bool` | `false` | 开启沙箱免确认/自动批准（自动注入 `--dangerously-skip-permissions` 等参数） |
+| `-install-app` | `bool` | `false` | 一键生成并安装本机桌面 GUI 应用程序图标（支持鼠标直接点开） |
 | `-password` | `string` | 自动生成强密码 | 终端访问密码保护（浏览器输入一次自动记住持久凭证） |
 | `-shell` | `string` | 环境变量 `$SHELL` | 指定 Shell 解释器路径 (如 `/bin/zsh`, `powershell.exe`) |
 | `-no-open` | `bool` | `false` | 启动后不自动在本地浏览器弹出控制面板 |
 | `-remote` | `bool` | `false` | 允许外部IP远程访问控制面板（默认仅限本机 127.0.0.1/localhost 访问，开启需密码鉴权） |
 | `-daemon` | `bool` | `false` | 开启独立 Supervisor 守护监控，异常崩溃秒级自愈重启，保证端口常驻 |
 | `-version` | `bool` | `false` | 查看版本信息并退出 |
-
 
 ### 🌐 外网与远程网络推荐
 Tim-Agent 默认在电脑端监听 `20996` 端口。需要不在电脑旁随时随地用手机访问时，推荐使用以下方案映射外网：
@@ -149,25 +150,26 @@ Tim-Agent 默认在电脑端监听 `20996` 端口。需要不在电脑旁随时�
 ## 🇭🇰 繁體中文
 
 ### 🎯 專案初衷與核心價值
-**Tim-Agent 專注於解決「手機與 PC 之間的任務協同」問題。**  
-告別傳統遠端終端連線方案繁瑣脆弱的體驗，讓手機成為電腦端開發任務最靈活的隨身副屏。
+**Tim-Agent 專注於解決「手機與 PC 之間的任務協同與多專案會話管理」問題。**  
+告別傳統遠端終端連線方案繁瑣脆弱的體驗，讓手機成為電腦端多專案開發任務最靈活的隨身副屏。
 
 ### 🌟 專案核心特點
 1. 🛡️ **無需配置 API Token，零洩密風險**：不需在網頁或設定檔中填入任何大模型 API Key，本體不儲存、不轉發金鑰，杜絕敏感資料外洩。
-2. 💻 **完整沿用電腦本機環境與設定**：直接在電腦本機的工作目錄運行，完全承襲既有的 Git 認證、SSH Key、編譯器與終端環境，省去雲端重設的困擾。
-3. 🔄 **手機 ↔ 電腦無縫雙向接力**：實現「電腦做一半，出門手機接著做；手機審批或輸入一半，回座電腦無縫接力」，跨端狀態即時同步。
-4. ⚡ **無視網路抖動，電腦 Agent 獨立常駐背景**：告別切換網路或進出電梯時 SSH Broken Pipe 導致工作中斷的惡夢。電腦本機持續運算，重連後即時恢復互動，完全不影響既有任務。
-5. 🤖 **原生採用官方頂級 Agent**：直接驅動 Anthropic Claude Code、OpenAI Codex、Google Gemini 等原廠 CLI 智能體，避免第三方包裝工具能力低弱或更新延遲的問題。
-6. 📲 **支援 PWA 本機應用程式安裝與防過期快取自動更新**：除瀏覽器存取外，支援一鍵安裝為手機/電腦桌面獨立 App（PWA）。內建 Network-First 網路優先防過期快取引擎，版本升級時即時自動更新，徹底杜絕快取死鎖。
+2. 📂 **多專案與多會話背景並行管理**：支援在控制台配置多個獨立專案（自訂專案名稱、專屬工作目錄 `WorkDir`、CLI Agent 代理、是否自動確認，並限制同一目錄不可歸屬不同專案）。遠端預設進入**最近操作的一個會話**，也可隨時切換至其它專案，切換後**原專案會話繼續在背景保持運行**。
+3. 🖥️ **原生桌面 GUI 應用程式（滑鼠雙擊啟動）+ 命令列雙模式**：支援生成 **macOS (`TimAgent.app`)**、**Windows (`TimAgent-windows-amd64-gui.exe` 無黑框)** 與 **Linux (`.desktop`)** 桌面應用程式，滑鼠點開即用；亦可透過 `-install-app` 或控制台「🖥️ 生成桌面應用」按鈕一鍵安裝桌面圖示。
+4. 💻 **完整沿用電腦本機環境與設定**：直接在電腦本機的工作目錄運行，完全承襲既有的 Git 認證、SSH Key、編譯器與終端環境。
+5. 🔄 **手機 ↔ 電腦無縫雙向接力**：實現「電腦做一半，出門手機接著做；手機審批或輸入一半，回座電腦無縫接力」，跨端狀態即時同步。
+6. ⚡ **無視網路抖動，電腦 Agent 獨立常駐背景**：電腦本機持續運算，重連後即時恢復互動，完全不影響既有任務。
+7. 🤖 **原生採用官方頂級 Agent**：直接驅動 Anthropic Claude Code、OpenAI Codex、Google Gemini 等原廠 CLI 智能體。
+8. 📲 **支援 PWA 本機應用程式與專屬虛擬鍵盤**：內建 `/resume`、`/model`、長按退格加速刪除與一鍵清空整行魔法功能，並採用 Network-First 防過期快取自動更新。
 
-### ⚡ 快速開始（免下載直跑）
-只要電腦已安裝 Go (1.23+)，直接在終端機輸入：
+### ⚡ 快速開始
 ```bash
 # 預設啟動（自動喚起控制台與常駐托盤）
 go run github.com/tim-today/tim-agent@latest
 
-# 指定 Agent、路徑與埠號
-go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project -port 20996
+# 一鍵生成並安裝桌面 GUI 應用程式 (.app / .lnk / .desktop)
+go run github.com/tim-today/tim-agent@latest -install-app
 ```
 
 ### ⚙️ 執行參數說明
@@ -175,6 +177,7 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 - `-port`: 終端服務埠號（預設 `20996`，衝突自動遞增；本地控制台為 `20997`）
 - `-dir`: 綁定之工作目錄（預設當前目錄）
 - `-auto-approve`: 自動確認/關閉沙箱權限提示
+- `-install-app`: 一鍵生成並安裝本機桌面 GUI 應用程式圖示
 - `-password`: 終端訪問密碼（瀏覽器輸入一次自動記住）
 - `-shell`: 指定 Shell 路徑（如 `/bin/zsh`, `powershell.exe`）
 - `-no-open`: 啟動時不自動彈出瀏覽器
@@ -182,53 +185,32 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 - `-daemon`: 以 Supervisor 守護行程模式運作（自動監控與異常自愈重啟）
 - `-version`: 查看版本資訊
 
-### 🌐 網路連線建議
-- **[Tailscale](https://tailscale.com/)（強烈推薦）**：免設定虛擬私有網路，自動識別 IP 並產生 QR Code，手機一掃秒連。
-- **[FRP](https://github.com/fatedier/frp)**：透過 VPS 將 `20996` 埠號映射至外網，在行動網路隨時隨地直連。
-- **區域網路 Wi-Fi**：同 Wi-Fi 下掃碼即用。
-
 ---
 
 <a id="日本語"></a>
 ## 🇯🇵 日本語
 
 ### 🎯 概要と目的
-**Tim-Agent は、「スマートフォンと PC 間のシームレスなタスク協調」のために開発されました。**  
+**Tim-Agent は、「スマートフォンと PC 間のシームレスなタスク協調とマルチプロジェクト管理」のために開発されました。**  
 従来の遠隔ターミナルによる煩雑な設定やスマホ操作の難しさを解消し、スマートフォンを PC の最強のサブディスプレイにします。
 
 ### 🌟 主な特徴
-1. 🛡️ **API トークンの設定不要・漏洩リスクゼロ**: Web や設定ファイルに API Key を入力する必要はありません。キーを中継・保存しないため、認証情報流出の心配がありません。
-2. 💻 **PC 本体のネイティブ環境をそのまま継承**: PC ローカルの作業ディレクトリ上で直接動作し、既存の Git 認証、SSH Key、コンパイラ、シェル設定をそのまま利用できます。
-3. 🔄 **スマホ ↔ PC のシームレスな作業リレー**: 「PC で進めていた作業の続きを外出先からスマホで継続」「スマホでの確認・承認の続きをデスクの PC で再開」が可能です。
-4. ⚡ **ネットワーク切断に強く、作業を中断させない常駐実行**: 電車やエレベーターでの電波途切れや Wi-Fi 切り替え時も SSH のような切断（Broken pipe）は起きません。PC 上で常駐プロセスが安全に作業を継続し、再接続時に即座に同期されます。
-5. 🤖 **公式ファーストパーティ Agent を直接駆動**: Anthropic Claude Code、OpenAI Codex、Google Gemini などの公式 CLI ツールを直接呼び出し、サードパーティ製ラッパーによる機能低下や遅延を回避します。
-6. 📲 **PWA ネイティブアプリ化とキャッシュ遅延のない即時自動更新**: ブラウザ利用に加え、スマホのホーム画面やデスクトップに独立した PWA アプリとしてインストール可能。Network-First（ネットワーク優先）キャッシュ制御により、肥大化した古いキャッシュによるバージョン不整合を防ぎ、最新バージョンを即座に自動反映します。
+1. 🛡️ **API トークンの設定不要・漏洩リスクゼロ**: Web や設定ファイルに API Key を入力する必要はありません。
+2. 📂 **マルチプロジェクト＆マルチセッション管理**: 管理パネルで複数のプロジェクト（名前、固有の作業ディレクトリ `WorkDir`、CLI Agent、自動承認設定）を登録可能（同一ディレクトリの重複登録を防止）。リモート接続時は**直近で操作したセッション**に自動接続され、別プロジェクトへ切り替えても**元のセッションはバックグラウンドで稼働し続けます**。
+3. 🖥️ **デスクトップ GUI アプリ（マウスでダブルクリック起動）＆ CLI 両対応**: **macOS (`TimAgent.app`)**、**Windows (`TimAgent-windows-amd64-gui.exe` コンソール非表示)**、**Linux (`.desktop`)** のネイティブ GUI アプリを生成可能。`-install-app` オプションまたは管理画面の「🖥️ デスクトップアプリ生成」ボタンでワンクリック作成できます。
+4. 💻 **PC 本体のネイティブ環境をそのまま継承**: PC ローカルの作業ディレクトリ上で直接動作し、既存の Git 認証、SSH Key、コンパイラをそのまま利用できます。
+5. 🔄 **スマホ ↔ PC のシームレスな作業リレー**: 外出先からスマホで作業を継続し、デスクに戻って PC でそのまま再開できます。
+6. 🤖 **公式ファーストパーティ Agent を直接駆動**: Anthropic Claude Code、OpenAI Codex、Google Gemini などの公式 CLI ツールを直接呼び出します。
+7. 📲 **PWA アプリ化とモバイル専用仮想キーボード**: `/resume` ボタンや長押し一括行削除機能付きの仮想キーボードを備え、Network-First キャッシュ制御により最新バージョンを即座に自動反映します。
 
-### ⚡ クイックスタート（インストール不要）
+### ⚡ クイックスタート
 ```bash
 # デフォルト起動（ダッシュボードとタスクトレイが自動起動）
 go run github.com/tim-today/tim-agent@latest
 
-# エージェント・ディレクトリ・ポートを指定して起動
-go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project -port 20996
+# デスクトップ GUI アプリ (.app / .lnk / .desktop) をワンクリック生成・インストール
+go run github.com/tim-today/tim-agent@latest -install-app
 ```
-
-### ⚙️ 起動オプション
-- `-agent`: 起動する AI エージェント（`claude`, `codex`, `opcode`, `pi`, `gemini`）
-- `-port`: ターミナル待受ポート（デフォルト `20996`、管理画面は `20997`）
-- `-dir`: バインドする作業ディレクトリ
-- `-auto-approve`: サンドボックス確認の自動承認フラグ
-- `-password`: Web ターミナル接続パスワード（自動生成または指定）
-- `-shell`: 使用するシェルパス（`/bin/zsh`, `powershell.exe` など）
-- `-no-open`: 起動時にブラウザを自動で開かない
-- `-remote`: 管理ダッシュボードのリモートアクセスを許可（デフォルト無効、有効時はパスワード認証必須）
-- `-daemon`: スーパーバイザー常駐監視モード（異常終了時の自動リカバリ起動）
-- `-version`: バージョン情報を表示
-
-### 🌐 リモート接続の推奨方法
-- **[Tailscale](https://tailscale.com/)（推奨）**：ポート開放不要のメッシュ VPN。QR コード読み取りで即時接続可能。
-- **[FRP](https://github.com/fatedier/frp)**：VPS を経由してポート `20996` を公開し、モバイル通信からどこでも接続。
-- **ローカル LAN (Wi-Fi)**：同一 Wi-Fi 内で QR コードをスキャンして直接接続。
 
 ---
 
@@ -236,42 +218,25 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 ## 🇰🇷 한국어
 
 ### 🎯 개요 및 핵심 목표
-**Tim-Agent는 '스마트폰과 PC 간의 원활한 작업 협업'을 위해 설계되었습니다.**  
-모바일에 최적화된 가상 툴바, 백그라운드 세션 유지, 간편한 QR 코드 연동을 통해 스마트폰을 PC 터미널의 최적 보조 화면으로 탈바꿈시킵니다.
+**Tim-Agent는 '스마트폰과 PC 간의 원활한 작업 협업 및 다중 프로젝트 세션 관리'를 위해 설계되었습니다.**  
+모바일에 최적화된 가상 툴바, 다중 프로젝트 백그라운드 세션 유지, 간편한 QR 코드 연동을 통해 스마트폰을 PC 터미널의 최적 보조 화면으로 탈바꿈시킵니다.
 
 ### 🌟 핵심 장점
-1. 🛡️ **API 토큰 설정 불필요 & 유출 위험 제로**: Web 화면이나 설정 파일에 별도의 API Key를 입력할 필요가 없으며, 민감한 키 정보를 저장하거나 프록시하지 않습니다.
-2. 💻 **PC 본체의 로컬 환경 100% 계승**: PC 로컬의 프로젝트 디렉토리에서 직접 실행되므로, 기존 Git 자격 증명, SSH 키, 컴파일러, 가상 환경 설정을 그대로 사용합니다.
-3. 🔄 **스마트폰 ↔ PC 무중단 작업 릴레이**: "PC에서 작업하던 내용을 이동 중 스마트폰으로 이어가고, 스마트폰에서 승인하던 작업을 다시 PC에서 이어받아 완료"할 수 있습니다.
-4. ⚡ **네트워크 흔들림 무시 & 무중단 백그라운드 실행**: 지하철이나 엘리베이터 등 통신 환경 변화에도 세션이 끊기지 않습니다. PC 상주 데몬이 빌드와 AI 작업을 백그라운드에서 계속 진행하며, 재접속 시 작업 중단 없이 즉시 복원됩니다.
-5. 🤖 **공식 정품 AI Agent 직접 구동**: Anthropic Claude Code, OpenAI Codex, Google Gemini 등 공식 CLI 툴을 직접 실행하여, 서드파티 래퍼의 성능 부족이나 기능 지연 문제를 완벽히 방지합니다.
-6. 📲 **PWA 로컬 앱 설치 및 캐시 고착 방지 자동 업데이트**: 브라우저 접속 외에도 모바일 홈 화면이나 데스크톱에 독립 실행형 PWA 앱으로 1초 설치 가능. Network-First 네트워크 우선 캐싱 엔진을 탑재하여 버전 업그레이드 시 캐시 고착 없이 최신 버전을 자동으로 동기화합니다.
+1. 🛡️ **API 토큰 설정 불필요 & 유출 위험 제로**: 별도의 API Key를 입력하거나 프록시하지 않습니다.
+2. 📂 **다중 프로젝트 및 멀티 세션 백그라운드 유지**: 제어판에서 여러 프로젝트(프로젝트 이름, 고유 `WorkDir`, CLI Agent, 자동 승인 여부)를 설정할 수 있으며 동일 디렉토리 중복 등록을 방지합니다. 원격 접속 시 **가장 최근에 조작한 세션**으로 기본 진입하며, 다른 프로젝트로 전환해도 **기존 세션은 백그라운드에서 계속 실행**됩니다.
+3. 🖥️ **데스크톱 GUI 애플리케이션(마우스 더블클릭 실행) & CLI 이중 모드**: **macOS (`TimAgent.app`)**, **Windows (`TimAgent-windows-amd64-gui.exe` 콘솔창 없음)**, **Linux (`.desktop`)** GUI 앱을 지원합니다. `-install-app` 플래그나 제어판 버튼을 통해 바탕화면 아이콘을 즉시 생성할 수 있습니다.
+4. 💻 **PC 본체의 로컬 환경 100% 계승**: 기존 Git 자격 증명, SSH 키, 컴파일러 설정을 그대로 사용합니다.
+5. 🤖 **공식 정품 AI Agent 직접 구동**: Anthropic Claude Code, OpenAI Codex, Google Gemini 등 공식 CLI 툴을 직접 실행합니다.
+6. 📲 **PWA 로컬 앱 및 모바일 맞춤형 가상 키보드**: `/resume` 세션 복구 버튼과 백스페이스 길게 눌러 줄 전체 지우기 매직 기능을 제공하며 Network-First 자동 업데이트를 지원합니다.
 
-### ⚡ 빠른 시작 (다운로드 불필요)
+### ⚡ 빠른 시작
 ```bash
 # 기본 실행 (대시보드 자동 실행 및 시스템 트레이 상주)
 go run github.com/tim-today/tim-agent@latest
 
-# AI 에이전트, 작업 경로 및 포트 지정 실행
-go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project -port 20996
+# 데스크톱 GUI 앱 (.app / .lnk / .desktop) 생성 및 설치
+go run github.com/tim-today/tim-agent@latest -install-app
 ```
-
-### ⚙️ 실행 플래그 안내
-- `-agent`: 기본 실행 AI 에이전트 (`claude`, `codex`, `opcode`, `pi`, `gemini`)
-- `-port`: 웹 터미널 포트 (기본값 `20996`, 관리 패널은 `20997`)
-- `-dir`: 터미널 작업 디렉토리 지정
-- `-auto-approve`: AI 에이전트 샌드박스 프롬프트 자동 승인
-- `-password`: 터미널 접근 보호 비밀번호
-- `-shell`: 실행 셸 경로 지정 (`/bin/zsh`, `powershell.exe` 등)
-- `-no-open`: 실행 시 브라우저 자동 팝업 비활성화
-- `-remote`: 관리 대시보드 원격 접속 허용 (기본값 로컬 전용, 활성화 시 비밀번호 인증 필요)
-- `-daemon`: 데몬 슈퍼바이저 감시 모드 실행 (비정상 종료 시 자동 복구 재시작)
-- `-version`: 현재 버전 확인
-
-### 🌐 외부 네트워크 연결 가이드
-- **[Tailscale](https://tailscale.com/) (강력 권장)**: 포트 포워딩 없는 사설 VPN. 대시보드에서 QR 코드를 스캔하여 1초 만에 연결.
-- **[FRP](https://github.com/fatedier/frp)**: 개인 서버(VPS)를 통해 포트 `20996`을 외부로 매핑하여 모바일 데이터 환경에서 원격 접속.
-- **로컬 Wi-Fi**: 동일한 Wi-Fi 환경에서 QR 코드로 즉시 접속.
 
 ---
 
@@ -279,42 +244,25 @@ go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project
 ## 🇩🇪 Deutsch
 
 ### 🎯 Zweck & Überblick
-**Tim-Agent wurde für die nahtlose Zusammenarbeit bei Entwickler-Aufgaben zwischen Smartphone und PC entwickelt.**  
-Schluss mit unhandlichen Terminal-Verbindungen auf Mobilgeräten. Tim-Agent verwandelt Ihr Smartphone in das ideale Begleitgerät für Ihren Desktop-Rechner.
+**Tim-Agent wurde für die nahtlose Zusammenarbeit und Multi-Projekt-Verwaltung zwischen Smartphone und PC entwickelt.**  
+Tim-Agent verwandelt Ihr Smartphone in das ideale Begleitgerät für Ihre Desktop-Entwicklungsprojekte.
 
 ### 🌟 Kernvorteile
-1. 🛡️ **Keine API-Token-Konfiguration & Null Leckagerisiko**: Sie müssen keine sensiblen API-Schlüssel in Webformularen oder Konfigurationen hinterlegen. Tim-Agent speichert oder leitet keine geheimen Schlüssel weiter.
-2. 💻 **Vollständige Übernahme der nativen PC-Umgebung**: Arbeitet direkt im Projektverzeichnis Ihres PCs und nutzt nahtlos Ihre lokalen Git-Anmeldedaten, SSH-Schlüssel, Compiler und Shell-Konfigurationen.
-3. 🔄 **Nahtlose Geräte-Staffel (Smartphone ↔ PC)**: Eine Aufgabe am Schreibtisch starten, unterwegs auf dem Handy überprüfen oder fortführen, und zurück am Arbeitsplatz direkt am PC nahtlos weitermachen.
-4. ⚡ **Resistent gegen Netzwerk-Schwankungen & Dauerbetrieb**: Keine abgebrochenen SSH-Verbindungen beim Wechsel zwischen Funkzellen oder im Fahrstuhl. Der PC-Hintergrundprozess arbeitet autark weiter, und die Sitzung wird bei erneuter Verbindung nahtlos fortgesetzt.
-5. 🤖 **Direkte Anbindung offizieller First-Party KI-Agenten**: Nutzt direkt die offiziellen CLI-Tools von Anthropic Claude Code, OpenAI Codex und Google Gemini. Keine schwachen Drittanbieter-Wrapper, immer maximale Modell-Leistung und sofortige Updates.
-6. 📲 **Progressive Web App (PWA) & Stale-Cache-sichere Auto-Updates**: Neben dem Browser-Zugriff lässt sich Tim-Agent mit einem Klick als native PWA auf Smartphone oder Desktop installieren. Ein Network-First-Caching-System stellt sicher, dass Aktualisierungen sofort übernommen werden, ohne durch alte Cache-Bestände blockiert zu werden.
+1. 🛡️ **Keine API-Token-Konfiguration & Null Leckagerisiko**: Keine Speicherung oder Weiterleitung geheimer API-Schlüssel.
+2. 📂 **Multi-Projekt- & Multi-Session-Management**: Konfigurieren Sie mehrere Projekte (Projektname, eindeutiges `WorkDir`, CLI-Agent, Auto-Approve). Remote-Verbindungen öffnen standardmäßig die **zuletzt aktive Sitzung**; beim Wechsel zu einem anderen Projekt laufen **bisherige Projektsitzungen im Hintergrund weiter**.
+3. 🖥️ **Native Desktop-GUI-Anwendung (Start per Mausklick) & CLI-Modus**: Unterstützt **macOS (`TimAgent.app`)**, **Windows (`TimAgent-windows-amd64-gui.exe` ohne Konsolenfenster)** und **Linux (`.desktop`)** sowie die 1-Klick-Installation über `-install-app` oder das Dashboard.
+4. 💻 **Vollständige Übernahme der nativen PC-Umgebung**: Nutzt direkt Ihre lokalen Git-Anmeldedaten, SSH-Schlüssel und Compiler.
+5. 🤖 **Direkte Anbindung offizieller First-Party KI-Agenten**: Unterstützt Anthropic Claude Code, OpenAI Codex und Google Gemini CLI.
+6. 📲 **Progressive Web App (PWA) & Mobile Vibe-Tastatur**: Mit `/resume`-Taste, Magic-Backspace zum Löschen ganzer Zeilen bei langem Drücken und Network-First Auto-Updates.
 
-### ⚡ Schnellstart (Ohne Download)
+### ⚡ Schnellstart
 ```bash
 # Standardstart (öffnet Dashboard & verbleibt im System-Tray)
 go run github.com/tim-today/tim-agent@latest
 
-# Start mit spezifischem KI-Agenten, Verzeichnis & Port
-go run github.com/tim-today/tim-agent@latest -agent claude -dir /path/to/project -port 20996
+# Desktop-GUI-App (.app / .lnk / .desktop) generieren & installieren
+go run github.com/tim-today/tim-agent@latest -install-app
 ```
-
-### ⚙️ Start-Parameter
-- `-agent`: Standard-KI-Agent (`claude`, `codex`, `opcode`, `pi`, `gemini`)
-- `-port`: Terminal-Port (Standard `20996`, Admin-Dashboard auf `20997`)
-- `-dir`: Arbeitsverzeichnis der Sitzung
-- `-auto-approve`: Automatische Bestätigung / Sandbox-Bypass für KI-Tools
-- `-password`: Passwortschutz für das Web-Terminal
-- `-shell`: Shell-Pfad (`/bin/zsh`, `powershell.exe` etc.)
-- `-no-open`: Browser nicht automatisch beim Start öffnen
-- `-remote`: Fernzugriff auf das Web-Dashboard erlauben (Standard nur 127.0.0.1/localhost, erfordert Passwort)
-- `-daemon`: Supervisor-Daemon-Modus (automatische Wiederherstellung bei Abstürzen)
-- `-version`: Versionsinformationen anzeigen
-
-### 🌐 Netzwerk- & Fernzugriff
-- **[Tailscale](https://tailscale.com/) (Empfohlen)**: Konfigurationsfreies privates Mesh-VPN mit 1-Klick-QR-Code-Kopplung.
-- **[FRP](https://github.com/fatedier/frp)**: Reverse-Proxy über einen VPS zur Freigabe von Port `20996` für den weltweiten Mobilzugriff.
-- **Lokales WLAN**: Direkte Verbindung im selben Heim- oder Firmennetzwerk.
 
 ---
 

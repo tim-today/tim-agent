@@ -4,13 +4,15 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
 const (
-	AppVersion     = "v1.0.5"
+	AppVersion     = "v2.0.0"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"
@@ -32,21 +34,32 @@ type AgentPreset struct {
 	Shortcuts       []string `json:"shortcuts"`
 }
 
+// ProjectConfig 单个项目的独立配置（支持多项目多会话切换）
+type ProjectConfig struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	WorkDir     string `json:"work_dir"`
+	Agent       string `json:"agent"`
+	AutoApprove bool   `json:"auto_approve"`
+}
+
 type ConfigData struct {
-	Port           int           `json:"port"`
-	Password       string        `json:"password"`
-	AuthToken      string        `json:"auth_token"`
-	Shell          string        `json:"shell"`
-	WorkDir        string        `json:"work_dir"`
-	SelectedAgent  string        `json:"selected_agent"`
-	AutoApprove    bool          `json:"auto_approve"` // 自动确认(关闭沙箱)，默认false
-	RemoteAccess   bool          `json:"remote_access"` // 远程管理访问(开启后允许外部IP访问管理面板，需密码鉴权)，默认false
-	Theme          string        `json:"theme"`          // 终端配色方案
-	Language       string        `json:"language"`       // 界面语言: "en" (默认) 或 "zh"
-	KeepAlive      bool          `json:"keep_alive"`
-	AutoOpen       bool          `json:"auto_open"`
-	CustomCommands []CommandItem `json:"custom_commands"`
-	Agents         []AgentPreset `json:"agents"`
+	Port            int             `json:"port"`
+	Password        string          `json:"password"`
+	AuthToken       string          `json:"auth_token"`
+	Shell           string          `json:"shell"`
+	WorkDir         string          `json:"work_dir"`
+	SelectedAgent   string          `json:"selected_agent"`
+	AutoApprove     bool            `json:"auto_approve"`      // 自动确认(关闭沙箱)，默认false
+	RemoteAccess    bool            `json:"remote_access"`     // 远程管理访问(开启后允许外部IP访问管理面板，需密码鉴权)，默认false
+	Theme           string          `json:"theme"`             // 终端配色方案
+	Language        string          `json:"language"`          // 界面语言: "en" (默认) 或 "zh"
+	KeepAlive       bool            `json:"keep_alive"`
+	AutoOpen        bool            `json:"auto_open"`
+	ActiveProjectID string          `json:"active_project_id"` // 当前/最近操作的项目会话ID
+	Projects        []ProjectConfig `json:"projects"`          // 多项目配置列表
+	CustomCommands  []CommandItem   `json:"custom_commands"`
+	Agents          []AgentPreset   `json:"agents"`
 }
 
 type Config struct {
@@ -129,6 +142,36 @@ func DefaultAgents() []AgentPreset {
 	}
 }
 
+// NormalizeWorkDir 规范化目录路径（清理末尾斜杠并解析软链），用于判断目录唯一性
+func NormalizeWorkDir(p string) string {
+	p = strings.TrimSpace(p)
+	if p == "" {
+		return ""
+	}
+	clean := filepath.Clean(p)
+	if realPath, err := filepath.EvalSymlinks(clean); err == nil {
+		return realPath
+	}
+	return clean
+}
+
+func defaultProjectFrom(workDir, agent string, autoApprove bool) ProjectConfig {
+	name := filepath.Base(workDir)
+	if name == "" || name == "." || name == "/" || name == "\\" {
+		name = "Default Project"
+	}
+	if agent == "" {
+		agent = "claude"
+	}
+	return ProjectConfig{
+		ID:          "proj-default",
+		Name:        name,
+		WorkDir:     workDir,
+		Agent:       agent,
+		AutoApprove: autoApprove,
+	}
+}
+
 func DefaultConfig() *Config {
 	shell := os.Getenv("SHELL")
 	if shell == "" {
@@ -146,21 +189,25 @@ func DefaultConfig() *Config {
 		cwd, _ = os.UserHomeDir()
 	}
 
+	defProj := defaultProjectFrom(cwd, "claude", false)
+
 	return &Config{
 		ConfigData: ConfigData{
-			Port:          20996,
-			Password:      generateRandomPassword(8), // 默认强制生成 8 位随机密码
-			AuthToken:     generateRandomToken(16),
-			Shell:         shell,
-			WorkDir:       cwd,
-			SelectedAgent: "claude", // 默认选用常用 claude
-			AutoApprove:   false,
-			RemoteAccess:  false, // 默认仅限本机访问
-			Theme:         "github-dark", // 默认配色方案
-			Language:      "en",            // 默认语言为英文
-			KeepAlive:     true,
-			AutoOpen:      true,
-			Agents:        DefaultAgents(),
+			Port:            20996,
+			Password:        generateRandomPassword(8), // 默认强制生成 8 位随机密码
+			AuthToken:       generateRandomToken(16),
+			Shell:           shell,
+			WorkDir:         cwd,
+			SelectedAgent:   "claude", // 默认选用常用 claude
+			AutoApprove:     false,
+			RemoteAccess:    false,         // 默认仅限本机访问
+			Theme:           "github-dark", // 默认配色方案
+			Language:        "en",          // 默认语言为英文
+			KeepAlive:       true,
+			AutoOpen:        true,
+			ActiveProjectID: defProj.ID,
+			Projects:        []ProjectConfig{defProj},
+			Agents:          DefaultAgents(),
 			CustomCommands: []CommandItem{
 				{ID: "cmd-1", Name: "Claude", Command: "claude", AutoEnter: true},
 				{ID: "cmd-2", Name: "Codex", Command: "codex", AutoEnter: true},
@@ -288,6 +335,73 @@ func LoadConfig() (*Config, error) {
 		_ = cfg.Save()
 	}
 
+	// 初始化或修复多项目列表
+	needSaveProjects := false
+	if len(cfg.Projects) == 0 {
+		defProj := defaultProjectFrom(cfg.WorkDir, cfg.SelectedAgent, cfg.AutoApprove)
+		cfg.Projects = []ProjectConfig{defProj}
+		cfg.ActiveProjectID = defProj.ID
+		needSaveProjects = true
+	} else {
+		// 去重同一目录的项目并补全缺失字段
+		seenDirs := make(map[string]bool)
+		var validProjs []ProjectConfig
+		for _, p := range cfg.Projects {
+			p.WorkDir = strings.TrimSpace(p.WorkDir)
+			if p.WorkDir == "" {
+				continue
+			}
+			norm := NormalizeWorkDir(p.WorkDir)
+			if seenDirs[norm] {
+				needSaveProjects = true
+				continue
+			}
+			seenDirs[norm] = true
+			if p.ID == "" {
+				p.ID = "proj-" + generateRandomToken(4)
+				needSaveProjects = true
+			}
+			if p.Name == "" {
+				p.Name = filepath.Base(p.WorkDir)
+				needSaveProjects = true
+			}
+			if p.Agent == "" {
+				p.Agent = "claude"
+				needSaveProjects = true
+			}
+			validProjs = append(validProjs, p)
+		}
+		if len(validProjs) == 0 {
+			defProj := defaultProjectFrom(cfg.WorkDir, cfg.SelectedAgent, cfg.AutoApprove)
+			validProjs = []ProjectConfig{defProj}
+			needSaveProjects = true
+		}
+		cfg.Projects = validProjs
+	}
+
+	// 确保 ActiveProjectID 有效并同步顶层兼容字段
+	foundActive := false
+	for _, p := range cfg.Projects {
+		if p.ID == cfg.ActiveProjectID {
+			foundActive = true
+			cfg.WorkDir = p.WorkDir
+			cfg.SelectedAgent = p.Agent
+			cfg.AutoApprove = p.AutoApprove
+			break
+		}
+	}
+	if !foundActive && len(cfg.Projects) > 0 {
+		cfg.ActiveProjectID = cfg.Projects[0].ID
+		cfg.WorkDir = cfg.Projects[0].WorkDir
+		cfg.SelectedAgent = cfg.Projects[0].Agent
+		cfg.AutoApprove = cfg.Projects[0].AutoApprove
+		needSaveProjects = true
+	}
+
+	if needSaveProjects {
+		_ = cfg.Save()
+	}
+
 	return cfg, nil
 }
 
@@ -295,13 +409,17 @@ func (c *Config) Save() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	return c.saveLocked()
+}
+
+func (c *Config) saveLocked() error {
 	data, err := json.MarshalIndent(c.ConfigData, "", "  ")
 	if err != nil {
 		return err
 	}
 
 	if c.filePath == "" {
-		c.filePath = getConfigPath()
+		return nil
 	}
 
 	dir := filepath.Dir(c.filePath)
@@ -310,6 +428,26 @@ func (c *Config) Save() error {
 	}
 
 	return os.WriteFile(c.filePath, data, 0644)
+}
+
+func (c *Config) syncTopFieldsFromActiveLocked() {
+	if len(c.Projects) == 0 {
+		defProj := defaultProjectFrom(c.WorkDir, c.SelectedAgent, c.AutoApprove)
+		c.Projects = []ProjectConfig{defProj}
+		c.ActiveProjectID = defProj.ID
+	}
+	for _, p := range c.Projects {
+		if p.ID == c.ActiveProjectID {
+			c.WorkDir = p.WorkDir
+			c.SelectedAgent = p.Agent
+			c.AutoApprove = p.AutoApprove
+			return
+		}
+	}
+	c.ActiveProjectID = c.Projects[0].ID
+	c.WorkDir = c.Projects[0].WorkDir
+	c.SelectedAgent = c.Projects[0].Agent
+	c.AutoApprove = c.Projects[0].AutoApprove
 }
 
 func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme, language string, autoApprove, keepAlive, remoteAccess bool, commands []CommandItem) error {
@@ -343,10 +481,210 @@ func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme
 	if commands != nil {
 		c.CustomCommands = commands
 	}
+
+	// 若传入了 workDir 或 selectedAgent，同步更新当前活动项目（同时校验不与其它项目目录冲突）
+	if len(c.Projects) == 0 {
+		defProj := defaultProjectFrom(c.WorkDir, c.SelectedAgent, c.AutoApprove)
+		c.Projects = []ProjectConfig{defProj}
+		c.ActiveProjectID = defProj.ID
+	} else if workDir != "" || selectedAgent != "" {
+		activeIdx := 0
+		for i, p := range c.Projects {
+			if p.ID == c.ActiveProjectID {
+				activeIdx = i
+				break
+			}
+		}
+		if workDir != "" {
+			normTarget := NormalizeWorkDir(workDir)
+			conflict := false
+			for i, p := range c.Projects {
+				if i != activeIdx && NormalizeWorkDir(p.WorkDir) == normTarget {
+					conflict = true
+					break
+				}
+			}
+			if !conflict {
+				c.Projects[activeIdx].WorkDir = workDir
+			}
+		}
+		if selectedAgent != "" {
+			c.Projects[activeIdx].Agent = selectedAgent
+		}
+		c.Projects[activeIdx].AutoApprove = autoApprove
+	}
+	c.syncTopFieldsFromActiveLocked()
+
+	err := c.saveLocked()
 	snapshot := c.ConfigData
 	c.mu.Unlock()
 
-	err := c.Save()
+	if err == nil {
+		c.notifyListeners(snapshot)
+	}
+	return err
+}
+
+// GetActiveProject 返回当前活动（最近操作）的项目配置
+func (c *Config) GetActiveProject() ProjectConfig {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, p := range c.Projects {
+		if p.ID == c.ActiveProjectID {
+			return p
+		}
+	}
+	if len(c.Projects) > 0 {
+		return c.Projects[0]
+	}
+	return defaultProjectFrom(c.WorkDir, c.SelectedAgent, c.AutoApprove)
+}
+
+// GetProject 根据 ID 或目录查找项目
+func (c *Config) GetProject(idOrDir string) (ProjectConfig, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, p := range c.Projects {
+		if p.ID == idOrDir {
+			return p, true
+		}
+	}
+	if idOrDir != "" && idOrDir != "default" {
+		norm := NormalizeWorkDir(idOrDir)
+		for _, p := range c.Projects {
+			if NormalizeWorkDir(p.WorkDir) == norm {
+				return p, true
+			}
+		}
+	}
+	return ProjectConfig{}, false
+}
+
+// SetActiveProject 设置当前/最近操作的项目会话
+func (c *Config) SetActiveProject(id string) (ProjectConfig, bool) {
+	c.mu.Lock()
+	var target ProjectConfig
+	found := false
+	for _, p := range c.Projects {
+		if p.ID == id {
+			target = p
+			found = true
+			break
+		}
+	}
+	if !found {
+		c.mu.Unlock()
+		return ProjectConfig{}, false
+	}
+
+	changed := c.ActiveProjectID != id
+	c.ActiveProjectID = id
+	c.syncTopFieldsFromActiveLocked()
+	if changed {
+		_ = c.saveLocked()
+	}
+	snapshot := c.ConfigData
+	c.mu.Unlock()
+
+	if changed {
+		c.notifyListeners(snapshot)
+	}
+	return target, true
+}
+
+// UpsertProject 新增或修改单个项目配置（强制校验：不能同一个目录属于不同项目）
+func (c *Config) UpsertProject(proj ProjectConfig, setActive bool) (ProjectConfig, error) {
+	c.mu.Lock()
+	proj.Name = strings.TrimSpace(proj.Name)
+	proj.WorkDir = strings.TrimSpace(proj.WorkDir)
+	if proj.WorkDir == "" {
+		c.mu.Unlock()
+		return ProjectConfig{}, fmt.Errorf("项目工作目录 (WorkDir) 不能为空")
+	}
+	if proj.Name == "" {
+		proj.Name = filepath.Base(proj.WorkDir)
+		if proj.Name == "" || proj.Name == "." || proj.Name == "/" {
+			proj.Name = "未命名项目"
+		}
+	}
+	if proj.Agent == "" {
+		proj.Agent = "claude"
+	}
+
+	normDir := NormalizeWorkDir(proj.WorkDir)
+
+	// 校验目录唯一性：不能同一个目录属于不同项目
+	for _, existing := range c.Projects {
+		if existing.ID != proj.ID && NormalizeWorkDir(existing.WorkDir) == normDir {
+			c.mu.Unlock()
+			return ProjectConfig{}, fmt.Errorf("工作目录 [%s] 已属于项目「%s」，不能将同一个目录分配给不同项目", proj.WorkDir, existing.Name)
+		}
+	}
+
+	updated := false
+	if proj.ID != "" {
+		for i := range c.Projects {
+			if c.Projects[i].ID == proj.ID {
+				c.Projects[i] = proj
+				updated = true
+				break
+			}
+		}
+	}
+	if !updated {
+		if proj.ID == "" {
+			proj.ID = "proj-" + generateRandomToken(4)
+		}
+		c.Projects = append(c.Projects, proj)
+	}
+
+	if setActive || c.ActiveProjectID == "" || c.ActiveProjectID == proj.ID {
+		if setActive || c.ActiveProjectID == "" {
+			c.ActiveProjectID = proj.ID
+		}
+	}
+	c.syncTopFieldsFromActiveLocked()
+	err := c.saveLocked()
+	snapshot := c.ConfigData
+	c.mu.Unlock()
+
+	if err == nil {
+		c.notifyListeners(snapshot)
+	}
+	return proj, err
+}
+
+// DeleteProject 删除指定项目（至少保留一个项目）
+func (c *Config) DeleteProject(id string) error {
+	c.mu.Lock()
+	if len(c.Projects) <= 1 {
+		c.mu.Unlock()
+		return fmt.Errorf("至少需要保留一个项目配置")
+	}
+
+	idx := -1
+	for i, p := range c.Projects {
+		if p.ID == id {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		c.mu.Unlock()
+		return fmt.Errorf("未找到该项目")
+	}
+
+	c.Projects = append(c.Projects[:idx], c.Projects[idx+1:]...)
+	if c.ActiveProjectID == id {
+		c.ActiveProjectID = c.Projects[0].ID
+	}
+	c.syncTopFieldsFromActiveLocked()
+	err := c.saveLocked()
+	snapshot := c.ConfigData
+	c.mu.Unlock()
+
 	if err == nil {
 		c.notifyListeners(snapshot)
 	}

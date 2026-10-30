@@ -8,6 +8,8 @@ bin/
 
 # Configuration / sensitive data
 config.json
+tim-agent.json
+*.app
 
 # Logs & temp
 *.log

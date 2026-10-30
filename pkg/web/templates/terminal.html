@@ -19,7 +19,9 @@
   <header class="top-bar">
     <div class="status-indicator">
       <span class="status-dot online" id="statusDot"></span>
-      <span class="session-name" id="sessionTitle" data-i18n="term_session_title">Terminal</span>
+      <button class="project-badge-btn" id="btnSwitchProject" title="切换项目会话 (多项目后台保持运行)">
+        📂 <span id="sessionTitle" data-i18n="term_session_title">Terminal</span> ▾
+      </button>
       <button class="agent-badge-btn" id="btnSwitchAgent" title="Switch Agent">
         🤖 <span id="agentNameText">Claude</span> ▾
       </button>
@@ -88,6 +90,22 @@
         <button class="btn btn-secondary" id="btnClearHelper" data-i18n="btn_clear_helper">Clear</button>
         <button class="btn btn-primary" id="btnSendWithEnter" data-i18n="btn_send_enter">Send & Execute (Enter)</button>
         <button class="btn btn-outline" id="btnSendOnly" data-i18n="btn_send_only">Send Only</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 切换项目会话弹窗 -->
+  <div class="modal-backdrop" id="projectSwitchModal" style="display: none;">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 data-i18n="modal_project_switch_title">📂 切换项目会话</h3>
+        <button class="close-btn" id="btnCloseProjectSwitchModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-tip" data-i18n="modal_project_switch_tip">点击即可秒级切换项目，原项目会话将继续在后台保持运行：</p>
+        <div class="agent-list-group" id="projectSwitchListGroup" style="max-height: 55vh; overflow-y: auto;">
+          <!-- 动态加载后台配置的项目列表 -->
+        </div>
       </div>
     </div>
   </div>
@@ -223,7 +241,7 @@
         <div style="font-size: 38px; margin-bottom: 8px;">🚀</div>
         <h2 style="margin: 0 0 6px 0; font-size: 20px; color: #58a6ff;">Tim-Agent</h2>
         <div style="display: inline-block; padding: 2px 10px; background: rgba(56,139,253,0.15); border: 1px solid #388bfd; border-radius: 12px; font-size: 13px; font-weight: 600; color: #58a6ff; margin-bottom: 12px;">
-          <span id="appVersionText">v1.0.5</span>
+          <span id="appVersionText">v2.0.0</span>
         </div>
         <p style="font-size: 13px; color: #8b949e; line-height: 1.5; margin: 0 0 16px 0;" data-i18n="about_desc">
           Native GUI Terminal Agent & Mobile Vibe Coding Hub

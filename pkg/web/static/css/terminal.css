@@ -63,6 +63,55 @@ body.dark-theme {
   flex-shrink: 0;
 }
 
+.project-badge-btn {
+  background: rgba(46, 160, 67, 0.16);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.45);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 165px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-badge-btn:active {
+  background: rgba(46, 160, 67, 0.32);
+}
+
+.project-badge-btn #sessionTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proj-run-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.proj-run-badge.running {
+  background: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.45);
+}
+
+.proj-run-badge.idle {
+  background: rgba(139, 148, 158, 0.15);
+  color: #8b949e;
+  border: 1px solid rgba(139, 148, 158, 0.3);
+}
+
 .agent-badge-btn {
   background: rgba(56, 189, 248, 0.15);
   color: #38bdf8;

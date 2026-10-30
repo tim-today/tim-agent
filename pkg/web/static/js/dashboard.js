@@ -61,6 +61,28 @@
       hint_remote_access: "Default off (127.0.0.1/localhost only). When enabled, external IPs can access dashboard with password.",
       badge_remote_off: "Localhost Only",
       badge_remote_on: "Remote Allowed",
+      card_projects_title: "📂 Project Management (Multi-Session)",
+      card_projects_subtitle: "Configure multiple projects with independent WorkDir & CLI Agent. Remote access enters the most recently operated session by default; background sessions keep running when switching. (Same WorkDir cannot be shared by different projects)",
+      btn_add_project: "+ Add Project",
+      modal_proj_add_title: "📂 Add New Project",
+      modal_proj_edit_title: "✏️ Edit Project",
+      label_proj_name: "Project Name:",
+      label_proj_workdir: "Working Directory (WorkDir):",
+      hint_proj_workdir: "⚠️ Each project must have a unique directory. Same directory cannot belong to different projects.",
+      label_proj_agent: "CLI Agent Preset:",
+      label_proj_auto_approve: "⚡ Auto-Approve / Bypass Sandbox",
+      label_proj_set_active: "Set as current active project (default for remote connection)",
+      btn_cancel: "Cancel",
+      btn_save_project: "Save Project",
+      badge_active_recent: "⭐ Recent Active",
+      badge_standby: "Standby (Not Started)",
+      btn_switch_open: "🚀 Open Terminal",
+      btn_set_active: "▶️ Activate / Start",
+      btn_restart_proj: "🔄 Restart",
+      btn_edit_proj: "✏️ Edit",
+      btn_del_proj: "🗑️ Delete",
+      confirm_del_proj: "Delete project ",
+      dup_workdir_err: "Working directory already belongs to another project: ",
     },
     zh: {
       app_title: "Tim-Agent 控制面板",
@@ -93,11 +115,11 @@
       label_password: "访问密码 (保护终端安全):",
       btn_regen_pwd: "🎲 重新随机",
       hint_password: "Web访问输入一次自动保存，扫码亦可一键免密直连",
-      label_workdir: "安全绑定工作目录 (WorkDir):",
+      label_workdir: "当前活动项目工作目录 (WorkDir):",
       hint_workdir: "安全隔离：终端与 Agent 命令均在此目录内运行",
-      label_agent: "选择命令行 Agent 代理:",
+      label_agent: "当前活动项目 Agent 代理:",
       label_auto_approve: "⚡ 自动确认 / 关闭沙箱 (默认不选)",
-      hint_agent: "切换后点击“保存配置”，系统将自动重启主会话并在绑定目录下拉起所选 Agent",
+      hint_agent: "切换后点击“保存配置”，系统将自动重启当前项目会话并拉起所选 Agent",
       label_shell: "执行 Shell 路径:",
       label_theme: "默认终端配色方案:",
       label_language: "界面语言 (Language):",
@@ -119,6 +141,28 @@
       hint_remote_access: "默认关闭 (仅限本机 127.0.0.1/localhost 访问)。开启后允许外部 IP 输入密码访问控制面板。",
       badge_remote_off: "仅限本机",
       badge_remote_on: "允许外部IP",
+      card_projects_title: "📂 项目管理 (多会话多项目切换)",
+      card_projects_subtitle: "可配置多个独立项目（各自拥有项目名、WorkDir、Agent、是否自动确认）。远程链接默认进入最近操作的会话，切换项目后之前会话保持在后台运行。（注意：不能同一个目录属于不同项目）",
+      btn_add_project: "+ 新增项目",
+      modal_proj_add_title: "📂 新增项目配置",
+      modal_proj_edit_title: "✏️ 编辑项目配置",
+      label_proj_name: "项目名称 (Project Name):",
+      label_proj_workdir: "项目工作目录 (WorkDir):",
+      hint_proj_workdir: "⚠️ 限制：不能将同一个目录分配给不同项目",
+      label_proj_agent: "命令行 Agent 代理:",
+      label_proj_auto_approve: "⚡ 自动确认 / 关闭沙箱 (默认不选)",
+      label_proj_set_active: "设为当前最近活动项目 (远程链接默认进入此会话)",
+      btn_cancel: "取消",
+      btn_save_project: "保存项目",
+      badge_active_recent: "⭐ 最近活动 (默认进入)",
+      badge_standby: "未启动 (待机)",
+      btn_switch_open: "🚀 进入终端",
+      btn_set_active: "▶️ 启动 / 设为当前",
+      btn_restart_proj: "🔄 重启",
+      btn_edit_proj: "✏️ 编辑",
+      btn_del_proj: "🗑️ 删除",
+      confirm_del_proj: "确定要删除项目 ",
+      dup_workdir_err: "工作目录不能重复，该目录已属于项目：",
     },
     'zh-TW': {
       app_title: "Tim-Agent 控制面板",
@@ -406,6 +450,7 @@
       renderNetworks(data.networks, data.auth_token);
       renderConfig(data.config);
       renderSession(data.session);
+      renderProjectsList(data.projects_status || (data.config && data.config.projects) || [], data.active_project_id);
     } catch (err) {
       console.error('获取状态失败', err);
     }
@@ -566,6 +611,7 @@
     // 填充 Agent 选项
     if (cfg.agents && cfg.agents.length > 0) {
       cfgAgent.innerHTML = '';
+      if (projAgentSelect) projAgentSelect.innerHTML = '';
       cfg.agents.forEach(a => {
         const opt = document.createElement('option');
         opt.value = a.id;
@@ -574,23 +620,310 @@
           opt.selected = true;
         }
         cfgAgent.appendChild(opt);
+
+        if (projAgentSelect) {
+          const opt2 = document.createElement('option');
+          opt2.value = a.id;
+          opt2.textContent = `${a.name} (${a.command || 'shell'}) - ${a.description}`;
+          projAgentSelect.appendChild(opt2);
+        }
       });
     }
   }
 
+  const sessName = document.getElementById('sessName');
+
   function renderSession(sess) {
     if (!sess) return;
+    if (sessName && sess.name) {
+      sessName.textContent = `${sess.name} (${sess.id || 'default'})`;
+    }
     sessPid.textContent = `PID: ${sess.pid || '--'}`;
     const clientsPrefix = I18N[currentLang].clients_label || 'Clients:';
     sessClients.textContent = `${clientsPrefix} ${sess.clients_count || 0}`;
     if (sess.active_agent) {
-      const approveBadge = currentStatus && currentStatus.config && currentStatus.config.auto_approve ? ' [⚡Auto-Approve]' : '';
+      const isAuto = sess.auto_approve !== undefined ? sess.auto_approve : (currentStatus && currentStatus.config && currentStatus.config.auto_approve);
+      const approveBadge = isAuto ? ' [⚡Auto-Approve]' : '';
       sessAgent.textContent = `Agent: ${sess.active_agent}${approveBadge}`;
     }
     if (sess.work_dir) {
       const workDirPrefix = I18N[currentLang].workdir_label || 'WorkDir:';
       sessWorkDir.textContent = `📁 ${workDirPrefix} ${sess.work_dir}`;
     }
+  }
+
+  // 多项目管理渲染与操作
+  const projectsListContainer = document.getElementById('projectsListContainer');
+  const btnAddProject = document.getElementById('btnAddProject');
+  const projectModal = document.getElementById('projectModal');
+  const projectModalTitle = document.getElementById('projectModalTitle');
+  const btnCloseProjectModal = document.getElementById('btnCloseProjectModal');
+  const btnCancelProjectModal = document.getElementById('btnCancelProjectModal');
+  const projectForm = document.getElementById('projectForm');
+  const projIdInput = document.getElementById('projIdInput');
+  const projNameInput = document.getElementById('projNameInput');
+  const projWorkDirInput = document.getElementById('projWorkDirInput');
+  const projAgentSelect = document.getElementById('projAgentSelect');
+  const projAutoApproveCheck = document.getElementById('projAutoApproveCheck');
+  const projSetActiveCheck = document.getElementById('projSetActiveCheck');
+  const projErrorMsg = document.getElementById('projErrorMsg');
+
+  function normalizeDirClient(dir) {
+    if (!dir) return '';
+    return dir.trim().replace(/[\\/]+$/, '');
+  }
+
+  function renderProjectsList(projectsStatus, activeProjectId) {
+    if (!projectsListContainer) return;
+    projectsListContainer.innerHTML = '';
+    const dict = I18N[currentLang] || I18N.en;
+    const totalCount = projectsStatus ? projectsStatus.length : 0;
+
+    (projectsStatus || []).forEach(p => {
+      const isActive = p.is_active || (activeProjectId && p.id === activeProjectId);
+      const isRunning = !!p.is_running;
+      const row = document.createElement('div');
+      row.className = 'project-item-row' + (isActive ? ' active-project' : '');
+
+      const runBadgeClass = isRunning ? 'status-green' : 'status-gray';
+      const runBadgeText = isRunning
+        ? `${dict.status_running_badge || 'Running'} (PID: ${p.pid || '--'} | Clients: ${p.clients_count || 0})`
+        : (dict.badge_standby || 'Standby');
+      const activeBadgeHtml = isActive
+        ? `<span class="session-badge status-active-star">${dict.badge_active_recent || '⭐ Recent Active'}</span>`
+        : '';
+      const approveTag = p.auto_approve ? ' [⚡Auto]' : '';
+
+      row.innerHTML = `
+        <div class="project-item-main">
+          <div class="project-item-title-line">
+            <span class="project-item-name">📂 ${escapeHtml(p.name || p.id)}</span>
+            ${activeBadgeHtml}
+            <span class="session-badge ${runBadgeClass}">${escapeHtml(runBadgeText)}</span>
+            <span class="session-badge status-blue">🤖 Agent: ${escapeHtml((p.active_agent || p.agent || 'claude') + approveTag)}</span>
+          </div>
+          <div class="project-item-dir">📁 WorkDir: ${escapeHtml(p.work_dir || '')}</div>
+        </div>
+        <div class="project-item-actions">
+          <button type="button" class="btn btn-sm btn-primary btn-proj-open">${dict.btn_switch_open || '🚀 Open Terminal'}</button>
+          <button type="button" class="btn btn-sm btn-secondary btn-proj-activate">${dict.btn_set_active || '▶️ Activate'}</button>
+          <button type="button" class="btn btn-sm btn-secondary btn-proj-restart">${dict.btn_restart_proj || '🔄 Restart'}</button>
+          <button type="button" class="btn btn-sm btn-secondary btn-proj-edit">${dict.btn_edit_proj || '✏️ Edit'}</button>
+          ${totalCount > 1 ? `<button type="button" class="btn btn-sm btn-danger btn-proj-del">${dict.btn_del_proj || '🗑️ Delete'}</button>` : ''}
+        </div>
+      `;
+
+      // 1. 切换并打开该项目终端 (之前会话保持后台运行)
+      const btnOpen = row.querySelector('.btn-proj-open');
+      if (btnOpen) {
+        btnOpen.onclick = async function () {
+          try {
+            await fetch('/api/projects/select', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ project_id: p.id })
+            });
+          } catch (_) {}
+          window.open('/terminal?session=' + encodeURIComponent(p.id), '_blank');
+          fetchStatus();
+        };
+      }
+
+      // 2. 启动/设为当前活动项目
+      const btnActivate = row.querySelector('.btn-proj-activate');
+      if (btnActivate) {
+        btnActivate.onclick = async function () {
+          try {
+            const res = await fetch('/api/projects/select', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ project_id: p.id })
+            });
+            const resData = await res.json();
+            if (resData.ok) {
+              fetchStatus();
+            } else {
+              alert(resData.message || 'Error');
+            }
+          } catch (_) {
+            alert(dict.net_error || 'Network error');
+          }
+        };
+      }
+
+      // 3. 重启该项目会话
+      const btnRestart = row.querySelector('.btn-proj-restart');
+      if (btnRestart) {
+        btnRestart.onclick = async function () {
+          const approveText = p.auto_approve ? (dict.auto_approve_yes || '【Auto-Approve】') : (dict.auto_approve_no || '【Standard】');
+          if (!confirm(`确定重启项目「${p.name}」的终端会话 (${approveText} [${p.agent}]) 吗？（其他后台项目会话不受影响）`)) return;
+          try {
+            const res = await fetch('/api/sessions/restart', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                project_id: p.id,
+                agent: p.agent,
+                work_dir: p.work_dir,
+                auto_approve: p.auto_approve
+              })
+            });
+            const resData = await res.json();
+            if (resData.ok) {
+              fetchStatus();
+            } else {
+              alert(resData.message || 'Error');
+            }
+          } catch (_) {
+            alert(dict.net_error || 'Network error');
+          }
+        };
+      }
+
+      // 4. 编辑项目配置
+      const btnEdit = row.querySelector('.btn-proj-edit');
+      if (btnEdit) {
+        btnEdit.onclick = function () {
+          openProjectModal(p);
+        };
+      }
+
+      // 5. 删除项目配置
+      const btnDel = row.querySelector('.btn-proj-del');
+      if (btnDel) {
+        btnDel.onclick = async function () {
+          if (!confirm(`${dict.confirm_del_proj || 'Delete project '}「${p.name}」?`)) return;
+          try {
+            const res = await fetch('/api/projects/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: p.id })
+            });
+            const resData = await res.json();
+            if (resData.ok) {
+              fetchStatus();
+            } else {
+              alert(resData.message || 'Error');
+            }
+          } catch (_) {
+            alert(dict.net_error || 'Network error');
+          }
+        };
+      }
+
+      projectsListContainer.appendChild(row);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function openProjectModal(proj) {
+    if (!projectModal) return;
+    const dict = I18N[currentLang] || I18N.en;
+    if (projErrorMsg) {
+      projErrorMsg.style.display = 'none';
+      projErrorMsg.textContent = '';
+    }
+    if (proj && proj.id) {
+      projectModalTitle.textContent = dict.modal_proj_edit_title || '✏️ 编辑项目配置';
+      projIdInput.value = proj.id;
+      projNameInput.value = proj.name || '';
+      projWorkDirInput.value = proj.work_dir || '';
+      if (projAgentSelect) projAgentSelect.value = proj.agent || 'claude';
+      projAutoApproveCheck.checked = !!proj.auto_approve;
+      projSetActiveCheck.checked = !!proj.is_active;
+    } else {
+      projectModalTitle.textContent = dict.modal_proj_add_title || '📂 新增项目配置';
+      projIdInput.value = '';
+      projNameInput.value = '';
+      projWorkDirInput.value = '';
+      if (projAgentSelect) projAgentSelect.value = 'claude';
+      projAutoApproveCheck.checked = false;
+      projSetActiveCheck.checked = true;
+    }
+    projectModal.style.display = 'flex';
+    projNameInput.focus();
+  }
+
+  function closeProjectModal() {
+    if (projectModal) projectModal.style.display = 'none';
+  }
+
+  if (btnAddProject) {
+    btnAddProject.addEventListener('click', function () {
+      openProjectModal(null);
+    });
+  }
+  if (btnCloseProjectModal) {
+    btnCloseProjectModal.addEventListener('click', closeProjectModal);
+  }
+  if (btnCancelProjectModal) {
+    btnCancelProjectModal.addEventListener('click', closeProjectModal);
+  }
+  if (projectModal) {
+    projectModal.addEventListener('click', function (e) {
+      if (e.target === projectModal) closeProjectModal();
+    });
+  }
+
+  if (projectForm) {
+    projectForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const dict = I18N[currentLang] || I18N.en;
+      const id = projIdInput.value.trim();
+      const name = projNameInput.value.trim();
+      const workDir = projWorkDirInput.value.trim();
+      const agent = projAgentSelect ? projAgentSelect.value : 'claude';
+      const autoApprove = projAutoApproveCheck.checked;
+      const setActive = projSetActiveCheck.checked;
+
+      // 前端前置校验：不能同一个目录属于不同项目
+      const normInputDir = normalizeDirClient(workDir);
+      const existingProjects = (currentStatus && currentStatus.config && currentStatus.config.projects) || [];
+      for (const item of existingProjects) {
+        if (item.id !== id && normalizeDirClient(item.work_dir) === normInputDir) {
+          if (projErrorMsg) {
+            projErrorMsg.textContent = `⚠️ ${dict.dup_workdir_err || '工作目录已属于其他项目：'}「${item.name}」(${item.work_dir})`;
+            projErrorMsg.style.display = 'block';
+          }
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch('/api/projects/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: id,
+            name: name,
+            work_dir: workDir,
+            agent: agent,
+            auto_approve: autoApprove,
+            set_active: setActive
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          closeProjectModal();
+          fetchStatus();
+        } else if (projErrorMsg) {
+          projErrorMsg.textContent = '⚠️ ' + (data.message || '保存失败');
+          projErrorMsg.style.display = 'block';
+        }
+      } catch (err) {
+        if (projErrorMsg) {
+          projErrorMsg.textContent = dict.net_error || 'Network error';
+          projErrorMsg.style.display = 'block';
+        }
+      }
+    });
   }
 
   const btnRegenPwd = document.getElementById('btnRegenPwd');
@@ -734,6 +1067,29 @@
 
   if (btnCheckUpdate) {
     btnCheckUpdate.addEventListener('click', () => checkForUpdates(true));
+  }
+
+  const btnInstallDesktopApp = document.getElementById('btnInstallDesktopApp');
+  if (btnInstallDesktopApp) {
+    btnInstallDesktopApp.addEventListener('click', async function () {
+      btnInstallDesktopApp.disabled = true;
+      const origText = btnInstallDesktopApp.textContent;
+      btnInstallDesktopApp.textContent = '⏳ 生成中...';
+      try {
+        const res = await fetch('/api/app/install', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          alert(`✅ 已成功生成本机桌面 GUI 应用程序！\n位置: ${data.path}\n\n现在您可以直接用鼠标双击桌面或应用程序列表中的「TimAgent」图标启动，无需打开命令行终端。`);
+        } else {
+          alert('生成桌面应用失败: ' + (data.message || '未知错误'));
+        }
+      } catch (e) {
+        alert('请求失败: ' + e.message);
+      } finally {
+        btnInstallDesktopApp.disabled = false;
+        btnInstallDesktopApp.textContent = origText;
+      }
+    });
   }
 
   // 初始加载
