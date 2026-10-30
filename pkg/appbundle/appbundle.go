@@ -185,6 +185,11 @@ func PackageMacApp(binaryPath, outAppDir string) error {
 	<string>%s</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>11.0</string>
+	<key>LSArchitecturePriority</key>
+	<array>
+		<string>arm64</string>
+		<string>x86_64</string>
+	</array>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>LSUIElement</key>
@@ -198,10 +203,14 @@ func PackageMacApp(binaryPath, outAppDir string) error {
 		return fmt.Errorf("写入 Info.plist 失败: %w", err)
 	}
 
-	// 如果当前在 macOS 上，移除 quarantine 属性并进行 ad-hoc 签名以支持直接双击打开
+	// 如果当前在 macOS 上，移除 quarantine 属性、进行 ad-hoc 签名并刷新 LaunchServices 缓存以支持直接双击打开
 	if runtime.GOOS == "darwin" {
 		_ = exec.Command("xattr", "-cr", outAppDir).Run()
 		_ = exec.Command("codesign", "--force", "--deep", "--sign", "-", outAppDir).Run()
+		lsreg := "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+		if _, err := os.Stat(lsreg); err == nil {
+			_ = exec.Command(lsreg, "-f", outAppDir).Run()
+		}
 	}
 
 	return nil

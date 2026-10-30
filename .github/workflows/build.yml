@@ -71,16 +71,36 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          # 1. 构建标准命令行/双模可执行程序
-          go build -ldflags="-s -w" -o dist/${{ matrix.output }} .
 
-          # 2. 构建各平台鼠标双击启动的原生 GUI Application
-          if [ "${{ matrix.goos }}" = "windows" ]; then
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            # macOS 强制开启 11.0+ 向下兼容 (解决高版本 SDK 编译在旧版 macOS 报错问题)
+            export MACOSX_DEPLOYMENT_TARGET=11.0
+            export CGO_CFLAGS="-mmacosx-version-min=11.0"
+            export CGO_LDFLAGS="-mmacosx-version-min=11.0"
+
+            # 1. 构建对应架构 CLI 二进制
+            go build -ldflags="-s -w" -o dist/${{ matrix.output }} .
+
+            # 2. 同时编译 arm64 与 amd64 并通过 lipo 合成 Universal 双架构通用二进制放入 TimAgent.app
+            # 确保无论用户在 Intel Mac 还是 Apple Silicon Mac 下载任意 .app.zip 均可 100% 正常打开！
+            GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -ldflags="-s -w" -o dist/tmp-arm64 .
+            GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-s -w" -o dist/tmp-amd64 .
+            lipo -create -output dist/tmp-universal dist/tmp-amd64 dist/tmp-arm64
+
+            # 使用当前 runner 原生架构执行打包命令
+            GOOS= GOARCH= CGO_ENABLED=1 go run . -pack-mac-app dist/TimAgent.app -pack-bin dist/tmp-universal
+            rm -f dist/tmp-arm64 dist/tmp-amd64 dist/tmp-universal
+
+            cd dist && zip -r -q ${{ matrix.gui_output }} TimAgent.app
+            if [ "${{ matrix.goarch }}" = "arm64" ]; then
+              cp ${{ matrix.gui_output }} TimAgent-macos-universal.app.zip
+            fi
+            rm -rf TimAgent.app
+          elif [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -ldflags="-s -w" -o dist/${{ matrix.output }} .
             go build -ldflags="-s -w -H=windowsgui" -o dist/${{ matrix.gui_output }} .
-          elif [ "${{ matrix.goos }}" = "darwin" ]; then
-            go run . -pack-mac-app dist/TimAgent.app -pack-bin dist/${{ matrix.output }}
-            cd dist && zip -r -q ${{ matrix.gui_output }} TimAgent.app && rm -rf TimAgent.app
           elif [ "${{ matrix.goos }}" = "linux" ]; then
+            go build -ldflags="-s -w" -o dist/${{ matrix.output }} .
             GOOS= GOARCH= CGO_ENABLED=0 go run . -pack-linux-app dist/TimAgent-linux-gui -pack-bin dist/${{ matrix.output }}
             cd dist && tar -czf ${{ matrix.gui_output }} TimAgent-linux-gui && rm -rf TimAgent-linux-gui
           fi
