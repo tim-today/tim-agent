@@ -130,6 +130,24 @@ body.dark-theme {
   background: rgba(56, 189, 248, 0.3);
 }
 
+.deploy-badge-btn {
+  background: rgba(240, 136, 62, 0.16);
+  color: #f0883e;
+  border: 1px solid rgba(240, 136, 62, 0.45);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.deploy-badge-btn:active {
+  background: rgba(240, 136, 62, 0.32);
+}
+
 .agent-list-group {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -124,6 +129,8 @@ func (s *Server) Start() error {
 	adminMux.HandleFunc("/api/projects/save", s.handleAPIProjectSave)
 	adminMux.HandleFunc("/api/projects/delete", s.handleAPIProjectDelete)
 	adminMux.HandleFunc("/api/projects/select", s.handleAPIProjectSelect)
+	adminMux.HandleFunc("/api/projects/deploy-prompts", s.handleAPIProjectDeployPrompts)
+	adminMux.HandleFunc("/api/projects/deploy-test", s.handleAPIProjectDeployTest)
 	adminMux.HandleFunc("/api/password/regenerate", s.handleAPIRegeneratePassword)
 	adminMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	adminMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
@@ -161,6 +168,8 @@ func (s *Server) Start() error {
 	publicMux.HandleFunc("/api/projects/save", s.handleAPIProjectSave)
 	publicMux.HandleFunc("/api/projects/delete", s.handleAPIProjectDelete)
 	publicMux.HandleFunc("/api/projects/select", s.handleAPIProjectSelect)
+	publicMux.HandleFunc("/api/projects/deploy-prompts", s.handleAPIProjectDeployPrompts)
+	publicMux.HandleFunc("/api/projects/deploy-test", s.handleAPIProjectDeployTest)
 	publicMux.HandleFunc("/api/password/regenerate", s.handleAPIRegeneratePassword)
 	publicMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	publicMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
@@ -478,15 +487,16 @@ func (s *Server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 	var projectsStatus []map[string]any
 	for _, p := range cfg.Projects {
 		ps := map[string]any{
-			"id":            p.ID,
-			"name":          p.Name,
-			"work_dir":      p.WorkDir,
-			"agent":         p.Agent,
-			"auto_approve":  p.AutoApprove,
-			"is_active":     p.ID == activeProj.ID,
-			"is_running":    false,
-			"pid":           0,
-			"clients_count": 0,
+			"id":                p.ID,
+			"name":              p.Name,
+			"work_dir":          p.WorkDir,
+			"agent":             p.Agent,
+			"auto_approve":      p.AutoApprove,
+			"deploy_apps_count": len(p.DeployApps),
+			"is_active":         p.ID == activeProj.ID,
+			"is_running":        false,
+			"pid":               0,
+			"clients_count":     0,
 		}
 		if existingSess := mgr.FindByProjectOrDir(p.ID, p.WorkDir); existingSess != nil && existingSess.IsRunning {
 			ps["is_running"] = true
@@ -498,11 +508,19 @@ func (s *Server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 		projectsStatus = append(projectsStatus, ps)
 	}
 
-	// 敏感信息保护：非本机且未经鉴权的访问，隐藏密码与鉴权 Token
+	// 敏感信息保护：非本机且未经鉴权的访问，隐藏密码、鉴权 Token 与部署服务器凭据
 	isAuthed := isLocalRequest(r) || s.isAuthenticated(r)
 	if !isAuthed {
 		cfg.Password = "******"
 		cfg.AuthToken = ""
+		for i := range cfg.Projects {
+			for j := range cfg.Projects[i].DeployApps {
+				for k := range cfg.Projects[i].DeployApps[j].Envs {
+					cfg.Projects[i].DeployApps[j].Envs[k].Password = ""
+					cfg.Projects[i].DeployApps[j].Envs[k].SSHKeyContent = ""
+				}
+			}
+		}
 	}
 
 	res := map[string]any{
@@ -682,13 +700,14 @@ func (s *Server) handleAPIProjectSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		ID          string `json:"id"`
-		Name        string `json:"name"`
-		WorkDir     string `json:"work_dir"`
-		Agent       string `json:"agent"`
-		AutoApprove bool   `json:"auto_approve"`
-		SetActive   bool   `json:"set_active"`
-		RestartNow  bool   `json:"restart_now"`
+		ID          string                   `json:"id"`
+		Name        string                   `json:"name"`
+		WorkDir     string                   `json:"work_dir"`
+		Agent       string                   `json:"agent"`
+		AutoApprove bool                     `json:"auto_approve"`
+		DeployApps  []config.DeployAppConfig `json:"deploy_apps"`
+		SetActive   bool                     `json:"set_active"`
+		RestartNow  bool                     `json:"restart_now"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -708,6 +727,7 @@ func (s *Server) handleAPIProjectSave(w http.ResponseWriter, r *http.Request) {
 		WorkDir:     req.WorkDir,
 		Agent:       req.Agent,
 		AutoApprove: req.AutoApprove,
+		DeployApps:  req.DeployApps,
 	}, req.SetActive)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -961,4 +981,233 @@ func (s *Server) handleAPIAppInstall(w http.ResponseWriter, r *http.Request) {
 		"path": installedPath,
 	})
 }
+
+// handleAPIProjectDeployPrompts 获取指定项目下所有部署应用与环境的零明文 AI 部署提示词列表
+func (s *Server) handleAPIProjectDeployPrompts(w http.ResponseWriter, r *http.Request) {
+	if !isLocalRequest(r) && !s.isAuthenticated(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projID := r.URL.Query().Get("project_id")
+	proj := s.resolveTargetProject(projID)
+	_ = config.SyncProjectVault(proj)
+
+	var appsOut []map[string]any
+	for _, app := range proj.DeployApps {
+		var envsOut []map[string]any
+		for _, env := range app.Envs {
+			_, scriptPath := config.GetDeployVaultFilePaths(proj.ID, app.ID, env.ID)
+			envsOut = append(envsOut, map[string]any{
+				"id":            env.ID,
+				"env_name":      env.EnvName,
+				"method":        env.Method,
+				"masked_host":   config.MaskHost(env.Host),
+				"port":          env.Port,
+				"remote_dir":    env.RemoteDir,
+				"custom_prompt": env.CustomPrompt,
+				"ignore_files":  env.IgnoreFiles,
+				"script_path":   scriptPath,
+				"prompt":        config.BuildDeployPrompt(proj, app, env),
+			})
+		}
+		appsOut = append(appsOut, map[string]any{
+			"id":   app.ID,
+			"name": app.Name,
+			"type": app.Type,
+			"envs": envsOut,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":           true,
+		"project_id":   proj.ID,
+		"project_name": proj.Name,
+		"work_dir":     proj.WorkDir,
+		"deploy_apps":  appsOut,
+	})
+}
+
+// handleAPIProjectDeployTest 测试部署环境服务器连接可用性 (TCP 端口连通性 + SSH/FTP 认证握手)
+func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
+
+	var env config.DeployEnvConfig
+	if err := json.NewDecoder(r.Body).Decode(&env); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if env.Method == "local_cmd" {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"message": "✅ 本地构建/脚本模式无需远程连接，立即可用",
+		})
+		return
+	}
+
+	host := strings.TrimSpace(env.Host)
+	if host == "" {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      false,
+			"message": "❌ 请先填写服务器地址 (Host / IP)",
+		})
+		return
+	}
+
+	port := env.Port
+	if port <= 0 {
+		if env.Method == "sftp_ftp" {
+			port = 21
+		} else {
+			port = 22
+		}
+	}
+
+	start := time.Now()
+	addr := net.JoinHostPort(host, fmt.Sprintf("%d", port))
+	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+	if err != nil {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      false,
+			"message": fmt.Sprintf("❌ TCP 端口无法连接 (%s): %v", addr, err),
+		})
+		return
+	}
+	_ = conn.Close()
+	tcpCost := time.Since(start).Milliseconds()
+
+	user := strings.TrimSpace(env.Username)
+	if user == "" {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms，未填写用户名跳过登录认证)", addr, tcpCost),
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+
+	// FTP/SFTP 模式测试
+	if env.Method == "sftp_ftp" {
+		if _, err := exec.LookPath("curl"); err == nil && env.Password != "" {
+			cmd := exec.CommandContext(ctx, "curl", "-sS", "--connect-timeout", "5", "-u", user+":"+env.Password, fmt.Sprintf("ftp://%s:%d/", host, port))
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"ok":      false,
+					"message": fmt.Sprintf("❌ TCP 已连通(%dms)，但 FTP 登录验证失败: %s", tcpCost, strings.TrimSpace(string(out))),
+				})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"ok":      true,
+				"message": fmt.Sprintf("✅ FTP 服务器连接与账号认证成功 (%s，耗时 %dms)", addr, time.Since(start).Milliseconds()),
+			})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"message": fmt.Sprintf("✅ 服务器端口连通正常 (%s，耗时 %dms)", addr, tcpCost),
+		})
+		return
+	}
+
+	// SSH 模式测试认证
+	if _, err := exec.LookPath("ssh"); err != nil {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms)", addr, tcpCost),
+		})
+		return
+	}
+
+	tmpDir, err := os.MkdirTemp("", "tim-agent-sshtest-*")
+	if err != nil {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms)", addr, tcpCost),
+		})
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+
+	sshArgs := []string{
+		"-p", fmt.Sprintf("%d", port),
+		"-o", "ConnectTimeout=5",
+		"-o", "StrictHostKeyChecking=accept-new",
+	}
+
+	effectiveKeyPath := strings.TrimSpace(env.SSHKeyPath)
+	rawKeyText := strings.TrimSpace(env.SSHKeyContent)
+	if rawKeyText == "" && strings.Contains(effectiveKeyPath, "PRIVATE KEY") {
+		rawKeyText = effectiveKeyPath
+		effectiveKeyPath = ""
+	}
+	if rawKeyText != "" {
+		tmpKey := filepath.Join(tmpDir, "id_test.pem")
+		if err := os.WriteFile(tmpKey, []byte(rawKeyText+"\n"), 0600); err == nil {
+			effectiveKeyPath = tmpKey
+		}
+	} else if strings.HasPrefix(effectiveKeyPath, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			effectiveKeyPath = filepath.Join(home, effectiveKeyPath[2:])
+		}
+	}
+
+	var cmd *exec.Cmd
+	if env.AuthType == "ssh_key" && effectiveKeyPath != "" {
+		sshArgs = append(sshArgs, "-o", "BatchMode=yes", "-i", effectiveKeyPath, fmt.Sprintf("%s@%s", user, host), "echo TIM_SSH_OK")
+		cmd = exec.CommandContext(ctx, "ssh", sshArgs...)
+	} else if env.Password != "" {
+		askpassFile := filepath.Join(tmpDir, "askpass.sh")
+		pwdFile := filepath.Join(tmpDir, "pwd.txt")
+		_ = os.WriteFile(pwdFile, []byte(env.Password), 0600)
+		askScript := fmt.Sprintf("#!/usr/bin/env bash\ncat '%s'\n", pwdFile)
+		_ = os.WriteFile(askpassFile, []byte(askScript), 0700)
+
+		sshArgs = append(sshArgs, "-o", "PubkeyAuthentication=no", fmt.Sprintf("%s@%s", user, host), "echo TIM_SSH_OK")
+		cmd = exec.CommandContext(ctx, "ssh", sshArgs...)
+		cmd.Env = append(os.Environ(),
+			"SSH_ASKPASS="+askpassFile,
+			"SSH_ASKPASS_REQUIRE=force",
+			"DISPLAY=:0",
+		)
+	} else {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      true,
+			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms，未提供密码/密钥跳过登录验证)", addr, tcpCost),
+		})
+		return
+	}
+
+	out, err := cmd.CombinedOutput()
+	outStr := strings.TrimSpace(string(out))
+	if err != nil || !strings.Contains(outStr, "TIM_SSH_OK") {
+		if outStr == "" && err != nil {
+			outStr = err.Error()
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":      false,
+			"message": fmt.Sprintf("❌ TCP 已连通(%dms)，但 SSH 认证失败: %s", tcpCost, outStr),
+		})
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":      true,
+		"message": fmt.Sprintf("✅ SSH 连接与身份认证完全成功 (%s@%s:%d，总耗时 %dms)", user, host, port, time.Since(start).Milliseconds()),
+	})
+}
+
 

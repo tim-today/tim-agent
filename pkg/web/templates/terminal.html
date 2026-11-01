@@ -25,6 +25,9 @@
       <button class="agent-badge-btn" id="btnSwitchAgent" title="Switch Agent">
         🤖 <span id="agentNameText">Claude</span> ▾
       </button>
+      <button class="deploy-badge-btn" id="btnTopDeploy" title="选择部署应用与环境">
+        🚀 部署 ▾
+      </button>
     </div>
     <div class="top-actions">
       <button class="icon-btn" id="btnInstallPwaTop" title="Install App / 安装到桌面" style="display: none;">📲</button>
@@ -53,7 +56,6 @@
       <button class="vibe-pill vibe-primary" data-vibe="继续" title="让AI继续执行">▶️ 继续</button>
       <button class="vibe-pill vibe-accent" data-vibe="帮我修复上面的报错并自测" title="一键修复报错">⚡ 修复</button>
       <button class="vibe-pill vibe-accent" data-vibe="帮我编译构建当前项目并汇报结果" title="编译构建项目">🛠️ 编译</button>
-      <button class="vibe-pill vibe-primary" data-vibe="帮我部署当前项目并检查运行状态" title="部署发布项目">🚀 部署</button>
       <button class="vibe-pill vibe-cmd" data-vibe="/resume" title="恢复会话 (/resume)">🔄 /resume</button>
       <button class="vibe-pill vibe-cmd" data-vibe="/model" title="切换模型 (/model)">🤖 /model</button>
       <button class="vibe-pill vibe-secondary" data-vibe="运行测试并汇报结果" title="跑测试">🧪 测试</button>
@@ -106,6 +108,25 @@
         <div class="agent-list-group" id="projectSwitchListGroup" style="max-height: 55vh; overflow-y: auto;">
           <!-- 动态加载后台配置的项目列表 -->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 选择部署应用与目标环境弹窗 -->
+  <div class="modal-backdrop" id="deploySelectModal" style="display: none;">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>🚀 选择部署应用与环境</h3>
+        <button class="close-btn" id="btnCloseDeploySelectModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="agent-list-group" id="deploySelectListGroup" style="max-height: 55vh; overflow-y: auto;">
+          <!-- 动态加载当前项目的部署应用与环境 -->
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 8px; padding-top: 8px;">
+        <button class="btn btn-secondary" id="btnFallbackGenericDeploy" style="font-size: 12px;">直接发送通用部署提示词</button>
+        <button class="btn btn-outline" id="btnCloseDeployFooter" style="font-size: 12px;">取消</button>
       </div>
     </div>
   </div>
@@ -241,7 +262,7 @@
         <div style="font-size: 38px; margin-bottom: 8px;">🚀</div>
         <h2 style="margin: 0 0 6px 0; font-size: 20px; color: #58a6ff;">Tim-Agent</h2>
         <div style="display: inline-block; padding: 2px 10px; background: rgba(56,139,253,0.15); border: 1px solid #388bfd; border-radius: 12px; font-size: 13px; font-weight: 600; color: #58a6ff; margin-bottom: 12px;">
-          <span id="appVersionText">v2.0.1</span>
+          <span id="appVersionText">v2.1.0</span>
         </div>
         <p style="font-size: 13px; color: #8b949e; line-height: 1.5; margin: 0 0 16px 0;" data-i18n="about_desc">
           Native GUI Terminal Agent & Mobile Vibe Coding Hub

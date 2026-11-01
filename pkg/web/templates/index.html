@@ -19,7 +19,7 @@
     <header class="app-header">
       <div class="brand">
         <span class="logo-icon">⚡</span>
-        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v2.0.1</span></h1>
+        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v2.1.0</span></h1>
       </div>
       <div class="header-right">
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="btn btn-secondary btn-icon-only" title="GitHub Official Repository" id="btnGitHubLink">
@@ -137,11 +137,6 @@
 
           <div class="form-row">
             <div class="form-item">
-              <label for="cfgWorkDir" data-i18n="label_workdir">Bound Working Directory (WorkDir):</label>
-              <input type="text" id="cfgWorkDir" class="form-input" placeholder="/Users/username/Workspace">
-              <small data-i18n="hint_workdir">Security isolation: terminal & agent run in this directory</small>
-            </div>
-            <div class="form-item">
               <label for="cfgAgent" data-i18n="label_agent">CLI Agent Preset:</label>
               <select id="cfgAgent" class="form-select"></select>
               <div class="checkbox-inline">
@@ -152,13 +147,13 @@
               </div>
               <small data-i18n="hint_agent">Auto-restarts session and launches selected Agent upon saving</small>
             </div>
-          </div>
-
-          <div class="form-row">
             <div class="form-item">
               <label for="cfgShell" data-i18n="label_shell">Shell Path:</label>
               <input type="text" id="cfgShell" class="form-input" placeholder="/bin/zsh or powershell.exe">
             </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-item">
               <label for="cfgTheme" data-i18n="label_theme">Default Terminal Theme:</label>
               <select id="cfgTheme" class="form-select">
@@ -170,9 +165,6 @@
                 <option value="solarized-dark">Solarized Dark</option>
               </select>
             </div>
-          </div>
-
-          <div class="form-row">
             <div class="form-item">
               <label for="cfgLanguage" data-i18n="label_language">UI Language (界面语言):</label>
               <select id="cfgLanguage" class="form-select">
@@ -184,6 +176,9 @@
                 <option value="de">Deutsch</option>
               </select>
             </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-item switch-item">
               <label data-i18n="label_keep_alive">Session Keep-Alive:</label>
               <label class="toggle-switch">
@@ -205,7 +200,7 @@
     <!-- 底部页脚 -->
     <footer class="app-footer">
       <div class="footer-left">
-        <span>Tim-Agent <span id="footerVersionText">v2.0.1</span></span>
+        <span>Tim-Agent <span id="footerVersionText">v2.1.0</span></span>
         <span class="dot-sep">•</span>
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="footer-link">GitHub Repository</a>
         <span class="dot-sep">•</span>
@@ -217,44 +212,61 @@
     </footer>
   </div>
 
-  <!-- 新增/编辑项目弹窗 -->
+  <!-- 新增/编辑项目弹窗 (含多应用多环境部署配置) -->
   <div class="dash-modal-backdrop" id="projectModal" style="display: none;">
-    <div class="dash-modal-dialog">
+    <div class="dash-modal-dialog dash-modal-lg">
       <div class="dash-modal-header">
         <h3 id="projectModalTitle" data-i18n="modal_proj_add_title">📂 新增项目配置</h3>
         <button type="button" class="dash-modal-close" id="btnCloseProjectModal">×</button>
       </div>
       <form id="projectForm" class="dash-modal-body">
         <input type="hidden" id="projIdInput">
-        <div class="form-item">
-          <label for="projNameInput" data-i18n="label_proj_name">项目名称 (Project Name):</label>
-          <input type="text" id="projNameInput" class="form-input" placeholder="例如：Tim-Agent / 前端工程" required>
+
+        <!-- 弹窗顶部导航 Tab -->
+        <div class="proj-modal-tabs">
+          <button type="button" class="proj-tab-btn active" id="tabBtnBasic" data-tab="basic">📂 基础信息</button>
+          <button type="button" class="proj-tab-btn" id="tabBtnDeploy" data-tab="deploy">🚀 部署配置 (多应用/多环境)</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnAddDeployApp" style="margin-left: auto;">+ 添加部署应用</button>
         </div>
-        <div class="form-item">
-          <label for="projWorkDirInput" data-i18n="label_proj_workdir">项目工作目录 (WorkDir):</label>
-          <input type="text" id="projWorkDirInput" class="form-input" placeholder="/Users/username/Workspace/my-project" required>
-          <small data-i18n="hint_proj_workdir">⚠️ 每个项目必须使用独立目录，不能将同一个目录分配给不同项目</small>
-        </div>
-        <div class="form-item">
-          <label for="projAgentSelect" data-i18n="label_proj_agent">命令行 Agent 代理 (CLI Agent):</label>
-          <select id="projAgentSelect" class="form-select"></select>
-        </div>
-        <div class="form-item">
-          <div class="checkbox-inline" style="margin-top: 2px;">
-            <input type="checkbox" id="projAutoApproveCheck">
-            <label for="projAutoApproveCheck" data-i18n="label_proj_auto_approve">
-              ⚡ 自动确认 / 关闭沙箱 (Auto-Approve)
-            </label>
+
+        <!-- Tab 1: 基础信息 -->
+        <div class="proj-tab-pane" id="tabPaneBasic">
+          <div class="form-item">
+            <label for="projNameInput" data-i18n="label_proj_name">项目名称 (Project Name):</label>
+            <input type="text" id="projNameInput" class="form-input" placeholder="例如：Tim-Agent / 商城系统" required>
+          </div>
+          <div class="form-item">
+            <label for="projWorkDirInput" data-i18n="label_proj_workdir">项目工作目录 (WorkDir):</label>
+            <input type="text" id="projWorkDirInput" class="form-input" placeholder="/Users/username/Workspace/my-project" required>
+            <small data-i18n="hint_proj_workdir">⚠️ 每个项目必须使用独立目录，不能将同一个目录分配给不同项目</small>
+          </div>
+          <div class="form-item">
+            <label for="projAgentSelect" data-i18n="label_proj_agent">命令行 Agent 代理 (CLI Agent):</label>
+            <select id="projAgentSelect" class="form-select"></select>
+          </div>
+          <div class="form-item">
+            <div class="checkbox-inline" style="margin-top: 2px;">
+              <input type="checkbox" id="projAutoApproveCheck">
+              <label for="projAutoApproveCheck" data-i18n="label_proj_auto_approve">
+                ⚡ 自动确认 / 关闭沙箱 (Auto-Approve)
+              </label>
+            </div>
+          </div>
+          <div class="form-item">
+            <div class="checkbox-inline" style="margin-top: 2px;">
+              <input type="checkbox" id="projSetActiveCheck" checked>
+              <label for="projSetActiveCheck" data-i18n="label_proj_set_active">
+                设为当前默认活动项目 (远程链接默认进入)
+              </label>
+            </div>
           </div>
         </div>
-        <div class="form-item">
-          <div class="checkbox-inline" style="margin-top: 2px;">
-            <input type="checkbox" id="projSetActiveCheck" checked>
-            <label for="projSetActiveCheck" data-i18n="label_proj_set_active">
-              设为当前默认活动项目 (远程链接默认进入)
-            </label>
-          </div>
+
+        <!-- Tab 2: 多应用 & 多环境部署配置 -->
+        <div class="proj-tab-pane" id="tabPaneDeploy" style="display: none;">
+          <div id="deployAppsContainer" class="deploy-apps-list"></div>
         </div>
+
         <div id="projErrorMsg" class="proj-error-msg" style="display: none;"></div>
         <div class="dash-modal-footer">
           <button type="button" class="btn btn-secondary" id="btnCancelProjectModal" data-i18n="btn_cancel">取消</button>

@@ -592,42 +592,51 @@
 
   function renderConfig(cfg) {
     if (!cfg) return;
-    cfgPort.value = cfg.port;
-    cfgPassword.value = cfg.password || '';
-    cfgShell.value = cfg.shell || '';
-    cfgWorkDir.value = cfg.work_dir || '';
-    cfgAutoApprove.checked = !!cfg.auto_approve;
-    if (cfgTheme && cfg.theme) {
+    if (document.activeElement !== cfgPort) cfgPort.value = cfg.port;
+    if (document.activeElement !== cfgPassword) cfgPassword.value = cfg.password || '';
+    if (document.activeElement !== cfgShell) cfgShell.value = cfg.shell || '';
+    if (cfgWorkDir && document.activeElement !== cfgWorkDir) cfgWorkDir.value = cfg.work_dir || '';
+    if (document.activeElement !== cfgAutoApprove) cfgAutoApprove.checked = !!cfg.auto_approve;
+    if (cfgTheme && cfg.theme && document.activeElement !== cfgTheme) {
       cfgTheme.value = cfg.theme;
     }
     const lang = cfg.language || currentLang || 'en';
     applyLanguage(lang);
-    cfgKeepAlive.checked = cfg.keep_alive;
+    if (document.activeElement !== cfgKeepAlive) cfgKeepAlive.checked = cfg.keep_alive;
     if (cfgRemoteAccess) {
       cfgRemoteAccess.checked = !!cfg.remote_access;
       updateRemoteAccessBadge(!!cfg.remote_access);
     }
 
-    // 填充 Agent 选项
+    // 填充 Agent 选项（保留项目弹窗内正在编辑的 Agent 选择值，防止定时轮询冲掉用户选择）
     if (cfg.agents && cfg.agents.length > 0) {
-      cfgAgent.innerHTML = '';
-      if (projAgentSelect) projAgentSelect.innerHTML = '';
-      cfg.agents.forEach(a => {
-        const opt = document.createElement('option');
-        opt.value = a.id;
-        opt.textContent = `${a.name} (${a.command || 'shell'}) - ${a.description}`;
-        if (a.id === cfg.selected_agent) {
-          opt.selected = true;
-        }
-        cfgAgent.appendChild(opt);
+      if (document.activeElement !== cfgAgent) {
+        cfgAgent.innerHTML = '';
+        cfg.agents.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = `${a.name} (${a.command || 'shell'}) - ${a.description}`;
+          if (a.id === cfg.selected_agent) {
+            opt.selected = true;
+          }
+          cfgAgent.appendChild(opt);
+        });
+      }
 
-        if (projAgentSelect) {
+      const isProjModalOpen = projectModal && projectModal.style.display !== 'none';
+      if (projAgentSelect && (!isProjModalOpen || projAgentSelect.options.length === 0)) {
+        const prevProjAgent = projAgentSelect.value;
+        projAgentSelect.innerHTML = '';
+        cfg.agents.forEach(a => {
           const opt2 = document.createElement('option');
           opt2.value = a.id;
           opt2.textContent = `${a.name} (${a.command || 'shell'}) - ${a.description}`;
           projAgentSelect.appendChild(opt2);
+        });
+        if (prevProjAgent) {
+          projAgentSelect.value = prevProjAgent;
         }
-      });
+      }
     }
   }
 
@@ -667,6 +676,364 @@
   const projAutoApproveCheck = document.getElementById('projAutoApproveCheck');
   const projSetActiveCheck = document.getElementById('projSetActiveCheck');
   const projErrorMsg = document.getElementById('projErrorMsg');
+  const tabBtnBasic = document.getElementById('tabBtnBasic');
+  const tabBtnDeploy = document.getElementById('tabBtnDeploy');
+  const tabPaneBasic = document.getElementById('tabPaneBasic');
+  const tabPaneDeploy = document.getElementById('tabPaneDeploy');
+  const btnAddDeployApp = document.getElementById('btnAddDeployApp');
+  const deployAppsContainer = document.getElementById('deployAppsContainer');
+
+  // 当前弹窗内正在编辑的多应用多环境部署列表与当前正在编辑的应用索引 (-1 表示列表视图)
+  let editingDeployApps = [];
+  let editingAppIndex = -1;
+
+  function switchProjectModalTab(tabName) {
+    const isDeploy = tabName === 'deploy';
+    if (tabBtnBasic) tabBtnBasic.classList.toggle('active', !isDeploy);
+    if (tabBtnDeploy) tabBtnDeploy.classList.toggle('active', isDeploy);
+    if (tabPaneBasic) tabPaneBasic.style.display = isDeploy ? 'none' : 'block';
+    if (tabPaneDeploy) tabPaneDeploy.style.display = isDeploy ? 'block' : 'none';
+  }
+
+  if (tabBtnBasic) {
+    tabBtnBasic.addEventListener('click', function () {
+      switchProjectModalTab('basic');
+    });
+  }
+  if (tabBtnDeploy) {
+    tabBtnDeploy.addEventListener('click', function () {
+      editingAppIndex = -1;
+      switchProjectModalTab('deploy');
+      renderDeployAppsEditor();
+    });
+  }
+
+  function genShortId(prefix) {
+    return (prefix || 'id') + '-' + Math.random().toString(36).substring(2, 7) + Date.now().toString(36).slice(-3);
+  }
+
+  function createDefaultEnv(envName) {
+    return {
+      id: genShortId('env'),
+      env_name: envName || '生产环境',
+      method: 'ssh',
+      host: '',
+      port: 22,
+      username: 'root',
+      auth_type: 'password',
+      password: '',
+      ssh_key_path: '',
+      ssh_key_content: '',
+      remote_dir: '',
+      custom_prompt: '',
+      ignore_files: '.git\nnode_modules\n.DS_Store'
+    };
+  }
+
+  function createDefaultDeployApp(appName, appType) {
+    return {
+      id: genShortId('app'),
+      name: appName || '后端API',
+      type: appType || 'backend_api',
+      envs: [createDefaultEnv('生产环境')]
+    };
+  }
+
+  function getAppTypeLabel(type) {
+    switch (type) {
+      case 'web_h5': return '🌐 前端 H5 / Web';
+      case 'backend_api': return '⚙️ 后端 API / 服务';
+      case 'android_apk': return '📱 APK / App打包';
+      case 'docker': return '🐳 Docker 容器';
+      default: return '🔧 自定义部署';
+    }
+  }
+
+  async function testDeployEnvConnection(env, btnEl, statusEl) {
+    if (!btnEl) return;
+    const origText = btnEl.textContent;
+    btnEl.disabled = true;
+    btnEl.textContent = '⏳ 测试中...';
+    if (statusEl) {
+      statusEl.textContent = '正在测试连接...';
+      statusEl.style.color = '#8b949e';
+    }
+    try {
+      const res = await fetch('/api/projects/deploy-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(env)
+      });
+      const data = await res.json();
+      if (statusEl) {
+        statusEl.textContent = data.message || (data.ok ? '✅ 连接成功' : '❌ 连接失败');
+        statusEl.style.color = data.ok ? '#3fb950' : '#ff7b72';
+      } else {
+        alert(data.message || (data.ok ? '✅ 连接成功' : '❌ 连接失败'));
+      }
+    } catch (err) {
+      if (statusEl) {
+        statusEl.textContent = '❌ 请求异常: ' + err.message;
+        statusEl.style.color = '#ff7b72';
+      } else {
+        alert('❌ 请求异常: ' + err.message);
+      }
+    } finally {
+      btnEl.disabled = false;
+      btnEl.textContent = origText;
+    }
+  }
+
+  function renderDeployAppsEditor() {
+    if (!deployAppsContainer) return;
+    deployAppsContainer.innerHTML = '';
+
+    if (tabBtnDeploy) {
+      let totalEnvs = 0;
+      editingDeployApps.forEach(a => { totalEnvs += (a.envs ? a.envs.length : 0); });
+      tabBtnDeploy.textContent = editingDeployApps.length > 0
+        ? `🚀 部署配置 (${editingDeployApps.length}个应用 / ${totalEnvs}个环境)`
+        : '🚀 部署配置 (多应用/多环境)';
+    }
+
+    // 列表模式：展示所有部署配置项，支持连接测试、编辑和删除
+    if (editingAppIndex < 0 || editingAppIndex >= editingDeployApps.length) {
+      editingAppIndex = -1;
+      if (!editingDeployApps || editingDeployApps.length === 0) {
+        deployAppsContainer.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:24px 0;text-align:center;">暂无部署配置，请点击右上角「+ 添加部署应用」</div>';
+        return;
+      }
+
+      editingDeployApps.forEach((app, appIdx) => {
+        if (!Array.isArray(app.envs)) app.envs = [];
+        const row = document.createElement('div');
+        row.className = 'deploy-list-row';
+
+        row.innerHTML = `
+          <div class="deploy-list-info">
+            <div class="deploy-list-title">
+              <span>📦 ${escapeHtml(app.name || '未命名应用')}</span>
+              <span class="session-badge status-blue">${escapeHtml(getAppTypeLabel(app.type))}</span>
+            </div>
+            <div class="deploy-list-envs"></div>
+          </div>
+          <div class="deploy-list-actions">
+            <button type="button" class="btn btn-sm btn-secondary btn-edit-deploy-app">✏️ 编辑</button>
+            <button type="button" class="btn btn-sm btn-danger btn-del-deploy-app">🗑️ 删除</button>
+          </div>
+        `;
+
+        const envsWrap = row.querySelector('.deploy-list-envs');
+        if (app.envs.length === 0) {
+          envsWrap.innerHTML = '<span style="color:#8b949e;font-size:12px;">暂无环境</span>';
+        } else {
+          app.envs.forEach(env => {
+            const methodTag = (env.method || 'ssh').toUpperCase();
+            const hostStr = env.method === 'local_cmd' ? '本地' : (env.host ? `${env.host}:${env.port || 22}` : '未填地址');
+            const pill = document.createElement('span');
+            pill.className = 'deploy-env-pill';
+            pill.innerHTML = `
+              <span>${escapeHtml(env.env_name || '环境')} (${escapeHtml(methodTag)}: ${escapeHtml(hostStr)})</span>
+              <button type="button" class="btn-inline-test" title="测试该环境连接可用性">🔌 测试</button>
+            `;
+            const btnTest = pill.querySelector('.btn-inline-test');
+            btnTest.addEventListener('click', function () {
+              testDeployEnvConnection(env, btnTest, null);
+            });
+            envsWrap.appendChild(pill);
+          });
+        }
+
+        row.querySelector('.btn-edit-deploy-app').addEventListener('click', function () {
+          editingAppIndex = appIdx;
+          renderDeployAppsEditor();
+        });
+
+        row.querySelector('.btn-del-deploy-app').addEventListener('click', function () {
+          if (!confirm(`确定删除部署配置「${app.name || '未命名'}」吗？`)) return;
+          editingDeployApps.splice(appIdx, 1);
+          renderDeployAppsEditor();
+        });
+
+        deployAppsContainer.appendChild(row);
+      });
+      return;
+    }
+
+    // 单项编辑模式：编辑选中的部署应用及其多环境配置
+    const appIdx = editingAppIndex;
+    const app = editingDeployApps[appIdx];
+    if (!Array.isArray(app.envs)) app.envs = [];
+
+    const card = document.createElement('div');
+    card.className = 'deploy-app-card';
+
+    card.innerHTML = `
+      <div class="deploy-app-header">
+        <div class="deploy-app-title-group">
+          <span style="font-size:13px;font-weight:600;color:#58a6ff;">📦 应用名称:</span>
+          <input type="text" class="form-input app-name-input" placeholder="如: 前端H5 / 后端API / APK打包" value="${escapeHtml(app.name || '')}">
+          <select class="form-select app-type-select">
+            <option value="web_h5" ${app.type === 'web_h5' ? 'selected' : ''}>🌐 前端 H5 / Web</option>
+            <option value="backend_api" ${(!app.type || app.type === 'backend_api') ? 'selected' : ''}>⚙️ 后端 API / 服务</option>
+            <option value="android_apk" ${app.type === 'android_apk' ? 'selected' : ''}>📱 移动端 APK / App打包</option>
+            <option value="docker" ${app.type === 'docker' ? 'selected' : ''}>🐳 Docker 容器服务</option>
+            <option value="custom" ${app.type === 'custom' ? 'selected' : ''}>🔧 自定义构建部署</option>
+          </select>
+        </div>
+        <div class="deploy-app-actions">
+          <button type="button" class="btn btn-sm btn-primary btn-add-env">+ 添加环境</button>
+          <button type="button" class="btn btn-sm btn-secondary btn-back-list">✓ 返回列表</button>
+        </div>
+      </div>
+      <div class="deploy-envs-container"></div>
+    `;
+
+    card.querySelector('.app-name-input').addEventListener('input', function () {
+      app.name = this.value;
+    });
+
+    card.querySelector('.app-type-select').addEventListener('change', function () {
+      app.type = this.value;
+    });
+
+    card.querySelector('.btn-add-env').addEventListener('click', function () {
+      const defaultNames = ['生产环境', '测试环境', '本地测试', '预发环境'];
+      const nextName = defaultNames[app.envs.length] || `环境-${app.envs.length + 1}`;
+      app.envs.push(createDefaultEnv(nextName));
+      renderDeployAppsEditor();
+    });
+
+    card.querySelector('.btn-back-list').addEventListener('click', function () {
+      editingAppIndex = -1;
+      renderDeployAppsEditor();
+    });
+
+    const envsContainer = card.querySelector('.deploy-envs-container');
+    app.envs.forEach((env, envIdx) => {
+      const envBox = document.createElement('div');
+      envBox.className = 'deploy-env-card';
+      const isLocal = env.method === 'local_cmd';
+      const isKeyAuth = env.auth_type === 'ssh_key';
+      const defaultPort = env.method === 'sftp_ftp' ? 21 : 22;
+
+      envBox.innerHTML = `
+        <div class="deploy-env-header">
+          <div class="deploy-env-title">
+            <span class="deploy-env-badge">环境 ${envIdx + 1}</span>
+            <input type="text" class="form-input env-name-input" style="width:140px;padding:4px 8px;font-size:12px;" placeholder="如: 生产环境 / 测试环境" value="${escapeHtml(env.env_name || '')}">
+            <select class="form-select env-deploy-type-select" style="width:170px;padding:4px 8px;font-size:12px;">
+              <option value="ssh" ${(!env.method || env.method === 'ssh') ? 'selected' : ''}>🖥️ SSH / SCP 远程服务器</option>
+              <option value="sftp_ftp" ${env.method === 'sftp_ftp' ? 'selected' : ''}>📁 FTP / SFTP 服务器上传</option>
+              <option value="local_cmd" ${env.method === 'local_cmd' ? 'selected' : ''}>💻 仅本地构建 / 脚本部署</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-secondary btn-test-env" style="padding:3px 9px;font-size:11.5px;">🔌 测试连接</button>
+            <span class="env-test-status" style="font-size:11.5px;"></span>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger btn-del-env" style="padding:2px 8px;font-size:11px;">删除环境</button>
+        </div>
+
+        <div class="deploy-env-grid">
+          <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
+            <label>服务器地址 (Host / IP):</label>
+            <input type="text" class="form-input env-host" placeholder="例如: 192.168.1.100" value="${escapeHtml(env.host || '')}">
+          </div>
+          <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
+            <label>端口 (Port):</label>
+            <input type="number" class="form-input env-port" placeholder="${defaultPort}" value="${env.port || defaultPort}">
+          </div>
+          <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
+            <label>登录用户名 (Username):</label>
+            <input type="text" class="form-input env-username" placeholder="root / ubuntu" value="${escapeHtml(env.username || '')}">
+          </div>
+
+          <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
+            <label>认证方式:</label>
+            <select class="form-select env-auth-type">
+              <option value="password" ${(!env.auth_type || env.auth_type === 'password') ? 'selected' : ''}>🔑 密码 / Token</option>
+              <option value="ssh_key" ${env.auth_type === 'ssh_key' ? 'selected' : ''}>📜 SSH 证书 / 私钥</option>
+            </select>
+          </div>
+          <div class="form-item env-remote-field env-pwd-wrap" style="${(isLocal || isKeyAuth) ? 'display:none;' : ''}">
+            <label>服务器密码 / Token:</label>
+            <input type="password" class="form-input env-password" autocomplete="new-password" placeholder="输入密码或Token" value="${escapeHtml(env.password || '')}">
+          </div>
+          <div class="form-item env-remote-field env-key-wrap" style="${(isLocal || !isKeyAuth) ? 'display:none;' : ''}">
+            <label>SSH 私钥文件路径 (可选):</label>
+            <input type="text" class="form-input env-ssh-key" placeholder="如 ~/.ssh/id_rsa (或直接在下方粘贴证书文本)" value="${escapeHtml(env.ssh_key_path || '')}">
+          </div>
+          <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
+            <label>远程目标目录 (Remote Dir):</label>
+            <input type="text" class="form-input env-remote-dir" placeholder="例如: /var/www/html" value="${escapeHtml(env.remote_dir || '')}">
+          </div>
+
+          <div class="form-item span-3 env-remote-field env-key-content-wrap" style="${(isLocal || !isKeyAuth) ? 'display:none;' : ''}">
+            <label>SSH 证书/私钥文本 (支持直接粘贴私钥内容 -----BEGIN ... PRIVATE KEY-----):</label>
+            <textarea class="form-input env-ssh-key-content" rows="3" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;可直接将私钥文件内容粘贴在此处，系统将自动以 0600 权限加密隔离保存...">${escapeHtml(env.ssh_key_content || '')}</textarea>
+          </div>
+
+          <div class="form-item span-2">
+            <label>自定义提示词 (Custom Prompt):</label>
+            <textarea class="form-input env-custom-prompt" rows="3" placeholder="输入部署该环境时的专属提示词要求（如：先执行 npm run build 编译，再上传 dist 目录并重启服务）...">${escapeHtml(env.custom_prompt || '')}</textarea>
+          </div>
+          <div class="form-item">
+            <label>忽略文件 (每行一个):</label>
+            <textarea class="form-input env-ignore-files" rows="3" placeholder=".git&#10;node_modules&#10;.env">${escapeHtml(env.ignore_files || '')}</textarea>
+          </div>
+        </div>
+      `;
+
+      envBox.querySelector('.env-name-input').addEventListener('input', function () { env.env_name = this.value; });
+      envBox.querySelector('.env-deploy-type-select').addEventListener('change', function () {
+        env.method = this.value;
+        if (this.value === 'sftp_ftp' && (!env.port || env.port === 22)) env.port = 21;
+        if (this.value === 'ssh' && (!env.port || env.port === 21)) env.port = 22;
+        renderDeployAppsEditor();
+      });
+      envBox.querySelector('.env-host').addEventListener('input', function () { env.host = this.value.trim(); });
+      envBox.querySelector('.env-port').addEventListener('input', function () { env.port = parseInt(this.value, 10) || 22; });
+      envBox.querySelector('.env-username').addEventListener('input', function () { env.username = this.value.trim(); });
+      envBox.querySelector('.env-auth-type').addEventListener('change', function () {
+        env.auth_type = this.value;
+        renderDeployAppsEditor();
+      });
+      envBox.querySelector('.env-password').addEventListener('input', function () { env.password = this.value; });
+      envBox.querySelector('.env-ssh-key').addEventListener('input', function () { env.ssh_key_path = this.value.trim(); });
+      envBox.querySelector('.env-ssh-key-content').addEventListener('input', function () { env.ssh_key_content = this.value; });
+      envBox.querySelector('.env-remote-dir').addEventListener('input', function () { env.remote_dir = this.value.trim(); });
+      envBox.querySelector('.env-custom-prompt').addEventListener('input', function () { env.custom_prompt = this.value; });
+      envBox.querySelector('.env-ignore-files').addEventListener('input', function () { env.ignore_files = this.value; });
+
+      const btnTestEnv = envBox.querySelector('.btn-test-env');
+      const statusSpan = envBox.querySelector('.env-test-status');
+      btnTestEnv.addEventListener('click', function () {
+        testDeployEnvConnection(env, btnTestEnv, statusSpan);
+      });
+
+      envBox.querySelector('.btn-del-env').addEventListener('click', function () {
+        app.envs.splice(envIdx, 1);
+        renderDeployAppsEditor();
+      });
+
+      envsContainer.appendChild(envBox);
+    });
+
+    deployAppsContainer.appendChild(card);
+  }
+
+  if (btnAddDeployApp) {
+    btnAddDeployApp.addEventListener('click', function () {
+      const presetNames = ['前端H5', '后端API', 'APK打包'];
+      const presetTypes = ['web_h5', 'backend_api', 'android_apk'];
+      const idx = editingDeployApps.length;
+      const defaultName = presetNames[idx] || `应用-${idx + 1}`;
+      const defaultType = presetTypes[idx] || 'backend_api';
+      editingDeployApps.push(createDefaultDeployApp(defaultName, defaultType));
+      editingAppIndex = editingDeployApps.length - 1;
+      switchProjectModalTab('deploy');
+      renderDeployAppsEditor();
+    });
+  }
 
   function normalizeDirClient(dir) {
     if (!dir) return '';
@@ -693,6 +1060,10 @@
         ? `<span class="session-badge status-active-star">${dict.badge_active_recent || '⭐ Recent Active'}</span>`
         : '';
       const approveTag = p.auto_approve ? ' [⚡Auto]' : '';
+      const deployAppsCount = (p.deploy_apps && p.deploy_apps.length) || p.deploy_apps_count || 0;
+      const deployBadgeHtml = deployAppsCount > 0
+        ? `<span class="session-badge status-green" title="已配置 ${deployAppsCount} 个部署应用 (密码安全隔离在 ~/.tim-agent/vault)">🚀 部署应用: ${deployAppsCount}</span>`
+        : '';
 
       row.innerHTML = `
         <div class="project-item-main">
@@ -701,6 +1072,7 @@
             ${activeBadgeHtml}
             <span class="session-badge ${runBadgeClass}">${escapeHtml(runBadgeText)}</span>
             <span class="session-badge status-blue">🤖 Agent: ${escapeHtml((p.active_agent || p.agent || 'claude') + approveTag)}</span>
+            ${deployBadgeHtml}
           </div>
           <div class="project-item-dir">📁 WorkDir: ${escapeHtml(p.work_dir || '')}</div>
         </div>
@@ -784,7 +1156,7 @@
       const btnEdit = row.querySelector('.btn-proj-edit');
       if (btnEdit) {
         btnEdit.onclick = function () {
-          openProjectModal(p);
+          openProjectModal(p, 'basic');
         };
       }
 
@@ -823,19 +1195,35 @@
       .replace(/"/g, '&quot;');
   }
 
-  function openProjectModal(proj) {
+  function openProjectModal(proj, defaultTab) {
     if (!projectModal) return;
     const dict = I18N[currentLang] || I18N.en;
     if (projErrorMsg) {
       projErrorMsg.style.display = 'none';
       projErrorMsg.textContent = '';
     }
+    // 查找完整配置中的 deploy_apps
+    let rawDeployApps = [];
+    if (proj && proj.id) {
+      if (Array.isArray(proj.deploy_apps)) {
+        rawDeployApps = proj.deploy_apps;
+      } else if (currentStatus && currentStatus.config && Array.isArray(currentStatus.config.projects)) {
+        const foundCfgProj = currentStatus.config.projects.find(item => item.id === proj.id);
+        if (foundCfgProj && Array.isArray(foundCfgProj.deploy_apps)) {
+          rawDeployApps = foundCfgProj.deploy_apps;
+        }
+      }
+    }
+    editingDeployApps = JSON.parse(JSON.stringify(rawDeployApps || []));
+    editingAppIndex = -1;
+    renderDeployAppsEditor();
+
     if (proj && proj.id) {
       projectModalTitle.textContent = dict.modal_proj_edit_title || '✏️ 编辑项目配置';
       projIdInput.value = proj.id;
       projNameInput.value = proj.name || '';
       projWorkDirInput.value = proj.work_dir || '';
-      if (projAgentSelect) projAgentSelect.value = proj.agent || 'claude';
+      if (projAgentSelect) projAgentSelect.value = proj.agent || proj.active_agent || 'claude';
       projAutoApproveCheck.checked = !!proj.auto_approve;
       projSetActiveCheck.checked = !!proj.is_active;
     } else {
@@ -847,8 +1235,11 @@
       projAutoApproveCheck.checked = false;
       projSetActiveCheck.checked = true;
     }
+    switchProjectModalTab(defaultTab || 'basic');
     projectModal.style.display = 'flex';
-    projNameInput.focus();
+    if (!defaultTab || defaultTab === 'basic') {
+      projNameInput.focus();
+    }
   }
 
   function closeProjectModal() {
@@ -857,7 +1248,7 @@
 
   if (btnAddProject) {
     btnAddProject.addEventListener('click', function () {
-      openProjectModal(null);
+      openProjectModal(null, 'basic');
     });
   }
   if (btnCloseProjectModal) {
@@ -883,11 +1274,21 @@
       const autoApprove = projAutoApproveCheck.checked;
       const setActive = projSetActiveCheck.checked;
 
+      if (!name || !workDir) {
+        switchProjectModalTab('basic');
+        if (projErrorMsg) {
+          projErrorMsg.textContent = '⚠️ 请填写项目名称与项目工作目录 (WorkDir)';
+          projErrorMsg.style.display = 'block';
+        }
+        return;
+      }
+
       // 前端前置校验：不能同一个目录属于不同项目
       const normInputDir = normalizeDirClient(workDir);
       const existingProjects = (currentStatus && currentStatus.config && currentStatus.config.projects) || [];
       for (const item of existingProjects) {
         if (item.id !== id && normalizeDirClient(item.work_dir) === normInputDir) {
+          switchProjectModalTab('basic');
           if (projErrorMsg) {
             projErrorMsg.textContent = `⚠️ ${dict.dup_workdir_err || '工作目录已属于其他项目：'}「${item.name}」(${item.work_dir})`;
             projErrorMsg.style.display = 'block';
@@ -906,6 +1307,7 @@
             work_dir: workDir,
             agent: agent,
             auto_approve: autoApprove,
+            deploy_apps: editingDeployApps,
             set_active: setActive
           })
         });
@@ -946,7 +1348,7 @@
   // 重启 Shell 并切换 Agent
   btnRestartPty.addEventListener('click', async function () {
     const selected = cfgAgent.value;
-    const workDir = cfgWorkDir.value.trim();
+    const workDir = cfgWorkDir ? cfgWorkDir.value.trim() : ((currentStatus && currentStatus.config && currentStatus.config.work_dir) || '');
     const autoApprove = cfgAutoApprove.checked;
     const approveText = autoApprove ? (I18N[currentLang].auto_approve_yes || '【Auto-Approve】') : (I18N[currentLang].auto_approve_no || '【Standard Mode】');
     const confirmPrompt = `${I18N[currentLang].confirm_restart_prefix || 'Restart with '}${approveText} [${selected}]?`;
@@ -980,7 +1382,7 @@
       port: parseInt(cfgPort.value, 10),
       password: cfgPassword.value,
       shell: cfgShell.value,
-      work_dir: cfgWorkDir.value.trim(),
+      work_dir: cfgWorkDir ? cfgWorkDir.value.trim() : ((currentStatus && currentStatus.config && currentStatus.config.work_dir) || ''),
       selected_agent: cfgAgent.value,
       auto_approve: cfgAutoApprove.checked,
       theme: cfgTheme ? cfgTheme.value : 'github-dark',

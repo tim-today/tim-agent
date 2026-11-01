@@ -1224,6 +1224,140 @@
     });
   }
 
+  // 部署弹窗元素 (顶部工具栏按钮)
+  const btnTopDeploy = document.getElementById('btnTopDeploy');
+  const deploySelectModal = document.getElementById('deploySelectModal');
+  const btnCloseDeploySelectModal = document.getElementById('btnCloseDeploySelectModal');
+  const btnCloseDeployFooter = document.getElementById('btnCloseDeployFooter');
+  const btnFallbackGenericDeploy = document.getElementById('btnFallbackGenericDeploy');
+  const deploySelectListGroup = document.getElementById('deploySelectListGroup');
+
+  function closeDeploySelectModal() {
+    if (deploySelectModal) deploySelectModal.style.display = 'none';
+  }
+
+  if (btnTopDeploy) {
+    btnTopDeploy.addEventListener('click', function (e) {
+      e.preventDefault();
+      openDeploySelector();
+    });
+  }
+  if (btnCloseDeploySelectModal) {
+    btnCloseDeploySelectModal.addEventListener('click', closeDeploySelectModal);
+  }
+  if (btnCloseDeployFooter) {
+    btnCloseDeployFooter.addEventListener('click', closeDeploySelectModal);
+  }
+  if (deploySelectModal) {
+    deploySelectModal.addEventListener('click', function (e) {
+      if (e.target === deploySelectModal) closeDeploySelectModal();
+    });
+  }
+  if (btnFallbackGenericDeploy) {
+    btnFallbackGenericDeploy.addEventListener('click', function () {
+      closeDeploySelectModal();
+      sendInput('帮我部署当前项目并检查运行状态\r');
+      term.focus();
+    });
+  }
+
+  function escapeHtmlTerm(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function openDeploySelector() {
+    if (!deploySelectModal || !deploySelectListGroup) {
+      const fallback = (btnVibeDeploy && btnVibeDeploy.getAttribute('data-vibe')) || '帮我部署当前项目并检查运行状态';
+      sendInput(fallback + '\r');
+      term.focus();
+      return;
+    }
+
+    deploySelectListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">⏳ 正在读取当前项目部署配置...</div>';
+    deploySelectModal.style.display = 'flex';
+
+    try {
+      const query = `?project_id=${encodeURIComponent(currentSessionId || '')}` + (token ? `&token=${encodeURIComponent(token)}` : '');
+      const res = await fetch('/api/projects/deploy-prompts' + query);
+      const data = await res.json();
+
+      const appsList = data.deploy_apps || data.apps || [];
+      if (!data.ok || !Array.isArray(appsList) || appsList.length === 0) {
+        deploySelectListGroup.innerHTML = `
+          <div style="background:rgba(255,255,255,0.03);border:1px dashed #30363d;border-radius:8px;padding:14px;color:#8b949e;font-size:12.5px;line-height:1.6;">
+            <div style="color:#c9d1d9;font-weight:600;margin-bottom:6px;">ℹ️ 当前项目「${escapeHtmlTerm(data.project_name || currentProjectName || currentSessionId)}」暂未配置专属部署应用</div>
+            <div>您可以在控制面板 <strong>【项目管理 -> 🚀 部署配置】</strong> 中为该项目添加多个应用（如：前端H5、后端API、APK打包）及不同环境（生产/测试/本地）的服务器与脚本信息。</div>
+            <div style="margin-top:6px;color:#3fb950;">🔒 账号密码隔离保存在服务端 ~/.tim-agent/vault/，绝不写入项目目录，也不会明文出现在终端上下文中。</div>
+          </div>
+        `;
+        return;
+      }
+
+      deploySelectListGroup.innerHTML = '';
+      let totalEnvCount = 0;
+
+      appsList.forEach(app => {
+        const envs = Array.isArray(app.envs) ? app.envs : [];
+        if (envs.length === 0) return;
+
+        const appSection = document.createElement('div');
+        appSection.style.marginBottom = '10px';
+
+        const appType = app.type || app.app_type || '';
+        const appName = app.name || app.app_name || '未命名应用';
+        const typeIcon = appType === 'web_h5' ? '🌐' : (appType === 'android_apk' ? '📱' : (appType === 'backend_api' ? '⚙️' : '📦'));
+        const appHeader = document.createElement('div');
+        appHeader.style.cssText = 'font-size:12px;font-weight:600;color:#58a6ff;margin:4px 0 6px 2px;display:flex;align-items:center;gap:6px;';
+        appHeader.innerHTML = `${typeIcon} <span>${escapeHtmlTerm(appName)}</span>`;
+        appSection.appendChild(appHeader);
+
+        envs.forEach(env => {
+          totalEnvCount++;
+          const btn = document.createElement('div');
+          btn.className = 'agent-item-btn';
+          btn.style.marginBottom = '6px';
+
+          const deployBadge = (env.method || env.deploy_type || 'ssh').toUpperCase();
+          const hostSummary = env.masked_host || env.host_summary || '本地构建';
+          const remoteTarget = env.remote_dir ? ` → ${env.remote_dir}` : '';
+          btn.innerHTML = `
+            <div class="agent-item-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>🚀 ${escapeHtmlTerm(appName)} — <strong style="color:#3fb950;">${escapeHtmlTerm(env.env_name || '默认环境')}</strong></span>
+              <span style="font-size:11px;padding:1px 7px;border-radius:10px;background:rgba(56,139,253,0.15);color:#58a6ff;border:1px solid rgba(56,139,253,0.35);">${escapeHtmlTerm(deployBadge)}</span>
+            </div>
+            <div class="agent-item-desc" style="margin-top:3px;font-family:monospace;color:#8b949e;font-size:11.5px;">
+              🖥️ 目标: ${escapeHtmlTerm(hostSummary + remoteTarget)}
+            </div>
+            <div class="agent-item-desc" style="margin-top:2px;color:#3fb950;font-size:11px;">
+              🔒 零明文脚本: ${escapeHtmlTerm(env.script_path || '~/.tim-agent/vault/')}
+            </div>
+          `;
+
+          btn.onclick = function () {
+            closeDeploySelectModal();
+            if (env.prompt) {
+              sendInput(env.prompt + '\r');
+            }
+            term.focus();
+          };
+          appSection.appendChild(btn);
+        });
+
+        deploySelectListGroup.appendChild(appSection);
+      });
+
+      if (totalEnvCount === 0) {
+        deploySelectListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">当前项目的应用下尚未添加环境，请在控制面板【🚀 部署配置】中添加环境。</div>';
+      }
+    } catch (err) {
+      deploySelectListGroup.innerHTML = '<div style="color:#f85149;font-size:13px;padding:12px;">读取部署配置失败，可直接点击下方「直接发送通用部署提示词」。</div>';
+    }
+  }
+
   // Vibe Coding 专属快捷操作按键监听
   document.querySelectorAll('[data-vibe]').forEach(function (btn) {
     btn.addEventListener('click', function (e) {

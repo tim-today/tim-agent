@@ -676,8 +676,15 @@ input:checked + .slider:before {
   border-radius: 12px;
   width: 100%;
   max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+}
+
+.dash-modal-lg {
+  max-width: 760px;
 }
 
 .dash-modal-header {
@@ -712,6 +719,243 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  max-height: calc(90vh - 60px);
+}
+
+.proj-modal-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 10px;
+}
+
+.proj-tab-btn {
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.proj-tab-btn.active {
+  background: rgba(88, 166, 255, 0.16);
+  color: #58a6ff;
+  border-color: #58a6ff;
+}
+
+.proj-tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.deploy-apps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deploy-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.deploy-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.deploy-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.deploy-list-envs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.deploy-env-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(56, 139, 253, 0.12);
+  color: #58a6ff;
+  border: 1px solid rgba(56, 139, 253, 0.35);
+}
+
+.btn-inline-test {
+  background: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.45);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-inline-test:hover {
+  background: rgba(46, 160, 67, 0.35);
+}
+
+.deploy-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.deploy-app-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deploy-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #21262d;
+  padding-bottom: 10px;
+}
+
+.deploy-app-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.deploy-app-title-group .form-input,
+.deploy-app-title-group .form-select {
+  width: auto;
+  min-width: 150px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.deploy-app-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deploy-envs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deploy-env-card {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-left: 3px solid #58a6ff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deploy-env-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deploy-env-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deploy-env-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(88, 166, 255, 0.16);
+  color: #58a6ff;
+}
+
+.deploy-env-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .deploy-env-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.deploy-env-grid .span-2 {
+  grid-column: span 2;
+}
+
+.deploy-env-grid .span-3 {
+  grid-column: span 3;
+}
+
+@media (max-width: 640px) {
+  .deploy-env-grid .span-2,
+  .deploy-env-grid .span-3 {
+    grid-column: span 1;
+  }
+}
+
+.deploy-env-grid .form-item label {
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.deploy-env-grid .form-input,
+.deploy-env-grid .form-select {
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
+.deploy-env-grid textarea.form-input {
+  resize: vertical;
+  min-height: 62px;
+  font-family: monospace;
+  line-height: 1.45;
 }
 
 .dash-modal-footer {

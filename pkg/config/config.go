@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	AppVersion     = "v2.0.1"
+	AppVersion     = "v2.1.0"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"
@@ -34,13 +34,39 @@ type AgentPreset struct {
 	Shortcuts       []string `json:"shortcuts"`
 }
 
-// ProjectConfig 单个项目的独立配置（支持多项目多会话切换）
+// DeployEnvConfig 单个部署环境配置（如：生产环境、测试环境、本地测试）
+type DeployEnvConfig struct {
+	ID            string `json:"id"`
+	EnvName       string `json:"env_name"`        // 环境名称: 如 "生产环境", "测试环境", "本地测试"
+	Method        string `json:"method"`          // 部署方式: "ssh" (SSH/SCP), "sftp_ftp" (FTP/SFTP), "local_cmd" (仅本地命令)
+	Host          string `json:"host"`            // 服务器 IP 或域名
+	Port          int    `json:"port"`            // 端口 (默认 SSH 22 / FTP 21)
+	Username      string `json:"username"`        // 服务器登录用户名
+	AuthType      string `json:"auth_type"`       // 认证方式: "password" (密码/Token), "ssh_key" (密钥)
+	Password      string `json:"password"`        // 服务器密码或上传 Token
+	SSHKeyPath    string `json:"ssh_key_path"`    // SSH 私钥文件路径
+	SSHKeyContent string `json:"ssh_key_content"` // 直接粘贴的 SSH 私钥证书文本内容
+	RemoteDir     string `json:"remote_dir"`      // 远程服务器目标目录 (如 /var/www/html 或 /data/apk)
+	CustomPrompt  string `json:"custom_prompt"`   // 自定义部署提示词 (多行文本)
+	IgnoreFiles   string `json:"ignore_files"`    // 忽略文件列表 (多行文本，每行一个)
+}
+
+// DeployAppConfig 项目下的单个部署应用配置（如：前端H5、后端API、APK打包）
+type DeployAppConfig struct {
+	ID   string            `json:"id"`
+	Name string            `json:"name"` // 应用名称: 如 "前端H5", "后端API", "APK打包"
+	Type string            `json:"type"` // 应用类型: "web_h5", "backend_api", "android_apk", "docker", "custom"
+	Envs []DeployEnvConfig `json:"envs"` // 多环境列表
+}
+
+// ProjectConfig 单个项目的独立配置（支持多项目多会话切换与多应用多环境部署）
 type ProjectConfig struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	WorkDir     string `json:"work_dir"`
-	Agent       string `json:"agent"`
-	AutoApprove bool   `json:"auto_approve"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	WorkDir     string            `json:"work_dir"`
+	Agent       string            `json:"agent"`
+	AutoApprove bool              `json:"auto_approve"`
+	DeployApps  []DeployAppConfig `json:"deploy_apps"`
 }
 
 type ConfigData struct {
@@ -369,6 +395,8 @@ func LoadConfig() (*Config, error) {
 				p.Agent = "claude"
 				needSaveProjects = true
 			}
+			normalizeProjectSubConfigs(&p)
+			_ = SyncProjectVault(p)
 			validProjs = append(validProjs, p)
 		}
 		if len(validProjs) == 0 {
@@ -612,6 +640,7 @@ func (c *Config) UpsertProject(proj ProjectConfig, setActive bool) (ProjectConfi
 	if proj.Agent == "" {
 		proj.Agent = "claude"
 	}
+	normalizeProjectSubConfigs(&proj)
 
 	normDir := NormalizeWorkDir(proj.WorkDir)
 
@@ -627,6 +656,10 @@ func (c *Config) UpsertProject(proj ProjectConfig, setActive bool) (ProjectConfi
 	if proj.ID != "" {
 		for i := range c.Projects {
 			if c.Projects[i].ID == proj.ID {
+				// 若调用方仅修改了基础字段（如终端切换 Agent 时未传 DeployApps），自动保留该项目已有的 DeployApps
+				if proj.DeployApps == nil && len(c.Projects[i].DeployApps) > 0 {
+					proj.DeployApps = c.Projects[i].DeployApps
+				}
 				c.Projects[i] = proj
 				updated = true
 				break
@@ -639,6 +672,8 @@ func (c *Config) UpsertProject(proj ProjectConfig, setActive bool) (ProjectConfi
 		}
 		c.Projects = append(c.Projects, proj)
 	}
+
+	_ = SyncProjectVault(proj)
 
 	if setActive || c.ActiveProjectID == "" || c.ActiveProjectID == proj.ID {
 		if setActive || c.ActiveProjectID == "" {
@@ -704,7 +739,26 @@ func (c *Config) RegeneratePassword() string {
 func (c *Config) Get() ConfigData {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.ConfigData
+	out := c.ConfigData
+	if len(c.Projects) > 0 {
+		out.Projects = make([]ProjectConfig, len(c.Projects))
+		for i, p := range c.Projects {
+			pCopy := p
+			if len(p.DeployApps) > 0 {
+				pCopy.DeployApps = make([]DeployAppConfig, len(p.DeployApps))
+				for j, app := range p.DeployApps {
+					appCopy := app
+					if len(app.Envs) > 0 {
+						appCopy.Envs = make([]DeployEnvConfig, len(app.Envs))
+						copy(appCopy.Envs, app.Envs)
+					}
+					pCopy.DeployApps[j] = appCopy
+				}
+			}
+			out.Projects[i] = pCopy
+		}
+	}
+	return out
 }
 
 // GetAgentCommand 获取当前选定 Agent 对应的启动命令（若开启 autoApprove 则追加对应免确认/关沙箱参数）
@@ -727,3 +781,44 @@ func (c *Config) GetAgentCommand(agentID string, autoApprove bool) string {
 	}
 	return ""
 }
+
+// normalizeProjectSubConfigs 规范化项目下的多应用多环境部署配置
+func normalizeProjectSubConfigs(proj *ProjectConfig) {
+	for i := range proj.DeployApps {
+		app := &proj.DeployApps[i]
+		app.Name = strings.TrimSpace(app.Name)
+		if app.Name == "" {
+			app.Name = fmt.Sprintf("应用-%d", i+1)
+		}
+		if app.ID == "" {
+			app.ID = fmt.Sprintf("app-%d-%s", i+1, generateRandomToken(3))
+		}
+		if app.Type == "" {
+			app.Type = "custom"
+		}
+		for j := range app.Envs {
+			env := &app.Envs[j]
+			env.EnvName = strings.TrimSpace(env.EnvName)
+			if env.EnvName == "" {
+				env.EnvName = fmt.Sprintf("环境-%d", j+1)
+			}
+			if env.ID == "" {
+				env.ID = fmt.Sprintf("env-%d-%s", j+1, generateRandomToken(3))
+			}
+			if env.Method == "" {
+				env.Method = "ssh"
+			}
+			if env.Port <= 0 {
+				if env.Method == "sftp_ftp" {
+					env.Port = 21
+				} else {
+					env.Port = 22
+				}
+			}
+			if env.AuthType == "" {
+				env.AuthType = "password"
+			}
+		}
+	}
+}
+

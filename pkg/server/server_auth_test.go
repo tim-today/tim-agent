@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/tim-today/tim-agent/pkg/appbundle"
@@ -298,6 +299,148 @@ func TestGUIApplicationBundlePackaging(t *testing.T) {
 		}
 	}
 }
+
+func TestDeployMultiAppEnvVaultAndZeroPlaintextPrompts(t *testing.T) {
+	workDir := t.TempDir()
+	cfg := config.DefaultConfig()
+	cfg.WorkDir = workDir
+	cfg.Password = "admin123"
+	cfg.AuthToken = "tok-deploy-test"
+
+	s, err := NewServer(cfg)
+	if err != nil {
+		t.Fatalf("NewServer failed: %v", err)
+	}
+	defer session.GetManager().CloseAll()
+
+	secretProdPwd := "SUPER_SECRET_PROD_PWD_998877!"
+	secretTestPwd := "SUPER_SECRET_TEST_PWD_112233!"
+	secretSSHKey := "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmU=\n-----END OPENSSH PRIVATE KEY-----"
+
+	saveBody, _ := json.Marshal(map[string]any{
+		"id":           "proj_deploy_demo",
+		"name":         "电商全栈项目",
+		"work_dir":     workDir,
+		"agent":        "claude",
+		"auto_approve": false,
+		"set_active":   true,
+		"deploy_apps": []map[string]any{
+			{
+				"id":   "app_h5",
+				"name": "前端H5",
+				"type": "web_h5",
+				"envs": []map[string]any{
+					{
+						"id":            "env_prod",
+						"env_name":      "生产环境",
+						"method":        "ssh",
+						"host":          "10.0.1.88",
+						"port":          22,
+						"username":      "root",
+						"auth_type":     "password",
+						"password":      secretProdPwd,
+						"remote_dir":    "/var/www/h5",
+						"custom_prompt": "先运行 npm run build 打包，然后上传 dist 目录并执行 nginx -s reload",
+						"ignore_files":  ".git\nnode_modules\n.env",
+					},
+					{
+						"id":              "env_test",
+						"env_name":        "测试环境",
+						"method":          "ssh",
+						"host":            "10.0.1.99",
+						"port":            22,
+						"username":        "tester",
+						"auth_type":       "ssh_key",
+						"password":        secretTestPwd,
+						"ssh_key_content": secretSSHKey,
+						"remote_dir":      "/var/www/h5-test",
+						"custom_prompt":   "执行测试环境构建并同步",
+						"ignore_files":    ".git\nnode_modules",
+					},
+				},
+			},
+		},
+	})
+
+	reqSave := httptest.NewRequest("POST", "/api/projects/save", bytes.NewReader(saveBody))
+	reqSave.RemoteAddr = "127.0.0.1:54321"
+	recSave := httptest.NewRecorder()
+	s.handleAPIProjectSave(recSave, reqSave)
+	if recSave.Code != http.StatusOK {
+		t.Fatalf("保存含部署配置的项目失败: %d, body: %s", recSave.Code, recSave.Body.String())
+	}
+
+	// 1. 验证项目工作目录 (WorkDir) 中绝不生成任何凭据或部署文件，防止误提交 Git
+	entries, _ := os.ReadDir(workDir)
+	if len(entries) != 0 {
+		t.Fatalf("项目工作目录 WorkDir 必须保持纯净，实际发现了文件: %v", entries)
+	}
+
+	// 2. 验证服务端隔离 Vault 目录已生成 0600 凭据与 0700 脚本
+	envFile, scriptFile := config.GetDeployVaultFilePaths("proj_deploy_demo", "app_h5", "env_prod")
+	defer os.RemoveAll(config.GetProjectVaultDir("proj_deploy_demo"))
+
+	envStat, err := os.Stat(envFile)
+	if err != nil {
+		t.Fatalf("Vault 凭据文件未生成: %v", err)
+	}
+	if envStat.Mode().Perm() != 0600 {
+		t.Errorf("Vault 凭据文件权限必须为 0600，实际: %o", envStat.Mode().Perm())
+	}
+	scriptStat, err := os.Stat(scriptFile)
+	if err != nil {
+		t.Fatalf("Vault 部署脚本未生成: %v", err)
+	}
+	if scriptStat.Mode().Perm() != 0700 {
+		t.Errorf("Vault 部署脚本权限必须为 0700，实际: %o", scriptStat.Mode().Perm())
+	}
+
+	// 3. 调用 /api/projects/deploy-prompts 获取生成的 AI 提示词，校验 100% 零明文密码
+	reqPrompts := httptest.NewRequest("GET", "/api/projects/deploy-prompts?project_id=proj_deploy_demo&token=tok-deploy-test", nil)
+	reqPrompts.RemoteAddr = "192.168.1.50:54321"
+	recPrompts := httptest.NewRecorder()
+	s.handleAPIProjectDeployPrompts(recPrompts, reqPrompts)
+	if recPrompts.Code != http.StatusOK {
+		t.Fatalf("获取部署提示词失败: %d, body: %s", recPrompts.Code, recPrompts.Body.String())
+	}
+
+	respText := recPrompts.Body.String()
+	if strings.Contains(respText, secretProdPwd) || strings.Contains(respText, secretTestPwd) || strings.Contains(respText, "b3BlbnNzaC1rZXktdjE") {
+		t.Fatalf("严重安全违规：生成的部署提示词接口响应中出现了明文密码或私钥内容！")
+	}
+	if !strings.Contains(respText, scriptFile) {
+		t.Errorf("生成的部署提示词中应包含安全隔离脚本路径 %s", scriptFile)
+	}
+	if !strings.Contains(respText, "nginx -s reload") {
+		t.Errorf("生成的部署提示词中应包含自定义提示词内容")
+	}
+
+	// 4. 验证未认证外部请求访问 /api/status 时，部署密码与私钥内容被脱敏且不影响服务端内存中的真实凭据
+	reqUnauthStatus := httptest.NewRequest("GET", "/api/status", nil)
+	reqUnauthStatus.RemoteAddr = "192.168.1.88:54321"
+	recUnauthStatus := httptest.NewRecorder()
+	s.handleAPIStatus(recUnauthStatus, reqUnauthStatus)
+	if strings.Contains(recUnauthStatus.Body.String(), secretProdPwd) || strings.Contains(recUnauthStatus.Body.String(), "b3BlbnNzaC1rZXktdjE") {
+		t.Fatalf("未认证的 /api/status 响应不应泄露部署服务器密码或私钥内容")
+	}
+	projInMem, ok := cfg.GetProject("proj_deploy_demo")
+	if !ok || projInMem.DeployApps[0].Envs[0].Password != secretProdPwd {
+		t.Fatalf("脱敏返回不应破坏服务端内存中的真实部署密码")
+	}
+
+	// 5. 验证 /api/projects/deploy-test 连接可用性测试接口
+	testConnBody, _ := json.Marshal(map[string]any{
+		"method": "local_cmd",
+	})
+	reqTestConn := httptest.NewRequest("POST", "/api/projects/deploy-test", bytes.NewReader(testConnBody))
+	reqTestConn.RemoteAddr = "127.0.0.1:54321"
+	recTestConn := httptest.NewRecorder()
+	s.handleAPIProjectDeployTest(recTestConn, reqTestConn)
+	if recTestConn.Code != http.StatusOK || !strings.Contains(recTestConn.Body.String(), `"ok":true`) {
+		t.Errorf("deploy-test 接口应正常返回: %d %s", recTestConn.Code, recTestConn.Body.String())
+	}
+}
+
 
 
 
