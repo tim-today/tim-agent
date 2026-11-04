@@ -59,14 +59,12 @@ func RunTray(callbacks TrayCallbacks) {
 		systray.AddSeparator()
 
 		// 语言切换子菜单
-		mLangMenu := systray.AddMenuItem("🌐 Language / 语言", "切换托盘界面语言")
+		mLangMenu := systray.AddMenuItem("🌐 Language", "Switch Tray Language")
 		langItems := map[string]*systray.MenuItem{
-			"en":    mLangMenu.AddSubMenuItem("English", "English"),
-			"zh":    mLangMenu.AddSubMenuItem("简体中文", "简体中文"),
-			"zh-TW": mLangMenu.AddSubMenuItem("繁體中文", "繁體中文"),
-			"ja":    mLangMenu.AddSubMenuItem("日本語", "日本語"),
-			"ko":    mLangMenu.AddSubMenuItem("한국어", "한국어"),
-			"de":    mLangMenu.AddSubMenuItem("Deutsch", "Deutsch"),
+			"en": mLangMenu.AddSubMenuItem("English", "English"),
+			"ja": mLangMenu.AddSubMenuItem("日本語", "日本語"),
+			"ko": mLangMenu.AddSubMenuItem("한국어", "한국어"),
+			"de": mLangMenu.AddSubMenuItem("Deutsch", "Deutsch"),
 		}
 
 		refreshLangChecks := func(activeLang string) {

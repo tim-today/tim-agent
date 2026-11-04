@@ -414,7 +414,7 @@ func (s *Server) handleAPILogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": "密码错误"})
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": "Incorrect password"})
 }
 
 func (s *Server) handleAPIRegeneratePassword(w http.ResponseWriter, r *http.Request) {
@@ -1050,7 +1050,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	if env.Method == "local_cmd" {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      true,
-			"message": "✅ 本地构建/脚本模式无需远程连接，立即可用",
+			"message": "✅ Local build / script mode requires no remote connection and is ready.",
 		})
 		return
 	}
@@ -1059,7 +1059,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	if host == "" {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      false,
-			"message": "❌ 请先填写服务器地址 (Host / IP)",
+			"message": "❌ Please enter a server address (Host / IP) first.",
 		})
 		return
 	}
@@ -1079,7 +1079,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      false,
-			"message": fmt.Sprintf("❌ TCP 端口无法连接 (%s): %v", addr, err),
+			"message": fmt.Sprintf("❌ TCP connection failed (%s): %v", addr, err),
 		})
 		return
 	}
@@ -1090,7 +1090,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	if user == "" {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      true,
-			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms，未填写用户名跳过登录认证)", addr, tcpCost),
+			"message": fmt.Sprintf("✅ TCP port reachable (%s, %dms; auth skipped without username)", addr, tcpCost),
 		})
 		return
 	}
@@ -1106,19 +1106,19 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 			if err != nil {
 				_ = json.NewEncoder(w).Encode(map[string]any{
 					"ok":      false,
-					"message": fmt.Sprintf("❌ TCP 已连通(%dms)，但 FTP 登录验证失败: %s", tcpCost, strings.TrimSpace(string(out))),
+					"message": fmt.Sprintf("❌ TCP reachable (%dms), but FTP login failed: %s", tcpCost, strings.TrimSpace(string(out))),
 				})
 				return
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"ok":      true,
-				"message": fmt.Sprintf("✅ FTP 服务器连接与账号认证成功 (%s，耗时 %dms)", addr, time.Since(start).Milliseconds()),
+				"message": fmt.Sprintf("✅ FTP connection & authentication succeeded (%s, %dms)", addr, time.Since(start).Milliseconds()),
 			})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      true,
-			"message": fmt.Sprintf("✅ 服务器端口连通正常 (%s，耗时 %dms)", addr, tcpCost),
+			"message": fmt.Sprintf("✅ Server TCP port reachable (%s, %dms)", addr, tcpCost),
 		})
 		return
 	}
@@ -1127,7 +1127,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	if _, err := exec.LookPath("ssh"); err != nil {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      true,
-			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms)", addr, tcpCost),
+			"message": fmt.Sprintf("✅ TCP port reachable (%s, %dms)", addr, tcpCost),
 		})
 		return
 	}
@@ -1136,7 +1136,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      true,
-			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms)", addr, tcpCost),
+			"message": fmt.Sprintf("✅ TCP port reachable (%s, %dms)", addr, tcpCost),
 		})
 		return
 	}
@@ -1186,7 +1186,7 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	} else {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      true,
-			"message": fmt.Sprintf("✅ TCP 端口连通成功 (%s，耗时 %dms，未提供密码/密钥跳过登录验证)", addr, tcpCost),
+			"message": fmt.Sprintf("✅ TCP port reachable (%s, %dms; auth skipped without password/key)", addr, tcpCost),
 		})
 		return
 	}
@@ -1199,14 +1199,14 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"ok":      false,
-			"message": fmt.Sprintf("❌ TCP 已连通(%dms)，但 SSH 认证失败: %s", tcpCost, outStr),
+			"message": fmt.Sprintf("❌ TCP reachable (%dms), but SSH authentication failed: %s", tcpCost, outStr),
 		})
 		return
 	}
 
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"ok":      true,
-		"message": fmt.Sprintf("✅ SSH 连接与身份认证完全成功 (%s@%s:%d，总耗时 %dms)", user, host, port, time.Since(start).Milliseconds()),
+		"message": fmt.Sprintf("✅ SSH connection & authentication succeeded (%s@%s:%d, %dms)", user, host, port, time.Since(start).Milliseconds()),
 	})
 }
 

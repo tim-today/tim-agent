@@ -35,7 +35,7 @@
       hint_agent: "Auto-restarts session and launches selected Agent upon saving",
       label_shell: "Shell Path:",
       label_theme: "Default Terminal Theme:",
-      label_language: "UI Language (界面语言):",
+      label_language: "UI Language:",
       label_keep_alive: "Session Keep-Alive:",
       hint_keep_alive: "Keep tasks running after disconnection",
       btn_save_config: "Save Settings",
@@ -45,11 +45,12 @@
       prompt_copy: "Please copy link manually:",
       confirm_regen: "Generate a new random access password?",
       regen_success: "New password generated & active: ",
-      auto_approve_yes: "【Auto-Approve Enabled】",
-      auto_approve_no: "【Standard Safe Mode】",
+      auto_approve_yes: "[Auto-Approve Enabled]",
+      auto_approve_no: "[Standard Safe Mode]",
       restart_success: "Terminal session restarted and Agent launched!",
       restart_fail: "Failed to restart: ",
       net_error: "Network error",
+      btn_install_desktop_app: "🖥️ Desktop App",
       btn_check_update: "🚀 Update",
       checking_update: "Checking for updates...",
       up_to_date: "✓ Up to date",
@@ -62,10 +63,13 @@
       badge_remote_off: "Localhost Only",
       badge_remote_on: "Remote Allowed",
       card_projects_title: "📂 Project Management (Multi-Session)",
-      card_projects_subtitle: "Configure multiple projects with independent WorkDir & CLI Agent. Remote access enters the most recently operated session by default; background sessions keep running when switching. (Same WorkDir cannot be shared by different projects)",
+      card_projects_subtitle: "Configure multiple projects with independent WorkDir, CLI Agent & Deploy configs. Remote access enters the most recently operated session by default; background sessions keep running when switching.",
       btn_add_project: "+ Add Project",
       modal_proj_add_title: "📂 Add New Project",
       modal_proj_edit_title: "✏️ Edit Project",
+      tab_basic_info: "📂 Basic Info",
+      tab_deploy_cfg: "🚀 Deploy Config (Multi-App/Env)",
+      btn_add_deploy_app: "+ Add Deploy App",
       label_proj_name: "Project Name:",
       label_proj_workdir: "Working Directory (WorkDir):",
       hint_proj_workdir: "⚠️ Each project must have a unique directory. Same directory cannot belong to different projects.",
@@ -83,144 +87,6 @@
       btn_del_proj: "🗑️ Delete",
       confirm_del_proj: "Delete project ",
       dup_workdir_err: "Working directory already belongs to another project: ",
-    },
-    zh: {
-      app_title: "Tim-Agent 控制面板",
-      status_running: "常驻运行中",
-      btn_enter_terminal: "进入终端 ↗",
-      btn_check_update: "🚀 检查更新",
-      checking_update: "正在检查最新版本...",
-      up_to_date: "✓ 当前已是最新版本",
-      update_available: "⭐ 发现新版本: ",
-      check_failed: "检查更新失败",
-      click_to_update: "点击前往下载新版本",
-      footer_releases: "版本发布与更新日志",
-      card1_title: "📱 手机扫码连接 (Tailscale / 局域网)",
-      card1_subtitle: "手机使用相机或浏览器直接扫码免密接入",
-      qr_loading: "生成中...",
-      label_network: "选择连接网络:",
-      btn_copy: "复制链接",
-      btn_copied: "已复制!",
-      card1_tip: "💡 配合 Tailscale，手机和电脑处在同一虚拟内网即可随时随地直连，无需公网IP和端口映射！",
-      card2_title: "🖥️ 终端会话状态 (永不中断)",
-      btn_refresh: "刷新",
-      status_running_badge: "运行中",
-      sess_main_title: "主会话 (default)",
-      btn_open_terminal: "打开终端",
-      btn_restart_agent: "🔄 重启并拉起Agent",
-      card2_tip: "🔒 会话保持开启中：即使手机锁屏、浏览器关闭、网络切断，后台 Shell 进程依然持续运行！",
-      card3_title: "⚙️ 服务与安全配置",
-      label_port: "共享服务端口:",
-      hint_port: "修改端口需重启服务生效",
-      label_password: "访问密码 (保护终端安全):",
-      btn_regen_pwd: "🎲 重新随机",
-      hint_password: "Web访问输入一次自动保存，扫码亦可一键免密直连",
-      label_workdir: "当前活动项目工作目录 (WorkDir):",
-      hint_workdir: "安全隔离：终端与 Agent 命令均在此目录内运行",
-      label_agent: "当前活动项目 Agent 代理:",
-      label_auto_approve: "⚡ 自动确认 / 关闭沙箱 (默认不选)",
-      hint_agent: "切换后点击“保存配置”，系统将自动重启当前项目会话并拉起所选 Agent",
-      label_shell: "执行 Shell 路径:",
-      label_theme: "默认终端配色方案:",
-      label_language: "界面语言 (Language):",
-      label_keep_alive: "会话持久保活 (Keep-Alive):",
-      hint_keep_alive: "断开连接后保持任务继续执行",
-      btn_save_config: "保存配置",
-      saving_text: "保存中...",
-      saved_text: "配置已保存！",
-      saved_restarted_prefix: "配置已保存，已自动切换并拉起 [",
-      prompt_copy: "请手动复制链接:",
-      confirm_regen: "确定重新生成一个随机访问密码吗？",
-      regen_success: "新密码已生成并生效: ",
-      auto_approve_yes: "【开启自动确认/关闭沙箱】",
-      auto_approve_no: "【普通安全确认】",
-      restart_success: "终端已重启，并已拉起指定 Agent！",
-      restart_fail: "重启失败: ",
-      net_error: "网络错误",
-      label_remote_access: "远程管理链接 (控制面板):",
-      hint_remote_access: "默认关闭 (仅限本机 127.0.0.1/localhost 访问)。开启后允许外部 IP 输入密码访问控制面板。",
-      badge_remote_off: "仅限本机",
-      badge_remote_on: "允许外部IP",
-      card_projects_title: "📂 项目管理 (多会话多项目切换)",
-      card_projects_subtitle: "可配置多个独立项目（各自拥有项目名、WorkDir、Agent、是否自动确认）。远程链接默认进入最近操作的会话，切换项目后之前会话保持在后台运行。（注意：不能同一个目录属于不同项目）",
-      btn_add_project: "+ 新增项目",
-      modal_proj_add_title: "📂 新增项目配置",
-      modal_proj_edit_title: "✏️ 编辑项目配置",
-      label_proj_name: "项目名称 (Project Name):",
-      label_proj_workdir: "项目工作目录 (WorkDir):",
-      hint_proj_workdir: "⚠️ 限制：不能将同一个目录分配给不同项目",
-      label_proj_agent: "命令行 Agent 代理:",
-      label_proj_auto_approve: "⚡ 自动确认 / 关闭沙箱 (默认不选)",
-      label_proj_set_active: "设为当前最近活动项目 (远程链接默认进入此会话)",
-      btn_cancel: "取消",
-      btn_save_project: "保存项目",
-      badge_active_recent: "⭐ 最近活动 (默认进入)",
-      badge_standby: "未启动 (待机)",
-      btn_switch_open: "🚀 进入终端",
-      btn_set_active: "▶️ 启动 / 设为当前",
-      btn_restart_proj: "🔄 重启",
-      btn_edit_proj: "✏️ 编辑",
-      btn_del_proj: "🗑️ 删除",
-      confirm_del_proj: "确定要删除项目 ",
-      dup_workdir_err: "工作目录不能重复，该目录已属于项目：",
-    },
-    'zh-TW': {
-      app_title: "Tim-Agent 控制面板",
-      status_running: "常駐運行中",
-      btn_enter_terminal: "進入終端 ↗",
-      card1_title: "📱 手機掃碼連接 (Tailscale / 區域網路)",
-      card1_subtitle: "手機使用相機或瀏覽器直接掃碼免密接入",
-      qr_loading: "生成中...",
-      label_network: "選擇連接網路:",
-      btn_copy: "複製連結",
-      btn_copied: "已複製!",
-      card1_tip: "💡 配合 Tailscale，手機與電腦處於同一虛擬內網即可隨時隨地直連，無需公網IP！",
-      card2_title: "🖥️ 終端會話狀態 (永不中斷)",
-      btn_refresh: "重新整理",
-      status_running_badge: "運行中",
-      sess_main_title: "主會話 (default)",
-      btn_open_terminal: "開啟終端",
-      btn_restart_agent: "🔄 重啟並拉起Agent",
-      card2_tip: "🔒 會話保持開啟中：即使手機鎖定、瀏覽器關閉，後台 Shell 依舊持續運行！",
-      card3_title: "⚙️ 服務與安全設定",
-      label_port: "共享服務埠號:",
-      hint_port: "修改埠號需重啟生效",
-      label_password: "存取密碼 (保護終端安全):",
-      btn_regen_pwd: "🎲 重新隨機",
-      hint_password: "Web存取輸入一次自動保存，掃碼亦可一鍵免密直連",
-      label_workdir: "安全綁定工作目錄 (WorkDir):",
-      hint_workdir: "安全隔離：終端與 Agent 命令均在此目錄內運行",
-      label_agent: "選擇命令列 Agent 代理:",
-      label_auto_approve: "⚡ 自動確認 / 關閉沙箱 (預設不選)",
-      hint_agent: "切換後點擊“保存設定”，系統將自動重啟主會話並拉起所選 Agent",
-      label_shell: "執行 Shell 路徑:",
-      label_theme: "預設終端配色主題:",
-      label_language: "介面語言 (Language):",
-      label_keep_alive: "會話持久保活 (Keep-Alive):",
-      hint_keep_alive: "斷開連線後保持任務繼續執行",
-      btn_save_config: "儲存設定",
-      saving_text: "儲存中...",
-      saved_text: "設定已儲存！",
-      saved_restarted_prefix: "設定已儲存，已自動切換並拉起 [",
-      prompt_copy: "請手動複製連結:",
-      confirm_regen: "確定重新生成一個隨機存取密碼嗎？",
-      regen_success: "新密碼已生成並生效: ",
-      auto_approve_yes: "【開啟自動確認/關閉沙箱】",
-      auto_approve_no: "【標準安全模式】",
-      restart_success: "終端已重啟，並已拉起指定 Agent！",
-      restart_fail: "重啟失敗: ",
-      net_error: "網路錯誤",
-      btn_check_update: "🚀 檢查更新",
-      checking_update: "正在檢查最新版本...",
-      up_to_date: "✓ 目前已是最新版本",
-      update_available: "⭐ 發現新版本: ",
-      check_failed: "檢查更新失敗",
-      click_to_update: "點擊前往下載新版本",
-      footer_releases: "版本發布與更新日誌",
-      label_remote_access: "遠端管理連結 (控制面板):",
-      hint_remote_access: "預設關閉 (僅限本機 127.0.0.1/localhost 存取)。開啟後允許外部 IP 輸入密碼存取控制面板。",
-      badge_remote_off: "僅限本機",
-      badge_remote_on: "允許外部IP",
     },
     ja: {
       app_title: "Tim-Agent コントロールセンター",
@@ -520,10 +386,10 @@
   function updateRemoteAccessBadge(enabled) {
     if (!remoteAccessBadge) return;
     if (enabled) {
-      remoteAccessBadge.textContent = I18N[currentLang].badge_remote_on || '允许外部IP';
+      remoteAccessBadge.textContent = I18N[currentLang].badge_remote_on || 'Remote Allowed';
       remoteAccessBadge.className = 'remote-badge remote-enabled';
     } else {
-      remoteAccessBadge.textContent = I18N[currentLang].badge_remote_off || '仅限本机';
+      remoteAccessBadge.textContent = I18N[currentLang].badge_remote_off || 'Localhost Only';
       remoteAccessBadge.className = 'remote-badge remote-disabled';
     }
   }
@@ -715,7 +581,7 @@
   function createDefaultEnv(envName) {
     return {
       id: genShortId('env'),
-      env_name: envName || '生产环境',
+      env_name: envName || 'Production',
       method: 'ssh',
       host: '',
       port: 22,
@@ -733,19 +599,19 @@
   function createDefaultDeployApp(appName, appType) {
     return {
       id: genShortId('app'),
-      name: appName || '后端API',
+      name: appName || 'Backend API',
       type: appType || 'backend_api',
-      envs: [createDefaultEnv('生产环境')]
+      envs: [createDefaultEnv('Production')]
     };
   }
 
   function getAppTypeLabel(type) {
     switch (type) {
-      case 'web_h5': return '🌐 前端 H5 / Web';
-      case 'backend_api': return '⚙️ 后端 API / 服务';
-      case 'android_apk': return '📱 APK / App打包';
-      case 'docker': return '🐳 Docker 容器';
-      default: return '🔧 自定义部署';
+      case 'web_h5': return '🌐 Frontend Web / H5';
+      case 'backend_api': return '⚙️ Backend API / Service';
+      case 'android_apk': return '📱 Mobile APK / App Build';
+      case 'docker': return '🐳 Docker Container';
+      default: return '🔧 Custom Deploy';
     }
   }
 
@@ -753,9 +619,9 @@
     if (!btnEl) return;
     const origText = btnEl.textContent;
     btnEl.disabled = true;
-    btnEl.textContent = '⏳ 测试中...';
+    btnEl.textContent = '⏳ Testing...';
     if (statusEl) {
-      statusEl.textContent = '正在测试连接...';
+      statusEl.textContent = 'Testing connection...';
       statusEl.style.color = '#8b949e';
     }
     try {
@@ -766,17 +632,17 @@
       });
       const data = await res.json();
       if (statusEl) {
-        statusEl.textContent = data.message || (data.ok ? '✅ 连接成功' : '❌ 连接失败');
+        statusEl.textContent = data.message || (data.ok ? '✅ Connected' : '❌ Connection failed');
         statusEl.style.color = data.ok ? '#3fb950' : '#ff7b72';
       } else {
-        alert(data.message || (data.ok ? '✅ 连接成功' : '❌ 连接失败'));
+        alert(data.message || (data.ok ? '✅ Connected' : '❌ Connection failed'));
       }
     } catch (err) {
       if (statusEl) {
-        statusEl.textContent = '❌ 请求异常: ' + err.message;
+        statusEl.textContent = '❌ Request error: ' + err.message;
         statusEl.style.color = '#ff7b72';
       } else {
-        alert('❌ 请求异常: ' + err.message);
+        alert('❌ Request error: ' + err.message);
       }
     } finally {
       btnEl.disabled = false;
@@ -792,15 +658,15 @@
       let totalEnvs = 0;
       editingDeployApps.forEach(a => { totalEnvs += (a.envs ? a.envs.length : 0); });
       tabBtnDeploy.textContent = editingDeployApps.length > 0
-        ? `🚀 部署配置 (${editingDeployApps.length}个应用 / ${totalEnvs}个环境)`
-        : '🚀 部署配置 (多应用/多环境)';
+        ? `🚀 Deploy Config (${editingDeployApps.length} Apps / ${totalEnvs} Envs)`
+        : '🚀 Deploy Config (Multi-App/Env)';
     }
 
     // 列表模式：展示所有部署配置项，支持连接测试、编辑和删除
     if (editingAppIndex < 0 || editingAppIndex >= editingDeployApps.length) {
       editingAppIndex = -1;
       if (!editingDeployApps || editingDeployApps.length === 0) {
-        deployAppsContainer.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:24px 0;text-align:center;">暂无部署配置，请点击右上角「+ 添加部署应用」</div>';
+        deployAppsContainer.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:24px 0;text-align:center;">No deploy apps configured yet. Click "+ Add Deploy App" in the top-right corner.</div>';
         return;
       }
 
@@ -812,29 +678,29 @@
         row.innerHTML = `
           <div class="deploy-list-info">
             <div class="deploy-list-title">
-              <span>📦 ${escapeHtml(app.name || '未命名应用')}</span>
+              <span>📦 ${escapeHtml(app.name || 'Unnamed App')}</span>
               <span class="session-badge status-blue">${escapeHtml(getAppTypeLabel(app.type))}</span>
             </div>
             <div class="deploy-list-envs"></div>
           </div>
           <div class="deploy-list-actions">
-            <button type="button" class="btn btn-sm btn-secondary btn-edit-deploy-app">✏️ 编辑</button>
-            <button type="button" class="btn btn-sm btn-danger btn-del-deploy-app">🗑️ 删除</button>
+            <button type="button" class="btn btn-sm btn-secondary btn-edit-deploy-app">✏️ Edit</button>
+            <button type="button" class="btn btn-sm btn-danger btn-del-deploy-app">🗑️ Delete</button>
           </div>
         `;
 
         const envsWrap = row.querySelector('.deploy-list-envs');
         if (app.envs.length === 0) {
-          envsWrap.innerHTML = '<span style="color:#8b949e;font-size:12px;">暂无环境</span>';
+          envsWrap.innerHTML = '<span style="color:#8b949e;font-size:12px;">No environments</span>';
         } else {
           app.envs.forEach(env => {
             const methodTag = (env.method || 'ssh').toUpperCase();
-            const hostStr = env.method === 'local_cmd' ? '本地' : (env.host ? `${env.host}:${env.port || 22}` : '未填地址');
+            const hostStr = env.method === 'local_cmd' ? 'Local' : (env.host ? `${env.host}:${env.port || 22}` : 'No Host');
             const pill = document.createElement('span');
             pill.className = 'deploy-env-pill';
             pill.innerHTML = `
-              <span>${escapeHtml(env.env_name || '环境')} (${escapeHtml(methodTag)}: ${escapeHtml(hostStr)})</span>
-              <button type="button" class="btn-inline-test" title="测试该环境连接可用性">🔌 测试</button>
+              <span>${escapeHtml(env.env_name || 'Env')} (${escapeHtml(methodTag)}: ${escapeHtml(hostStr)})</span>
+              <button type="button" class="btn-inline-test" title="Test connectivity & authentication">🔌 Test</button>
             `;
             const btnTest = pill.querySelector('.btn-inline-test');
             btnTest.addEventListener('click', function () {
@@ -850,7 +716,7 @@
         });
 
         row.querySelector('.btn-del-deploy-app').addEventListener('click', function () {
-          if (!confirm(`确定删除部署配置「${app.name || '未命名'}」吗？`)) return;
+          if (!confirm(`Delete deploy configuration "${app.name || 'Unnamed'}"?`)) return;
           editingDeployApps.splice(appIdx, 1);
           renderDeployAppsEditor();
         });
@@ -871,19 +737,19 @@
     card.innerHTML = `
       <div class="deploy-app-header">
         <div class="deploy-app-title-group">
-          <span style="font-size:13px;font-weight:600;color:#58a6ff;">📦 应用名称:</span>
-          <input type="text" class="form-input app-name-input" placeholder="如: 前端H5 / 后端API / APK打包" value="${escapeHtml(app.name || '')}">
+          <span style="font-size:13px;font-weight:600;color:#58a6ff;">📦 App Name:</span>
+          <input type="text" class="form-input app-name-input" placeholder="e.g. Frontend Web / Backend API / APK Build" value="${escapeHtml(app.name || '')}">
           <select class="form-select app-type-select">
-            <option value="web_h5" ${app.type === 'web_h5' ? 'selected' : ''}>🌐 前端 H5 / Web</option>
-            <option value="backend_api" ${(!app.type || app.type === 'backend_api') ? 'selected' : ''}>⚙️ 后端 API / 服务</option>
-            <option value="android_apk" ${app.type === 'android_apk' ? 'selected' : ''}>📱 移动端 APK / App打包</option>
-            <option value="docker" ${app.type === 'docker' ? 'selected' : ''}>🐳 Docker 容器服务</option>
-            <option value="custom" ${app.type === 'custom' ? 'selected' : ''}>🔧 自定义构建部署</option>
+            <option value="web_h5" ${app.type === 'web_h5' ? 'selected' : ''}>🌐 Frontend Web / H5</option>
+            <option value="backend_api" ${(!app.type || app.type === 'backend_api') ? 'selected' : ''}>⚙️ Backend API / Service</option>
+            <option value="android_apk" ${app.type === 'android_apk' ? 'selected' : ''}>📱 Mobile APK / App Build</option>
+            <option value="docker" ${app.type === 'docker' ? 'selected' : ''}>🐳 Docker Container Service</option>
+            <option value="custom" ${app.type === 'custom' ? 'selected' : ''}>🔧 Custom Build & Deploy</option>
           </select>
         </div>
         <div class="deploy-app-actions">
-          <button type="button" class="btn btn-sm btn-primary btn-add-env">+ 添加环境</button>
-          <button type="button" class="btn btn-sm btn-secondary btn-back-list">✓ 返回列表</button>
+          <button type="button" class="btn btn-sm btn-primary btn-add-env">+ Add Env</button>
+          <button type="button" class="btn btn-sm btn-secondary btn-back-list">✓ Back to List</button>
         </div>
       </div>
       <div class="deploy-envs-container"></div>
@@ -898,8 +764,8 @@
     });
 
     card.querySelector('.btn-add-env').addEventListener('click', function () {
-      const defaultNames = ['生产环境', '测试环境', '本地测试', '预发环境'];
-      const nextName = defaultNames[app.envs.length] || `环境-${app.envs.length + 1}`;
+      const defaultNames = ['Production', 'Staging', 'Local Test', 'Pre-Release'];
+      const nextName = defaultNames[app.envs.length] || `Env-${app.envs.length + 1}`;
       app.envs.push(createDefaultEnv(nextName));
       renderDeployAppsEditor();
     });
@@ -920,64 +786,64 @@
       envBox.innerHTML = `
         <div class="deploy-env-header">
           <div class="deploy-env-title">
-            <span class="deploy-env-badge">环境 ${envIdx + 1}</span>
-            <input type="text" class="form-input env-name-input" style="width:140px;padding:4px 8px;font-size:12px;" placeholder="如: 生产环境 / 测试环境" value="${escapeHtml(env.env_name || '')}">
-            <select class="form-select env-deploy-type-select" style="width:170px;padding:4px 8px;font-size:12px;">
-              <option value="ssh" ${(!env.method || env.method === 'ssh') ? 'selected' : ''}>🖥️ SSH / SCP 远程服务器</option>
-              <option value="sftp_ftp" ${env.method === 'sftp_ftp' ? 'selected' : ''}>📁 FTP / SFTP 服务器上传</option>
-              <option value="local_cmd" ${env.method === 'local_cmd' ? 'selected' : ''}>💻 仅本地构建 / 脚本部署</option>
+            <span class="deploy-env-badge">Env ${envIdx + 1}</span>
+            <input type="text" class="form-input env-name-input" style="width:140px;padding:4px 8px;font-size:12px;" placeholder="e.g. Production / Staging" value="${escapeHtml(env.env_name || '')}">
+            <select class="form-select env-deploy-type-select" style="width:185px;padding:4px 8px;font-size:12px;">
+              <option value="ssh" ${(!env.method || env.method === 'ssh') ? 'selected' : ''}>🖥️ SSH / SCP Remote Server</option>
+              <option value="sftp_ftp" ${env.method === 'sftp_ftp' ? 'selected' : ''}>📁 FTP / SFTP Upload</option>
+              <option value="local_cmd" ${env.method === 'local_cmd' ? 'selected' : ''}>💻 Local Build / Script Only</option>
             </select>
-            <button type="button" class="btn btn-sm btn-secondary btn-test-env" style="padding:3px 9px;font-size:11.5px;">🔌 测试连接</button>
+            <button type="button" class="btn btn-sm btn-secondary btn-test-env" style="padding:3px 9px;font-size:11.5px;">🔌 Test Connection</button>
             <span class="env-test-status" style="font-size:11.5px;"></span>
           </div>
-          <button type="button" class="btn btn-sm btn-danger btn-del-env" style="padding:2px 8px;font-size:11px;">删除环境</button>
+          <button type="button" class="btn btn-sm btn-danger btn-del-env" style="padding:2px 8px;font-size:11px;">Delete Env</button>
         </div>
 
         <div class="deploy-env-grid">
           <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
-            <label>服务器地址 (Host / IP):</label>
-            <input type="text" class="form-input env-host" placeholder="例如: 192.168.1.100" value="${escapeHtml(env.host || '')}">
+            <label>Server Host / IP:</label>
+            <input type="text" class="form-input env-host" placeholder="e.g. 192.168.1.100" value="${escapeHtml(env.host || '')}">
           </div>
           <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
-            <label>端口 (Port):</label>
+            <label>Port:</label>
             <input type="number" class="form-input env-port" placeholder="${defaultPort}" value="${env.port || defaultPort}">
           </div>
           <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
-            <label>登录用户名 (Username):</label>
+            <label>Username:</label>
             <input type="text" class="form-input env-username" placeholder="root / ubuntu" value="${escapeHtml(env.username || '')}">
           </div>
 
           <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
-            <label>认证方式:</label>
+            <label>Auth Method:</label>
             <select class="form-select env-auth-type">
-              <option value="password" ${(!env.auth_type || env.auth_type === 'password') ? 'selected' : ''}>🔑 密码 / Token</option>
-              <option value="ssh_key" ${env.auth_type === 'ssh_key' ? 'selected' : ''}>📜 SSH 证书 / 私钥</option>
+              <option value="password" ${(!env.auth_type || env.auth_type === 'password') ? 'selected' : ''}>🔑 Password / Token</option>
+              <option value="ssh_key" ${env.auth_type === 'ssh_key' ? 'selected' : ''}>📜 SSH Certificate / Private Key</option>
             </select>
           </div>
           <div class="form-item env-remote-field env-pwd-wrap" style="${(isLocal || isKeyAuth) ? 'display:none;' : ''}">
-            <label>服务器密码 / Token:</label>
-            <input type="password" class="form-input env-password" autocomplete="new-password" placeholder="输入密码或Token" value="${escapeHtml(env.password || '')}">
+            <label>Server Password / Token:</label>
+            <input type="password" class="form-input env-password" autocomplete="new-password" placeholder="Enter password or token" value="${escapeHtml(env.password || '')}">
           </div>
           <div class="form-item env-remote-field env-key-wrap" style="${(isLocal || !isKeyAuth) ? 'display:none;' : ''}">
-            <label>SSH 私钥文件路径 (可选):</label>
-            <input type="text" class="form-input env-ssh-key" placeholder="如 ~/.ssh/id_rsa (或直接在下方粘贴证书文本)" value="${escapeHtml(env.ssh_key_path || '')}">
+            <label>SSH Private Key File Path (Optional):</label>
+            <input type="text" class="form-input env-ssh-key" placeholder="e.g. ~/.ssh/id_rsa (or paste key text below)" value="${escapeHtml(env.ssh_key_path || '')}">
           </div>
           <div class="form-item env-remote-field" style="${isLocal ? 'display:none;' : ''}">
-            <label>远程目标目录 (Remote Dir):</label>
-            <input type="text" class="form-input env-remote-dir" placeholder="例如: /var/www/html" value="${escapeHtml(env.remote_dir || '')}">
+            <label>Remote Target Directory:</label>
+            <input type="text" class="form-input env-remote-dir" placeholder="e.g. /var/www/html" value="${escapeHtml(env.remote_dir || '')}">
           </div>
 
           <div class="form-item span-3 env-remote-field env-key-content-wrap" style="${(isLocal || !isKeyAuth) ? 'display:none;' : ''}">
-            <label>SSH 证书/私钥文本 (支持直接粘贴私钥内容 -----BEGIN ... PRIVATE KEY-----):</label>
-            <textarea class="form-input env-ssh-key-content" rows="3" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;可直接将私钥文件内容粘贴在此处，系统将自动以 0600 权限加密隔离保存...">${escapeHtml(env.ssh_key_content || '')}</textarea>
+            <label>SSH Private Key Text (Paste -----BEGIN ... PRIVATE KEY----- directly):</label>
+            <textarea class="form-input env-ssh-key-content" rows="3" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;Paste private key content directly here; stored securely in Vault with 0600 permissions...">${escapeHtml(env.ssh_key_content || '')}</textarea>
           </div>
 
           <div class="form-item span-2">
-            <label>自定义提示词 (Custom Prompt):</label>
-            <textarea class="form-input env-custom-prompt" rows="3" placeholder="输入部署该环境时的专属提示词要求（如：先执行 npm run build 编译，再上传 dist 目录并重启服务）...">${escapeHtml(env.custom_prompt || '')}</textarea>
+            <label>Custom Deploy Prompt:</label>
+            <textarea class="form-input env-custom-prompt" rows="3" placeholder="Enter custom instructions for this environment (e.g. run npm run build first, upload dist/, and reload nginx)...">${escapeHtml(env.custom_prompt || '')}</textarea>
           </div>
           <div class="form-item">
-            <label>忽略文件 (每行一个):</label>
+            <label>Ignore Files (one per line):</label>
             <textarea class="form-input env-ignore-files" rows="3" placeholder=".git&#10;node_modules&#10;.env">${escapeHtml(env.ignore_files || '')}</textarea>
           </div>
         </div>
@@ -1023,10 +889,10 @@
 
   if (btnAddDeployApp) {
     btnAddDeployApp.addEventListener('click', function () {
-      const presetNames = ['前端H5', '后端API', 'APK打包'];
+      const presetNames = ['Frontend Web', 'Backend API', 'Mobile APK'];
       const presetTypes = ['web_h5', 'backend_api', 'android_apk'];
       const idx = editingDeployApps.length;
-      const defaultName = presetNames[idx] || `应用-${idx + 1}`;
+      const defaultName = presetNames[idx] || `App-${idx + 1}`;
       const defaultType = presetTypes[idx] || 'backend_api';
       editingDeployApps.push(createDefaultDeployApp(defaultName, defaultType));
       editingAppIndex = editingDeployApps.length - 1;
@@ -1062,7 +928,7 @@
       const approveTag = p.auto_approve ? ' [⚡Auto]' : '';
       const deployAppsCount = (p.deploy_apps && p.deploy_apps.length) || p.deploy_apps_count || 0;
       const deployBadgeHtml = deployAppsCount > 0
-        ? `<span class="session-badge status-green" title="已配置 ${deployAppsCount} 个部署应用 (密码安全隔离在 ~/.tim-agent/vault)">🚀 部署应用: ${deployAppsCount}</span>`
+        ? `<span class="session-badge status-green" title="${deployAppsCount} deploy app(s) configured (credentials isolated in ~/.tim-agent/vault)">🚀 Deploy Apps: ${deployAppsCount}</span>`
         : '';
 
       row.innerHTML = `
@@ -1127,8 +993,8 @@
       const btnRestart = row.querySelector('.btn-proj-restart');
       if (btnRestart) {
         btnRestart.onclick = async function () {
-          const approveText = p.auto_approve ? (dict.auto_approve_yes || '【Auto-Approve】') : (dict.auto_approve_no || '【Standard】');
-          if (!confirm(`确定重启项目「${p.name}」的终端会话 (${approveText} [${p.agent}]) 吗？（其他后台项目会话不受影响）`)) return;
+          const approveText = p.auto_approve ? (dict.auto_approve_yes || '[Auto-Approve]') : (dict.auto_approve_no || '[Standard]');
+          if (!confirm(`Restart terminal session for project "${p.name}" (${approveText} [${p.agent}])? (Other background project sessions will not be affected)`)) return;
           try {
             const res = await fetch('/api/sessions/restart', {
               method: 'POST',
@@ -1219,7 +1085,7 @@
     renderDeployAppsEditor();
 
     if (proj && proj.id) {
-      projectModalTitle.textContent = dict.modal_proj_edit_title || '✏️ 编辑项目配置';
+      projectModalTitle.textContent = dict.modal_proj_edit_title || '✏️ Edit Project';
       projIdInput.value = proj.id;
       projNameInput.value = proj.name || '';
       projWorkDirInput.value = proj.work_dir || '';
@@ -1227,7 +1093,7 @@
       projAutoApproveCheck.checked = !!proj.auto_approve;
       projSetActiveCheck.checked = !!proj.is_active;
     } else {
-      projectModalTitle.textContent = dict.modal_proj_add_title || '📂 新增项目配置';
+      projectModalTitle.textContent = dict.modal_proj_add_title || '📂 Add New Project';
       projIdInput.value = '';
       projNameInput.value = '';
       projWorkDirInput.value = '';
@@ -1277,7 +1143,7 @@
       if (!name || !workDir) {
         switchProjectModalTab('basic');
         if (projErrorMsg) {
-          projErrorMsg.textContent = '⚠️ 请填写项目名称与项目工作目录 (WorkDir)';
+          projErrorMsg.textContent = '⚠️ Please enter both Project Name and Working Directory (WorkDir)';
           projErrorMsg.style.display = 'block';
         }
         return;
@@ -1290,7 +1156,7 @@
         if (item.id !== id && normalizeDirClient(item.work_dir) === normInputDir) {
           switchProjectModalTab('basic');
           if (projErrorMsg) {
-            projErrorMsg.textContent = `⚠️ ${dict.dup_workdir_err || '工作目录已属于其他项目：'}「${item.name}」(${item.work_dir})`;
+            projErrorMsg.textContent = `⚠️ ${dict.dup_workdir_err || 'Working directory already belongs to project: '}"${item.name}" (${item.work_dir})`;
             projErrorMsg.style.display = 'block';
           }
           return;
@@ -1316,7 +1182,7 @@
           closeProjectModal();
           fetchStatus();
         } else if (projErrorMsg) {
-          projErrorMsg.textContent = '⚠️ ' + (data.message || '保存失败');
+          projErrorMsg.textContent = '⚠️ ' + (data.message || 'Failed to save project');
           projErrorMsg.style.display = 'block';
         }
       } catch (err) {
@@ -1476,17 +1342,17 @@
     btnInstallDesktopApp.addEventListener('click', async function () {
       btnInstallDesktopApp.disabled = true;
       const origText = btnInstallDesktopApp.textContent;
-      btnInstallDesktopApp.textContent = '⏳ 生成中...';
+      btnInstallDesktopApp.textContent = '⏳ Generating...';
       try {
         const res = await fetch('/api/app/install', { method: 'POST' });
         const data = await res.json();
         if (data.ok) {
-          alert(`✅ 已成功生成本机桌面 GUI 应用程序！\n位置: ${data.path}\n\n现在您可以直接用鼠标双击桌面或应用程序列表中的「TimAgent」图标启动，无需打开命令行终端。`);
+          alert(`✅ Native Desktop GUI Application generated!\nLocation: ${data.path}\n\nYou can now double-click the "TimAgent" icon on your Desktop or Applications folder to launch directly without a console window.`);
         } else {
-          alert('生成桌面应用失败: ' + (data.message || '未知错误'));
+          alert('Failed to generate desktop app: ' + (data.message || 'Unknown error'));
         }
       } catch (e) {
-        alert('请求失败: ' + e.message);
+        alert('Request failed: ' + e.message);
       } finally {
         btnInstallDesktopApp.disabled = false;
         btnInstallDesktopApp.textContent = origText;

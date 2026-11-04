@@ -229,7 +229,7 @@ esac
 func MaskHost(host string) string {
 	host = strings.TrimSpace(host)
 	if host == "" {
-		return "本地环境 (Local)"
+		return "Local"
 	}
 	parts := strings.Split(host, ".")
 	if len(parts) == 4 {
@@ -244,13 +244,13 @@ func BuildDeployPrompt(proj ProjectConfig, app DeployAppConfig, env DeployEnvCon
 
 	var details []string
 	if app.Type != "" {
-		details = append(details, fmt.Sprintf("应用类型: `%s`", app.Type))
+		details = append(details, fmt.Sprintf("type: `%s`", app.Type))
 	}
 	if env.Method != "" {
-		details = append(details, fmt.Sprintf("部署方式: `%s`", env.Method))
+		details = append(details, fmt.Sprintf("method: `%s`", env.Method))
 	}
 	if env.RemoteDir != "" {
-		details = append(details, fmt.Sprintf("远程目标目录: `%s`", env.RemoteDir))
+		details = append(details, fmt.Sprintf("remote_dir: `%s`", env.RemoteDir))
 	}
 
 	var ignoreList []string
@@ -260,26 +260,26 @@ func BuildDeployPrompt(proj ProjectConfig, app DeployAppConfig, env DeployEnvCon
 		}
 	}
 	if len(ignoreList) > 0 {
-		details = append(details, fmt.Sprintf("忽略文件: `%s`", strings.Join(ignoreList, ", ")))
+		details = append(details, fmt.Sprintf("ignore_files: `%s`", strings.Join(ignoreList, ", ")))
 	}
 
 	summaryStr := ""
 	if len(details) > 0 {
-		summaryStr = "（" + strings.Join(details, "，") + "）"
+		summaryStr = " (" + strings.Join(details, ", ") + ")"
 	}
 
 	customPromptStr := ""
 	if cp := strings.TrimSpace(env.CustomPrompt); cp != "" {
 		// 将多行换行整理为空格或分号，避免发给终端时被截断为多次回车
-		compactCP := strings.Join(strings.Fields(strings.ReplaceAll(cp, "\n", "；")), " ")
-		customPromptStr = fmt.Sprintf(" 【自定义部署要求】：%s。", compactCP)
+		compactCP := strings.Join(strings.Fields(strings.ReplaceAll(cp, "\n", "; ")), " ")
+		customPromptStr = fmt.Sprintf(" [Custom Instructions]: %s.", compactCP)
 	}
 
 	return fmt.Sprintf(
-		"请帮我将当前项目「%s」下的应用【%s】部署到【%s】环境%s。%s "+
-			"【安全部署工具】：服务器账号密码与连接配置已隔离保存在 `%s` 与免密执行脚本 `%s` 中（上传用 `%s upload <本地路径> [远程路径]`，远程执行命令用 `%s ssh \"<命令>\"`）。"+
-			"⚠️ 严禁使用 cat/echo 打印 `%s` 中的明文密码，严禁将凭据复制到项目代码目录中！",
-		proj.Name, app.Name, env.EnvName, summaryStr, customPromptStr,
+		"Please deploy application [%s] of project \"%s\" to environment [%s]%s.%s "+
+			"[Zero-Plaintext Vault Tool]: Server credentials and connection configs are isolated in `%s` and the passwordless runner script `%s` (use `%s upload <local_path> [remote_path]` to upload, or `%s ssh \"<command>\"` to execute remote commands). "+
+			"⚠️ NEVER print plaintext passwords from `%s` using cat/echo, and NEVER copy credentials into the project repository!",
+		app.Name, proj.Name, env.EnvName, summaryStr, customPromptStr,
 		envPath, scriptPath, scriptPath, scriptPath, envPath,
 	)
 }

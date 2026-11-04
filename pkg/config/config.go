@@ -122,7 +122,7 @@ func DefaultAgents() []AgentPreset {
 			Name:            "Claude Code",
 			Command:         "claude",
 			AutoApproveFlag: "--dangerously-skip-permissions",
-			Description:     "Anthropic Claude Code CLI 辅助开发",
+			Description:     "Anthropic Official Claude Code CLI",
 			Shortcuts:       []string{"/help", "/compact", "/cost", "/review", "exit"},
 		},
 		{
@@ -130,7 +130,7 @@ func DefaultAgents() []AgentPreset {
 			Name:            "Codex CLI",
 			Command:         "codex",
 			AutoApproveFlag: "--dangerously-bypass-approvals-and-sandbox",
-			Description:     "OpenAI Codex 命令行开发工具",
+			Description:     "OpenAI Official Codex CLI Agent",
 			Shortcuts:       []string{"--help", "generate", "explain", "review"},
 		},
 		{
@@ -138,7 +138,7 @@ func DefaultAgents() []AgentPreset {
 			Name:            "OpenCode (opcode)",
 			Command:         "opcode",
 			AutoApproveFlag: "--yes",
-			Description:     "OpenCode 终端 AI Agent",
+			Description:     "OpenCode Terminal AI Agent",
 			Shortcuts:       []string{"help", "run", "status"},
 		},
 		{
@@ -146,7 +146,7 @@ func DefaultAgents() []AgentPreset {
 			Name:            "Pi CLI",
 			Command:         "pi",
 			AutoApproveFlag: "-y",
-			Description:     "Inflection Pi 命令行对话与辅助工具",
+			Description:     "Inflection Pi CLI Assistant",
 			Shortcuts:       []string{"--help", "quit"},
 		},
 		{
@@ -154,15 +154,15 @@ func DefaultAgents() []AgentPreset {
 			Name:            "Gemini CLI",
 			Command:         "gemini",
 			AutoApproveFlag: "--auto-approve",
-			Description:     "Google Gemini 命令行代码助手",
+			Description:     "Google Official Gemini CLI Agent",
 			Shortcuts:       []string{"--help", "chat", "code"},
 		},
 		{
 			ID:              "shell",
-			Name:            "普通 Shell",
+			Name:            "Native Shell",
 			Command:         "",
 			AutoApproveFlag: "",
-			Description:     "系统原生交互式 Shell (无预设 Agent)",
+			Description:     "System Native Interactive Shell",
 			Shortcuts:       []string{"ls -la", "git status", "git diff", "clear"},
 		},
 	}
@@ -333,12 +333,27 @@ func LoadConfig() (*Config, error) {
 		cfg.Agents = DefaultAgents()
 		_ = cfg.Save()
 	} else {
-		// 自动平滑升级旧版 Agent 参数（例如 codex --full-auto 现已过时）
+		// 自动平滑升级旧版 Agent 参数与英文描述
 		updated := false
+		defAgents := DefaultAgents()
+		defMap := make(map[string]AgentPreset, len(defAgents))
+		for _, da := range defAgents {
+			defMap[da.ID] = da
+		}
 		for i := range cfg.Agents {
 			if cfg.Agents[i].ID == "codex" && (cfg.Agents[i].AutoApproveFlag == "--full-auto" || cfg.Agents[i].AutoApproveFlag == "") {
 				cfg.Agents[i].AutoApproveFlag = "--dangerously-bypass-approvals-and-sandbox"
 				updated = true
+			}
+			if da, ok := defMap[cfg.Agents[i].ID]; ok {
+				if cfg.Agents[i].Name == "普通 Shell" {
+					cfg.Agents[i].Name = da.Name
+					updated = true
+				}
+				if cfg.Agents[i].Description != da.Description {
+					cfg.Agents[i].Description = da.Description
+					updated = true
+				}
 			}
 		}
 		if updated {
@@ -351,7 +366,7 @@ func LoadConfig() (*Config, error) {
 		_ = cfg.Save()
 	}
 
-	if cfg.Language == "" {
+	if cfg.Language == "" || cfg.Language == "zh" || cfg.Language == "zh-TW" {
 		cfg.Language = "en"
 		_ = cfg.Save()
 	}
@@ -501,6 +516,9 @@ func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme
 		c.Theme = theme
 	}
 	if language != "" {
+		if language == "zh" || language == "zh-TW" {
+			language = "en"
+		}
 		c.Language = language
 	}
 	c.AutoApprove = autoApprove
@@ -629,12 +647,12 @@ func (c *Config) UpsertProject(proj ProjectConfig, setActive bool) (ProjectConfi
 	proj.WorkDir = strings.TrimSpace(proj.WorkDir)
 	if proj.WorkDir == "" {
 		c.mu.Unlock()
-		return ProjectConfig{}, fmt.Errorf("项目工作目录 (WorkDir) 不能为空")
+		return ProjectConfig{}, fmt.Errorf("project working directory (WorkDir) cannot be empty")
 	}
 	if proj.Name == "" {
 		proj.Name = filepath.Base(proj.WorkDir)
 		if proj.Name == "" || proj.Name == "." || proj.Name == "/" {
-			proj.Name = "未命名项目"
+			proj.Name = "Unnamed Project"
 		}
 	}
 	if proj.Agent == "" {
@@ -648,7 +666,7 @@ func (c *Config) UpsertProject(proj ProjectConfig, setActive bool) (ProjectConfi
 	for _, existing := range c.Projects {
 		if existing.ID != proj.ID && NormalizeWorkDir(existing.WorkDir) == normDir {
 			c.mu.Unlock()
-			return ProjectConfig{}, fmt.Errorf("工作目录 [%s] 已属于项目「%s」，不能将同一个目录分配给不同项目", proj.WorkDir, existing.Name)
+			return ProjectConfig{}, fmt.Errorf("working directory [%s] already belongs to project \"%s\"; the same directory cannot be assigned to multiple projects", proj.WorkDir, existing.Name)
 		}
 	}
 
@@ -788,7 +806,7 @@ func normalizeProjectSubConfigs(proj *ProjectConfig) {
 		app := &proj.DeployApps[i]
 		app.Name = strings.TrimSpace(app.Name)
 		if app.Name == "" {
-			app.Name = fmt.Sprintf("应用-%d", i+1)
+			app.Name = fmt.Sprintf("App-%d", i+1)
 		}
 		if app.ID == "" {
 			app.ID = fmt.Sprintf("app-%d-%s", i+1, generateRandomToken(3))
@@ -800,7 +818,7 @@ func normalizeProjectSubConfigs(proj *ProjectConfig) {
 			env := &app.Envs[j]
 			env.EnvName = strings.TrimSpace(env.EnvName)
 			if env.EnvName == "" {
-				env.EnvName = fmt.Sprintf("环境-%d", j+1)
+				env.EnvName = fmt.Sprintf("Env-%d", j+1)
 			}
 			if env.ID == "" {
 				env.ID = fmt.Sprintf("env-%d-%s", j+1, generateRandomToken(3))

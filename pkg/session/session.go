@@ -50,7 +50,7 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 		id = "default"
 	}
 	if name == "" {
-		name = "主会话"
+		name = "Main Session"
 	}
 	if lang == "" {
 		lang = "en"
@@ -61,7 +61,7 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 
 	ptySess, err := startPTY(shell, workDir, cols, rows)
 	if err != nil {
-		return nil, fmt.Errorf("启动虚拟终端失败: %w", err)
+		return nil, fmt.Errorf("failed to start PTY: %w", err)
 	}
 
 	now := time.Now()
@@ -94,10 +94,6 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 			time.Sleep(600 * time.Millisecond)
 			msg := fmt.Sprintf("\r\n\x1b[32m[TimAgent] Starting Agent: %s (%s)...\x1b[0m\r\n", activeAgent, initCmd)
 			switch lang {
-			case "zh":
-				msg = fmt.Sprintf("\r\n\x1b[32m[TimAgent] 正在启动 Agent: %s (%s)...\x1b[0m\r\n", activeAgent, initCmd)
-			case "zh-TW":
-				msg = fmt.Sprintf("\r\n\x1b[32m[TimAgent] 正在啟動 Agent: %s (%s)...\x1b[0m\r\n", activeAgent, initCmd)
 			case "ja":
 				msg = fmt.Sprintf("\r\n\x1b[32m[TimAgent] Agentを起動しています: %s (%s)...\x1b[0m\r\n", activeAgent, initCmd)
 			case "ko":
@@ -131,10 +127,6 @@ func (s *Session) readLoop() {
 				s.mu.Unlock()
 				exitMsg := "\r\n\x1b[33m[TimAgent] Terminal process exited\x1b[0m\r\n"
 				switch s.Lang {
-				case "zh":
-					exitMsg = "\r\n\x1b[33m[TimAgent] 终端进程已退出\x1b[0m\r\n"
-				case "zh-TW":
-					exitMsg = "\r\n\x1b[33m[TimAgent] 終端程序已結束\x1b[0m\r\n"
 				case "ja":
 					exitMsg = "\r\n\x1b[33m[TimAgent] 端末プロセスが終了しました\x1b[0m\r\n"
 				case "ko":

@@ -72,120 +72,26 @@
       btn_install_pwa: "📲 Install as App (PWA)",
       pwa_ios_tip: "iOS Install: Tap Safari Share button ⎋ at bottom, then choose 'Add to Home Screen'!",
       pwa_installed_tip: "Open browser menu and select 'Install App' or 'Add to Home Screen'.",
+      btn_top_deploy: "🚀 Deploy ▾",
+      modal_project_switch_title: "📂 Switch Project Session",
+      modal_project_switch_tip: "Click to switch project immediately; previous sessions stay running in the background:",
+      modal_deploy_select_title: "🚀 Select Deploy App & Environment",
+      btn_generic_deploy: "Send Generic Deploy Prompt",
+      modal_num_title: "🔢 Number Picker (0-9)",
+      modal_num_tip: "Tap to send digit to terminal immediately:",
+      modal_about_title: "ℹ️ About Tim-Agent",
+      about_desc: "Native GUI Terminal Agent & Mobile Vibe Coding Hub",
+      about_status: "Daemon Status:",
+      about_status_active: "Active",
+      about_uptime: "Uptime:",
+      btn_check_update: "Check Updates",
       vibes: {
-        '帮我修复上面的报错并自测': { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
-        '继续': { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
-        '帮我编译构建当前项目并汇报结果': { text: '🛠️ Build', prompt: 'Build and compile project and report results', title: 'Compile & Build' },
-        '帮我部署当前项目并检查运行状态': { text: '🚀 Deploy', prompt: 'Deploy the project and check running status', title: 'Deploy project' },
-        '运行测试并汇报结果': { text: '🧪 Test', prompt: 'Run tests and report results', title: 'Run tests' },
-        '帮我用简明commit message提交当前修改': { text: '📝 Commit', prompt: 'Commit current changes with concise commit message', title: 'Git Commit' }
-      }
-    },
-    zh: {
-      term_page_title: "Tim-Agent 终端",
-      term_session_title: "终端",
-      btn_switch_agent_title: "点击切换当前Agent代理",
-      btn_redraw_title: "重绘屏幕 (修复尺寸变动乱码)",
-      btn_theme_title: "切换终端配色方案",
-      btn_input_title: "Prompt / 长文本输入助手",
-      btn_zoom_out_title: "减小字体",
-      btn_zoom_in_title: "增大字体",
-      btn_keyboard_title: "切换虚拟键盘显隐",
-      btn_dashboard_title: "返回控制面板",
-      btn_ctrl_picker_title: "点击展开选择字母输入 Ctrl+ 组合键",
-      key_backspace_title: "退格删除",
-      key_enter_title: "回车换行/执行",
-      btn_add_cmd: "+ 自定义",
-      modal_prompt_title: "Prompt / 长文本输入助手",
-      btn_paste_clipboard: "📋 从剪贴板粘贴",
-      btn_clear_helper: "清空",
-      btn_send_enter: "发送并执行 (Enter)",
-      btn_send_only: "仅发送",
-      modal_add_cmd_title: "添加常用快捷命令",
-      label_cmd_name: "按钮名称:",
-      label_cmd_text: "执行命令:",
-      label_cmd_enter: "点击后自动回车执行",
-      btn_cancel: "取消",
-      btn_save_cmd: "保存按钮",
-      modal_agent_title: "选择命令行 Agent 代理",
-      modal_agent_tip: "切换后将自动在绑定目录下重新拉起该 Agent",
-      label_auto_approve: "⚡ 自动确认 (关闭沙箱 / 免交互弹窗)",
-      modal_ctrl_title: "⌨️ Ctrl+ 快捷组合键",
-      modal_ctrl_tip: "点击立即发送对应快捷控制符并自动收起：",
-      ctrl_c_desc: "中断/取消",
-      ctrl_d_desc: "退出/EOF",
-      ctrl_z_desc: "挂起后台",
-      ctrl_l_desc: "清屏重绘",
-      ctrl_r_desc: "反向搜索",
-      ctrl_a_desc: "光标行首",
-      ctrl_e_desc: "光标行尾",
-      ctrl_u_desc: "删除整行",
-      ctrl_alpha_title: "其他字母 (Ctrl + A~Z):",
-      modal_theme_title: "🎨 终端配色方案",
-      modal_theme_tip: "选择适合手机环境与夜晚编码的舒适配色：",
-      status_online: "在线正常",
-      status_connecting: "正在重连...",
-      status_offline: "已离线",
-      btn_install_pwa: "📲 安装为本地应用 (PWA)",
-      pwa_ios_tip: "iOS 安装方法：点击 Safari 底部「分享」按钮 ⎋，然后选择「添加到主屏幕」即可安装为独立 App！",
-      pwa_installed_tip: "可通过浏览器右上角菜单选择「安装应用」或「添加到主屏幕」将终端保存至桌面",
-      vibes: {}
-    },
-    'zh-TW': {
-      term_page_title: "Tim-Agent 終端",
-      term_session_title: "終端",
-      btn_switch_agent_title: "點擊切換當前Agent代理",
-      btn_redraw_title: "重繪螢幕 (修復尺寸變動亂碼)",
-      btn_theme_title: "切換終端配色主題",
-      btn_input_title: "Prompt / 長文字輸入助手",
-      btn_zoom_out_title: "縮小字型",
-      btn_zoom_in_title: "放大字型",
-      btn_keyboard_title: "切換虛擬鍵盤顯示",
-      btn_dashboard_title: "返回控制面板",
-      btn_ctrl_picker_title: "點擊選擇字母輸入 Ctrl+ 組合鍵",
-      key_backspace_title: "倒退刪除",
-      key_enter_title: "換行/執行",
-      btn_add_cmd: "+ 自訂",
-      modal_prompt_title: "Prompt / 長文字輸入助手",
-      btn_paste_clipboard: "📋 從剪貼簿貼上",
-      btn_clear_helper: "清空",
-      btn_send_enter: "傳送並執行 (Enter)",
-      btn_send_only: "僅傳送",
-      modal_add_cmd_title: "新增常用快捷命令",
-      label_cmd_name: "按鈕名稱:",
-      label_cmd_text: "執行命令:",
-      label_cmd_enter: "點擊後自動回車執行",
-      btn_cancel: "取消",
-      btn_save_cmd: "儲存按鈕",
-      modal_agent_title: "選擇命令列 Agent 代理",
-      modal_agent_tip: "切換後將自動在綁定目錄下重新拉起該 Agent",
-      label_auto_approve: "⚡ 自動確認 (關閉沙箱 / 免互動)",
-      modal_ctrl_title: "⌨️ Ctrl+ 快捷組合鍵",
-      modal_ctrl_tip: "點擊立即傳送對應控制符號並自動收起：",
-      ctrl_c_desc: "中斷/取消",
-      ctrl_d_desc: "結束/EOF",
-      ctrl_z_desc: "掛起背景",
-      ctrl_l_desc: "清屏重繪",
-      ctrl_r_desc: "反向搜尋",
-      ctrl_a_desc: "游標行首",
-      ctrl_e_desc: "游標行尾",
-      ctrl_u_desc: "刪除整行",
-      ctrl_alpha_title: "其他字母 (Ctrl + A~Z):",
-      modal_theme_title: "🎨 終端配色主題",
-      modal_theme_tip: "選擇舒適的配色主題：",
-      status_online: "連線正常",
-      status_connecting: "重新連線中...",
-      status_offline: "已離線",
-      btn_install_pwa: "📲 安裝為本機應用程式 (PWA)",
-      pwa_ios_tip: "iOS 安裝方式：點擊 Safari 底部「分享」按鈕 ⎋，然後選擇「加入主畫面」即可安裝為獨立 App！",
-      pwa_installed_tip: "可透過瀏覽器選單選擇「安裝應用程式」或「加入主畫面」將終端儲存至桌面",
-      vibes: {
-        '帮我修复上面的报错并自测': { text: '⚡ 修復', prompt: '幫我修復上面的報錯並自測', title: '一鍵修復' },
-        '继续': { text: '▶️ 繼續', prompt: '繼續', title: '繼續執行' },
-        '帮我编译构建当前项目并汇报结果': { text: '🛠️ 編譯', prompt: '幫我編譯構建當前專案並匯報結果', title: '編譯專案' },
-        '帮我部署当前项目并检查运行状态': { text: '🚀 部署', prompt: '幫我部署當前專案並檢查運行狀態', title: '部署專案' },
-        '运行测试并汇报结果': { text: '🧪 測試', prompt: '運行測試並匯報結果', title: '跑測試' },
-        '帮我用简明commit message提交当前修改': { text: '📝 提交', prompt: '幫我用簡明commit message提交當前修改', title: '提交代碼' }
+        fix: { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
+        continue: { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
+        build: { text: '🛠️ Build', prompt: 'Build and compile the current project and report results', title: 'Compile & Build' },
+        deploy: { text: '🚀 Deploy', prompt: 'Deploy the current project and check running status', title: 'Deploy project' },
+        test: { text: '🧪 Test', prompt: 'Run tests and report results', title: 'Run tests' },
+        commit: { text: '📝 Commit', prompt: 'Commit current changes with a concise commit message', title: 'Git Commit' }
       }
     },
     ja: {
@@ -236,13 +142,26 @@
       btn_install_pwa: "📲 ホーム画面に追加 (PWA)",
       pwa_ios_tip: "iOS インストール: Safari 画面下の共有ボタン ⎋ をタップし、「ホーム画面に追加」を選択してください。",
       pwa_installed_tip: "ブラウザのメニューから「アプリをインストール」または「ホーム画面に追加」を選択してください。",
+      btn_top_deploy: "🚀 デプロイ ▾",
+      modal_project_switch_title: "📂 プロジェクト切替",
+      modal_project_switch_tip: "タップで即座にプロジェクトを切り替えます（元のセッションはバックグラウンドで継続）:",
+      modal_deploy_select_title: "🚀 デプロイ先アプリ＆環境を選択",
+      btn_generic_deploy: "汎用デプロイ指示を送信",
+      modal_num_title: "🔢 数字選択 (0-9)",
+      modal_num_tip: "タップして数字を送信:",
+      modal_about_title: "ℹ️ Tim-Agent について",
+      about_desc: "Native GUI Terminal Agent & Mobile Vibe Coding Hub",
+      about_status: "稼働状態:",
+      about_status_active: "正常稼働中 (Active)",
+      about_uptime: "稼働時間:",
+      btn_check_update: "更新を確認",
       vibes: {
-        '帮我修复上面的报错并自测': { text: '⚡ 修正', prompt: 'エラーを修正してテストしてください', title: 'エラー修正' },
-        '继续': { text: '▶️ 続行', prompt: '続行してください', title: '続行' },
-        '帮我编译构建当前项目并汇报结果': { text: '🛠️ ビルド', prompt: 'プロジェクトをビルドして結果を報告してください', title: 'ビルド' },
-        '帮我部署当前项目并检查运行状态': { text: '🚀 デプロイ', prompt: 'プロジェクトをデプロイして稼働確認してください', title: 'デプロイ' },
-        '运行测试并汇报结果': { text: '🧪 テスト', prompt: 'テストを実行して結果を報告してください', title: 'テスト実行' },
-        '帮我用简明commit message提交当前修改': { text: '📝 コミット', prompt: 'コミットメッセージを作成してコミットしてください', title: 'コミット' }
+        fix: { text: '⚡ 修正', prompt: 'エラーを修正してテストしてください', title: 'エラー修正' },
+        continue: { text: '▶️ 続行', prompt: '続行してください', title: '続行' },
+        build: { text: '🛠️ ビルド', prompt: 'プロジェクトをビルドして結果を報告してください', title: 'ビルド' },
+        deploy: { text: '🚀 デプロイ', prompt: 'プロジェクトをデプロイして稼働確認してください', title: 'デプロイ' },
+        test: { text: '🧪 テスト', prompt: 'テストを実行して結果を報告してください', title: 'テスト実行' },
+        commit: { text: '📝 コミット', prompt: 'コミットメッセージを作成してコミットしてください', title: 'コミット' }
       }
     },
     ko: {
@@ -293,13 +212,26 @@
       btn_install_pwa: "📲 앱으로 설치 (PWA)",
       pwa_ios_tip: "iOS 설치: Safari 하단 공유 버튼 ⎋ 을 누른 후 '홈 화면에 추가'를 선택하세요.",
       pwa_installed_tip: "브라우저 메뉴에서 '앱 설치' 또는 '홈 화면에 추가'를 선택하여 설치할 수 있습니다.",
+      btn_top_deploy: "🚀 배포 ▾",
+      modal_project_switch_title: "📂 프로젝트 세션 전환",
+      modal_project_switch_tip: "클릭 시 즉시 전환되며 기존 세션은 백그라운드에서 계속 유지됩니다:",
+      modal_deploy_select_title: "🚀 배포 앱 및 환경 선택",
+      btn_generic_deploy: "일반 배포 프롬프트 전송",
+      modal_num_title: "🔢 숫자 선택 (0-9)",
+      modal_num_tip: "클릭하여 숫자를 즉시 전송:",
+      modal_about_title: "ℹ️ Tim-Agent 정보",
+      about_desc: "Native GUI Terminal Agent & Mobile Vibe Coding Hub",
+      about_status: "데몬 상태:",
+      about_status_active: "정상 실행 중 (Active)",
+      about_uptime: "가동 시간:",
+      btn_check_update: "업데이트 확인",
       vibes: {
-        '帮我修复上面的报错并自测': { text: '⚡ 수정', prompt: '오류를 수정하고 자체 테스트를 수행하세요', title: '오류 수정' },
-        '继续': { text: '▶️ 계속', prompt: '계속 실행하세요', title: '계속' },
-        '帮我编译构建当前项目并汇报结果': { text: '🛠️ 빌드', prompt: '프로젝트를 빌드하고 결과를 보고하세요', title: '빌드' },
-        '帮我部署当前项目并检查运行状态': { text: '🚀 배포', prompt: '프로젝트를 배포하고 실행 상태를 확인하세요', title: '배포' },
-        '运行测试并汇报结果': { text: '🧪 테스트', prompt: '테스트를 실행하고 결과를 보고하세요', title: '테스트' },
-        '帮我用简明commit message提交当前修改': { text: '📝 커밋', prompt: '간결한 커밋 메시지로 커밋하세요', title: '커밋' }
+        fix: { text: '⚡ 수정', prompt: '오류를 수정하고 자체 테스트를 수행하세요', title: '오류 수정' },
+        continue: { text: '▶️ 계속', prompt: '계속 실행하세요', title: '계속' },
+        build: { text: '🛠️ 빌드', prompt: '프로젝트를 빌드하고 결과를 보고하세요', title: '빌드' },
+        deploy: { text: '🚀 배포', prompt: '프로젝트를 배포하고 실행 상태를 확인하세요', title: '배포' },
+        test: { text: '🧪 테스트', prompt: '테스트를 실행하고 결과를 보고하세요', title: '테스트' },
+        commit: { text: '📝 커밋', prompt: '간결한 커밋 메시지로 커밋하세요', title: '커밋' }
       }
     },
     de: {
@@ -350,13 +282,26 @@
       btn_install_pwa: "📲 Als App installieren (PWA)",
       pwa_ios_tip: "iOS-Installation: Tippen Sie in Safari unten auf Teilen ⎋ und wählen Sie 'Zum Home-Bildschirm'.",
       pwa_installed_tip: "Öffnen Sie das Browsermenü und wählen Sie 'App installieren' oder 'Zum Startbildschirm hinzufügen'.",
+      btn_top_deploy: "🚀 Deploy ▾",
+      modal_project_switch_title: "📂 Projektsitzung wechseln",
+      modal_project_switch_tip: "Klicken zum sofortigen Wechsel; bisherige Sitzungen laufen im Hintergrund weiter:",
+      modal_deploy_select_title: "🚀 Deploy-App & Umgebung wählen",
+      btn_generic_deploy: "Allgemeinen Deploy-Prompt senden",
+      modal_num_title: "🔢 Ziffernauswahl (0-9)",
+      modal_num_tip: "Tippen, um Ziffer direkt zu senden:",
+      modal_about_title: "ℹ️ Über Tim-Agent",
+      about_desc: "Native GUI Terminal Agent & Mobile Vibe Coding Hub",
+      about_status: "Daemon-Status:",
+      about_status_active: "Aktiv",
+      about_uptime: "Laufzeit:",
+      btn_check_update: "Updates prüfen",
       vibes: {
-        '帮我修复上面的报错并自测': { text: '⚡ Reparieren', prompt: 'Fehler oben beheben und überprüfen', title: 'Fehler beheben' },
-        '继续': { text: '▶️ Weiter', prompt: 'Weiter ausführen', title: 'Weiter' },
-        '帮我编译构建当前项目并汇报结果': { text: '🛠️ Build', prompt: 'Projekt erstellen und Ergebnis melden', title: 'Projekt bauen' },
-        '帮我部署当前项目并检查运行状态': { text: '🚀 Deploy', prompt: 'Projekt bereitstellen und Status prüfen', title: 'Bereitstellen' },
-        '运行测试并汇报结果': { text: '🧪 Test', prompt: 'Tests ausführen und Ergebnis melden', title: 'Tests' },
-        '帮我用简明commit message提交当前修改': { text: '📝 Commit', prompt: 'Änderungen mit kurzer Commit-Nachricht committen', title: 'Git Commit' }
+        fix: { text: '⚡ Reparieren', prompt: 'Fehler oben beheben und überprüfen', title: 'Fehler beheben' },
+        continue: { text: '▶️ Weiter', prompt: 'Weiter ausführen', title: 'Weiter' },
+        build: { text: '🛠️ Build', prompt: 'Projekt erstellen und Ergebnis melden', title: 'Projekt bauen' },
+        deploy: { text: '🚀 Deploy', prompt: 'Projekt bereitstellen und Status prüfen', title: 'Bereitstellen' },
+        test: { text: '🧪 Test', prompt: 'Tests ausführen und Ergebnis melden', title: 'Tests' },
+        commit: { text: '📝 Commit', prompt: 'Änderungen mit kurzer Commit-Nachricht committen', title: 'Git Commit' }
       }
     }
   };
@@ -367,6 +312,7 @@
     if (!TERM_I18N[lang]) lang = 'en';
     currentUiLang = lang;
     localStorage.setItem('tim_lang', lang);
+    document.documentElement.lang = lang;
     const dict = TERM_I18N[lang];
 
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
@@ -383,12 +329,12 @@
 
     // 适配 Vibe 按键
     if (dict.vibes) {
-      document.querySelectorAll('[data-vibe]').forEach(function (btn) {
-        const origVibe = btn.getAttribute('data-vibe');
-        if (dict.vibes[origVibe]) {
-          btn.textContent = dict.vibes[origVibe].text;
-          btn.title = dict.vibes[origVibe].title;
-          btn.setAttribute('data-vibe', dict.vibes[origVibe].prompt);
+      document.querySelectorAll('[data-vibe-id]').forEach(function (btn) {
+        const vibeId = btn.getAttribute('data-vibe-id');
+        if (dict.vibes[vibeId]) {
+          btn.textContent = dict.vibes[vibeId].text;
+          btn.title = dict.vibes[vibeId].title;
+          btn.setAttribute('data-vibe', dict.vibes[vibeId].prompt);
         }
       });
     }
@@ -411,7 +357,7 @@
     'github-dark': {
       id: 'github-dark',
       name: 'GitHub Dark',
-      desc: '经典深灰，层次清晰',
+      desc: 'Classic dark slate, crisp contrast',
       sample: ['#0d1117', '#3fb950', '#58a6ff', '#bc8cff'],
       ui: { bg: '#0d1117', header: '#161b22', border: '#30363d', btnBg: '#21262d' },
       term: {
@@ -440,7 +386,7 @@
     'oled-black': {
       id: 'oled-black',
       name: 'OLED Pure Black',
-      desc: '纯黑省电，高对比度',
+      desc: 'True black battery saver, high contrast',
       sample: ['#000000', '#50fa7b', '#00ff66', '#bd93f9'],
       ui: { bg: '#000000', header: '#0a0a0a', border: '#222222', btnBg: '#141414' },
       term: {
@@ -469,7 +415,7 @@
     'dracula': {
       id: 'dracula',
       name: 'Dracula',
-      desc: '暗紫风韵，现代极客',
+      desc: 'Vibrant purple & neon geek aesthetic',
       sample: ['#282a36', '#50fa7b', '#ff79c6', '#bd93f9'],
       ui: { bg: '#282a36', header: '#1e1f29', border: '#44475a', btnBg: '#343746' },
       term: {
@@ -498,7 +444,7 @@
     'one-dark': {
       id: 'one-dark',
       name: 'One Dark',
-      desc: '经典代码色，雅致耐看',
+      desc: 'Balanced Atom editor palette',
       sample: ['#1e1e24', '#98c379', '#61afef', '#c678dd'],
       ui: { bg: '#1e1e24', header: '#18181c', border: '#2c313a', btnBg: '#282c34' },
       term: {
@@ -527,7 +473,7 @@
     'monokai': {
       id: 'monokai',
       name: 'Monokai Pro',
-      desc: '鲜艳对撞，高辨识度',
+      desc: 'Warm charcoal with vivid syntax colors',
       sample: ['#272822', '#a6e22e', '#66d9ef', '#ae81ff'],
       ui: { bg: '#272822', header: '#1e1f1c', border: '#3e3d32', btnBg: '#34352e' },
       term: {
@@ -556,7 +502,7 @@
     'solarized-dark': {
       id: 'solarized-dark',
       name: 'Solarized Dark',
-      desc: '复古青绿，柔和舒适',
+      desc: 'Precision teal tones, easy on the eyes',
       sample: ['#002b36', '#859900', '#268bd2', '#d33682'],
       ui: { bg: '#002b36', header: '#00212b', border: '#073642', btnBg: '#073642' },
       term: {
@@ -1204,26 +1150,6 @@
     });
   }
 
-  // 多语言适配 Vibe 按键标签与提示词
-  if (currentUiLang !== 'zh') {
-    const vibeTranslations = {
-      '帮我修复上面的报错并自测': { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
-      '继续': { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
-      '帮我编译构建当前项目并汇报结果': { text: '🛠️ Build', prompt: 'Build and compile project and report results', title: 'Compile & Build' },
-      '帮我部署当前项目并检查运行状态': { text: '🚀 Deploy', prompt: 'Deploy the project and check running status', title: 'Deploy project' },
-      '运行测试并汇报结果': { text: '🧪 Test', prompt: 'Run tests and report results', title: 'Run tests' },
-      '帮我用简明commit message提交当前修改': { text: '📝 Commit', prompt: 'Commit current changes with concise commit message', title: 'Git Commit' },
-    };
-    document.querySelectorAll('[data-vibe]').forEach(function (btn) {
-      const origVibe = btn.getAttribute('data-vibe');
-      if (vibeTranslations[origVibe]) {
-        btn.textContent = vibeTranslations[origVibe].text;
-        btn.title = vibeTranslations[origVibe].title;
-        btn.setAttribute('data-vibe', vibeTranslations[origVibe].prompt);
-      }
-    });
-  }
-
   // 部署弹窗元素 (顶部工具栏按钮)
   const btnTopDeploy = document.getElementById('btnTopDeploy');
   const deploySelectModal = document.getElementById('deploySelectModal');
@@ -1256,7 +1182,9 @@
   if (btnFallbackGenericDeploy) {
     btnFallbackGenericDeploy.addEventListener('click', function () {
       closeDeploySelectModal();
-      sendInput('帮我部署当前项目并检查运行状态\r');
+      const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+      const promptText = (dict.vibes && dict.vibes.deploy && dict.vibes.deploy.prompt) || 'Deploy the current project and check running status';
+      sendInput(promptText + '\r');
       term.focus();
     });
   }
@@ -1271,13 +1199,12 @@
 
   async function openDeploySelector() {
     if (!deploySelectModal || !deploySelectListGroup) {
-      const fallback = (btnVibeDeploy && btnVibeDeploy.getAttribute('data-vibe')) || '帮我部署当前项目并检查运行状态';
-      sendInput(fallback + '\r');
+      sendInput('Deploy the current project and check running status\r');
       term.focus();
       return;
     }
 
-    deploySelectListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">⏳ 正在读取当前项目部署配置...</div>';
+    deploySelectListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">⏳ Loading project deploy configurations...</div>';
     deploySelectModal.style.display = 'flex';
 
     try {
@@ -1289,9 +1216,9 @@
       if (!data.ok || !Array.isArray(appsList) || appsList.length === 0) {
         deploySelectListGroup.innerHTML = `
           <div style="background:rgba(255,255,255,0.03);border:1px dashed #30363d;border-radius:8px;padding:14px;color:#8b949e;font-size:12.5px;line-height:1.6;">
-            <div style="color:#c9d1d9;font-weight:600;margin-bottom:6px;">ℹ️ 当前项目「${escapeHtmlTerm(data.project_name || currentProjectName || currentSessionId)}」暂未配置专属部署应用</div>
-            <div>您可以在控制面板 <strong>【项目管理 -> 🚀 部署配置】</strong> 中为该项目添加多个应用（如：前端H5、后端API、APK打包）及不同环境（生产/测试/本地）的服务器与脚本信息。</div>
-            <div style="margin-top:6px;color:#3fb950;">🔒 账号密码隔离保存在服务端 ~/.tim-agent/vault/，绝不写入项目目录，也不会明文出现在终端上下文中。</div>
+            <div style="color:#c9d1d9;font-weight:600;margin-bottom:6px;">ℹ️ No deploy apps configured for project "${escapeHtmlTerm(data.project_name || currentProjectName || currentSessionId)}"</div>
+            <div>You can configure multiple deploy applications (Frontend, Backend API, Mobile APK) and target environments (Production / Staging / Test) in <strong>[Control Center -> Project Management -> 🚀 Deploy Config]</strong>.</div>
+            <div style="margin-top:6px;color:#3fb950;">🔒 Server credentials are isolated in ~/.tim-agent/vault/ (0600 permissions) and never exposed in plaintext.</div>
           </div>
         `;
         return;
@@ -1308,7 +1235,7 @@
         appSection.style.marginBottom = '10px';
 
         const appType = app.type || app.app_type || '';
-        const appName = app.name || app.app_name || '未命名应用';
+        const appName = app.name || app.app_name || 'Unnamed App';
         const typeIcon = appType === 'web_h5' ? '🌐' : (appType === 'android_apk' ? '📱' : (appType === 'backend_api' ? '⚙️' : '📦'));
         const appHeader = document.createElement('div');
         appHeader.style.cssText = 'font-size:12px;font-weight:600;color:#58a6ff;margin:4px 0 6px 2px;display:flex;align-items:center;gap:6px;';
@@ -1322,18 +1249,18 @@
           btn.style.marginBottom = '6px';
 
           const deployBadge = (env.method || env.deploy_type || 'ssh').toUpperCase();
-          const hostSummary = env.masked_host || env.host_summary || '本地构建';
+          const hostSummary = env.masked_host || env.host_summary || 'Local Build';
           const remoteTarget = env.remote_dir ? ` → ${env.remote_dir}` : '';
           btn.innerHTML = `
             <div class="agent-item-title" style="display:flex;justify-content:space-between;align-items:center;">
-              <span>🚀 ${escapeHtmlTerm(appName)} — <strong style="color:#3fb950;">${escapeHtmlTerm(env.env_name || '默认环境')}</strong></span>
+              <span>🚀 ${escapeHtmlTerm(appName)} — <strong style="color:#3fb950;">${escapeHtmlTerm(env.env_name || 'Default Env')}</strong></span>
               <span style="font-size:11px;padding:1px 7px;border-radius:10px;background:rgba(56,139,253,0.15);color:#58a6ff;border:1px solid rgba(56,139,253,0.35);">${escapeHtmlTerm(deployBadge)}</span>
             </div>
             <div class="agent-item-desc" style="margin-top:3px;font-family:monospace;color:#8b949e;font-size:11.5px;">
-              🖥️ 目标: ${escapeHtmlTerm(hostSummary + remoteTarget)}
+              🖥️ Target: ${escapeHtmlTerm(hostSummary + remoteTarget)}
             </div>
             <div class="agent-item-desc" style="margin-top:2px;color:#3fb950;font-size:11px;">
-              🔒 零明文脚本: ${escapeHtmlTerm(env.script_path || '~/.tim-agent/vault/')}
+              🔒 Vault Runner: ${escapeHtmlTerm(env.script_path || '~/.tim-agent/vault/')}
             </div>
           `;
 
@@ -1351,10 +1278,10 @@
       });
 
       if (totalEnvCount === 0) {
-        deploySelectListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">当前项目的应用下尚未添加环境，请在控制面板【🚀 部署配置】中添加环境。</div>';
+        deploySelectListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">No target environments configured yet. Please add environments in [🚀 Deploy Config].</div>';
       }
     } catch (err) {
-      deploySelectListGroup.innerHTML = '<div style="color:#f85149;font-size:13px;padding:12px;">读取部署配置失败，可直接点击下方「直接发送通用部署提示词」。</div>';
+      deploySelectListGroup.innerHTML = '<div style="color:#f85149;font-size:13px;padding:12px;">Failed to load deploy config. You can click "Send Generic Deploy Prompt" below.</div>';
     }
   }
 
@@ -1440,7 +1367,7 @@
   function updateAgentUI() {
     const found = currentAgents.find(a => a.id === currentActiveAgent);
     const name = found ? found.name : currentActiveAgent;
-    const approveBadge = currentAutoApprove ? (currentUiLang === 'zh' ? ' [⚡免确认]' : ' [⚡Auto]') : '';
+    const approveBadge = currentAutoApprove ? ' [⚡Auto]' : '';
     agentNameText.textContent = name + approveBadge;
   }
 
@@ -1463,7 +1390,7 @@
     projectSwitchListGroup.innerHTML = '';
 
     if (!currentProjectsStatus || currentProjectsStatus.length === 0) {
-      projectSwitchListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">暂无已配置项目，请前往控制面板添加项目。</div>';
+      projectSwitchListGroup.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px;">No projects configured yet. Please add projects in the Control Center.</div>';
       return;
     }
 
@@ -1474,11 +1401,12 @@
 
       const foundAgent = currentAgents.find(a => a.id === (proj.active_agent || proj.agent));
       const agentLabel = foundAgent ? foundAgent.name : (proj.active_agent || proj.agent || 'claude');
-      const autoText = proj.auto_approve ? ' ⚡免确认' : '';
-      const runBadge = proj.running
-        ? `<span class="proj-run-badge running">● 后台运行中 (PID:${proj.pid || '-'})</span>`
-        : `<span class="proj-run-badge idle">○ 待机 (点击启动)</span>`;
-      const currentTag = isCurrent ? `<span style="color:#58a6ff;font-size:12px;margin-left:6px;">[当前会话]</span>` : '';
+      const autoText = proj.auto_approve ? ' ⚡Auto-Approve' : '';
+      const isRunning = proj.is_running || proj.running;
+      const runBadge = isRunning
+        ? `<span class="proj-run-badge running">● Running in Background (PID:${proj.pid || '-'})</span>`
+        : `<span class="proj-run-badge idle">○ Standby (Click to Start)</span>`;
+      const currentTag = isCurrent ? `<span style="color:#58a6ff;font-size:12px;margin-left:6px;">[Current Session]</span>` : '';
 
       btn.innerHTML = `
         <div class="agent-item-title">📂 ${proj.name} ${runBadge} ${currentTag}</div>
@@ -1506,7 +1434,7 @@
       });
       const resData = await res.json();
       if (!resData.ok) {
-        alert('切换项目失败: ' + (resData.message || '未知错误'));
+        alert('Failed to switch project: ' + (resData.message || 'Unknown error'));
         return;
       }
 
@@ -1620,15 +1548,15 @@
     currentAgents.forEach(a => {
       const btn = document.createElement('div');
       btn.className = 'agent-item-btn' + (a.id === currentActiveAgent ? ' active' : '');
-      const flagHint = a.auto_approve_flag ? `<span style="color: #e3b341; font-size: 11px;">(支持自动确认: ${a.auto_approve_flag})</span>` : '';
+      const flagHint = a.auto_approve_flag ? `<span style="color: #e3b341; font-size: 11px;">(Auto-Approve flag: ${a.auto_approve_flag})</span>` : '';
       btn.innerHTML = `
         <div class="agent-item-title">${a.name} (${a.command || 'shell'}) ${flagHint}</div>
         <div class="agent-item-desc">${a.description}</div>
       `;
       btn.onclick = async function () {
         const autoApprove = modalAutoApprove.checked;
-        const confirmText = autoApprove ? '【开启自动确认/关闭沙箱】' : '【普通安全确认】';
-        if (!confirm(`确定以 ${confirmText} 模式切换到 [${a.name}] 吗？当前终端会话将重启`)) return;
+        const confirmText = autoApprove ? '[Auto-Approve Enabled]' : '[Standard Safe Mode]';
+        if (!confirm(`Switch to [${a.name}] in ${confirmText} mode? The current terminal session will restart.`)) return;
         try {
           const res = await fetch('/api/sessions/restart', {
             method: 'POST',
@@ -1651,10 +1579,10 @@
               ws.close();
             }
           } else {
-            alert('切换失败: ' + (resData.message || '未知错误'));
+            alert('Switch failed: ' + (resData.message || 'Unknown error'));
           }
         } catch (err) {
-          alert('网络错误');
+          alert('Network error');
         }
       };
       agentListGroup.appendChild(btn);
@@ -1832,32 +1760,34 @@
 
   if (btnCheckUpdateTerminal) {
     btnCheckUpdateTerminal.addEventListener('click', async function () {
+      const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+      const origLabel = dict.btn_check_update || 'Check Updates';
       btnCheckUpdateTerminal.disabled = true;
-      btnCheckUpdateTerminal.textContent = '检查中...';
+      btnCheckUpdateTerminal.textContent = 'Checking...';
       try {
         const res = await fetch('/api/version/check');
         const data = await res.json();
         if (data.ok) {
           if (data.has_update) {
-            btnCheckUpdateTerminal.textContent = `发现新版 ${data.latest_version}`;
-            if (confirm(`发现 Tim-Agent 新版本 ${data.latest_version}！\n是否前往 GitHub 查看更新？`)) {
+            btnCheckUpdateTerminal.textContent = `New: ${data.latest_version}`;
+            if (confirm(`New Tim-Agent release ${data.latest_version} available!\nOpen GitHub Releases to download?`)) {
               window.open(data.html_url || 'https://github.com/tim-today/tim-agent/releases', '_blank');
             }
           } else {
-            btnCheckUpdateTerminal.textContent = '已是最新版 ✓';
+            btnCheckUpdateTerminal.textContent = 'Up to date ✓';
             setTimeout(() => {
-              btnCheckUpdateTerminal.textContent = '检查更新';
+              btnCheckUpdateTerminal.textContent = origLabel;
               btnCheckUpdateTerminal.disabled = false;
             }, 2500);
           }
         } else {
-          alert('检测版本失败: ' + (data.error || '网络超时'));
-          btnCheckUpdateTerminal.textContent = '检查更新';
+          alert('Update check failed: ' + (data.error || 'Timeout'));
+          btnCheckUpdateTerminal.textContent = origLabel;
           btnCheckUpdateTerminal.disabled = false;
         }
       } catch (err) {
-        alert('无法连接到 GitHub 版本检测服务');
-        btnCheckUpdateTerminal.textContent = '检查更新';
+        alert('Unable to reach GitHub release check service');
+        btnCheckUpdateTerminal.textContent = origLabel;
         btnCheckUpdateTerminal.disabled = false;
       }
     });
@@ -1922,17 +1852,15 @@
       const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
 
       if (isIOS) {
-        alert(dict.pwa_ios_tip || 'iOS 安装方法：点击 Safari 底部「分享」按钮 ⎋，然后选择「添加到主屏幕」即可安装为独立 App！');
+        alert(dict.pwa_ios_tip || "iOS Install: Tap Safari Share button ⎋ at the bottom, then choose 'Add to Home Screen'!");
       } else if (isAndroid) {
         alert(
-          '📱 Android Chrome 安装指引：\n' +
-          '1. 点击 Chrome 右上角三个点「⋮」菜单\n' +
-          '2. 选择「添加到主屏幕」或「安装应用」\n' +
-          '💡 荣耀 MagicOS / 华为系统提醒：请确保在手机【设置 -> 应用管理 -> Chrome】中已开启「创建桌面快捷方式」权限！\n\n' +
-          '💡 局域网专属提示：因浏览器安全策略，纯 HTTP 局域网地址默认限制自动安装弹窗。若需开启原生 PWA 弹窗，可在 Chrome 访问 chrome://flags/#unsafely-treat-insecure-origin-as-secure 将当前连接地址设为信任。'
+          '📱 Android Chrome Install Guide:\n' +
+          '1. Tap the 3-dot menu "⋮" in the top-right corner of Chrome\n' +
+          '2. Select "Add to Home screen" or "Install app"'
         );
       } else {
-        alert(dict.pwa_installed_tip || '可通过浏览器右上角菜单选择「安装应用」或「添加到主屏幕」将终端保存至桌面');
+        alert(dict.pwa_installed_tip || "Open your browser menu and select 'Install App' or 'Add to Home Screen'.");
       }
     }
   }

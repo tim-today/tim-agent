@@ -22,42 +22,6 @@ type TrayI18n struct {
 
 func GetTrayI18n(lang string, port int, ver string) TrayI18n {
 	switch lang {
-	case "zh":
-		return TrayI18n{
-			Tooltip:      fmt.Sprintf("Tim-Agent 在线终端 %s (端口: %d)", ver, port),
-			TitleActive:  fmt.Sprintf("🟢 Tim-Agent %s 运行中 (:%d)", ver, port),
-			OpenGUI:      "🌐 打开 Web 控制面板",
-			OpenGUITip:   "在浏览器中打开配置与扫码页面",
-			OpenTerm:     "📱 打开终端 (手机/PC)",
-			OpenTermTip:  "在浏览器中打开终端界面",
-			Restart:      "🔄 重启终端主会话",
-			RestartTip:   "重启底层 Shell 会话并拉起Agent",
-			GitHubLink:   "⭐ GitHub 官方开源主页",
-			GitHubTip:    "在浏览器中访问 GitHub 仓库",
-			CheckUpdate:  "🚀 检查新版本发布",
-			CheckTip:     "在浏览器中查看 GitHub 最新 Release",
-			VersionLabel: fmt.Sprintf("ℹ️ 当前版本: %s", ver),
-			Quit:         "❌ 退出 Tim-Agent",
-			QuitTip:      "停止服务并退出程序",
-		}
-	case "zh-TW":
-		return TrayI18n{
-			Tooltip:      fmt.Sprintf("Tim-Agent 線上終端 %s (連接埠: %d)", ver, port),
-			TitleActive:  fmt.Sprintf("🟢 Tim-Agent %s 運行中 (:%d)", ver, port),
-			OpenGUI:      "🌐 開啟 Web 控制面板",
-			OpenGUITip:   "在瀏覽器中開啟設定與掃碼頁面",
-			OpenTerm:     "📱 開啟終端機 (手機/PC)",
-			OpenTermTip:  "在瀏覽器中開啟終端機介面",
-			Restart:      "🔄 重啟終端機主工作階段",
-			RestartTip:   "重啟底層 Shell 會話並拉起Agent",
-			GitHubLink:   "⭐ GitHub 官方開源主頁",
-			GitHubTip:    "在瀏覽器中造訪 GitHub 倉庫",
-			CheckUpdate:  "🚀 檢查新版本發布",
-			CheckTip:     "在瀏覽器中檢視 GitHub 最新 Release",
-			VersionLabel: fmt.Sprintf("ℹ️ 目前版本: %s", ver),
-			Quit:         "❌ 結束 Tim-Agent",
-			QuitTip:      "停止服務並結束程式",
-		}
 	case "ja":
 		return TrayI18n{
 			Tooltip:      fmt.Sprintf("Tim-Agent オンライン端末 %s (ポート: %d)", ver, port),

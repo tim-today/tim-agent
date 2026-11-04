@@ -26,7 +26,7 @@
           <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
           GitHub
         </a>
-        <button id="btnInstallDesktopApp" class="btn btn-secondary" title="一键生成本机桌面 GUI 应用程序 (鼠标双击启动)">🖥️ 生成桌面应用</button>
+        <button id="btnInstallDesktopApp" class="btn btn-secondary" title="Generate & install native Desktop GUI App (double-click to launch)" data-i18n="btn_install_desktop_app">🖥️ Desktop App</button>
         <button id="btnCheckUpdate" class="btn btn-secondary" title="Check for updates on GitHub" data-i18n="btn_check_update">🚀 Update</button>
         <button id="btnRestartPty" class="btn btn-danger" title="Restart and launch selected Agent" data-i18n="btn_restart_agent">🔄 Restart & Launch Agent</button>
         <a href="/terminal" target="_blank" class="btn btn-primary" data-i18n="btn_enter_terminal">Open Terminal ↗</a>
@@ -43,7 +43,7 @@
         </div>
         <div class="qrcode-content">
           <div class="qr-preview-box">
-            <img id="qrImage" src="" alt="二维码加载中" class="qr-img">
+            <img id="qrImage" src="" alt="QR Code Loading" class="qr-img">
             <div id="qrPlaceholder" class="qr-loading" data-i18n="qr_loading">Generating...</div>
           </div>
           <div class="network-selector">
@@ -82,11 +82,11 @@
           <div class="remote-access-info">
             <div class="remote-access-label">
               <span class="remote-access-icon">🌐</span>
-              <strong data-i18n="label_remote_access">远程链接 (Remote Management):</strong>
-              <span id="remoteAccessBadge" class="remote-badge remote-disabled" data-i18n="badge_remote_off">仅限本机</span>
+              <strong data-i18n="label_remote_access">Remote Management (Web Dashboard):</strong>
+              <span id="remoteAccessBadge" class="remote-badge remote-disabled" data-i18n="badge_remote_off">Localhost Only</span>
             </div>
             <p class="remote-access-hint" data-i18n="hint_remote_access">
-              默认关闭（仅限 127.0.0.1 或 localhost 访问）。开启后允许外部 IP 访问控制面板，需输入访问密码验证。
+              Default off (127.0.0.1/localhost only). When enabled, external IPs can access dashboard with password.
             </p>
           </div>
           <label class="toggle-switch">
@@ -102,10 +102,10 @@
       <section class="card projects-card">
         <div class="card-header">
           <div>
-            <h2 data-i18n="card_projects_title">📂 项目管理 (Multi-Project & Sessions)</h2>
-            <span class="sub-hint" data-i18n="card_projects_subtitle">配置多个独立项目工作目录与专属 Agent，远程默认进入最近操作的会话，切换项目后原会话继续在后台运行（同一目录不可属于不同项目）</span>
+            <h2 data-i18n="card_projects_title">📂 Project Management (Multi-Session)</h2>
+            <span class="sub-hint" data-i18n="card_projects_subtitle">Configure multiple projects with independent WorkDir, CLI Agent & Deploy configs. Remote access enters the most recently operated session by default; background sessions keep running when switching.</span>
           </div>
-          <button type="button" id="btnAddProject" class="btn btn-primary btn-sm" data-i18n="btn_add_project">+ 新增项目</button>
+          <button type="button" id="btnAddProject" class="btn btn-primary btn-sm" data-i18n="btn_add_project">+ Add Project</button>
         </div>
 
         <div class="projects-list" id="projectsListContainer">
@@ -166,11 +166,9 @@
               </select>
             </div>
             <div class="form-item">
-              <label for="cfgLanguage" data-i18n="label_language">UI Language (界面语言):</label>
+              <label for="cfgLanguage" data-i18n="label_language">UI Language:</label>
               <select id="cfgLanguage" class="form-select">
                 <option value="en">English (Default)</option>
-                <option value="zh">简体中文</option>
-                <option value="zh-TW">繁體中文</option>
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="de">Deutsch</option>
@@ -216,7 +214,7 @@
   <div class="dash-modal-backdrop" id="projectModal" style="display: none;">
     <div class="dash-modal-dialog dash-modal-lg">
       <div class="dash-modal-header">
-        <h3 id="projectModalTitle" data-i18n="modal_proj_add_title">📂 新增项目配置</h3>
+        <h3 id="projectModalTitle" data-i18n="modal_proj_add_title">📂 Add New Project</h3>
         <button type="button" class="dash-modal-close" id="btnCloseProjectModal">×</button>
       </div>
       <form id="projectForm" class="dash-modal-body">
@@ -224,31 +222,31 @@
 
         <!-- 弹窗顶部导航 Tab -->
         <div class="proj-modal-tabs">
-          <button type="button" class="proj-tab-btn active" id="tabBtnBasic" data-tab="basic">📂 基础信息</button>
-          <button type="button" class="proj-tab-btn" id="tabBtnDeploy" data-tab="deploy">🚀 部署配置 (多应用/多环境)</button>
-          <button type="button" class="btn btn-primary btn-sm" id="btnAddDeployApp" style="margin-left: auto;">+ 添加部署应用</button>
+          <button type="button" class="proj-tab-btn active" id="tabBtnBasic" data-tab="basic" data-i18n="tab_basic_info">📂 Basic Info</button>
+          <button type="button" class="proj-tab-btn" id="tabBtnDeploy" data-tab="deploy" data-i18n="tab_deploy_cfg">🚀 Deploy Config (Multi-App/Env)</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnAddDeployApp" style="margin-left: auto;" data-i18n="btn_add_deploy_app">+ Add Deploy App</button>
         </div>
 
         <!-- Tab 1: 基础信息 -->
         <div class="proj-tab-pane" id="tabPaneBasic">
           <div class="form-item">
-            <label for="projNameInput" data-i18n="label_proj_name">项目名称 (Project Name):</label>
-            <input type="text" id="projNameInput" class="form-input" placeholder="例如：Tim-Agent / 商城系统" required>
+            <label for="projNameInput" data-i18n="label_proj_name">Project Name:</label>
+            <input type="text" id="projNameInput" class="form-input" placeholder="e.g. Tim-Agent / E-Commerce Backend" required>
           </div>
           <div class="form-item">
-            <label for="projWorkDirInput" data-i18n="label_proj_workdir">项目工作目录 (WorkDir):</label>
+            <label for="projWorkDirInput" data-i18n="label_proj_workdir">Working Directory (WorkDir):</label>
             <input type="text" id="projWorkDirInput" class="form-input" placeholder="/Users/username/Workspace/my-project" required>
-            <small data-i18n="hint_proj_workdir">⚠️ 每个项目必须使用独立目录，不能将同一个目录分配给不同项目</small>
+            <small data-i18n="hint_proj_workdir">⚠️ Each project must use a unique directory; the same directory cannot be shared across projects.</small>
           </div>
           <div class="form-item">
-            <label for="projAgentSelect" data-i18n="label_proj_agent">命令行 Agent 代理 (CLI Agent):</label>
+            <label for="projAgentSelect" data-i18n="label_proj_agent">CLI Agent Preset:</label>
             <select id="projAgentSelect" class="form-select"></select>
           </div>
           <div class="form-item">
             <div class="checkbox-inline" style="margin-top: 2px;">
               <input type="checkbox" id="projAutoApproveCheck">
               <label for="projAutoApproveCheck" data-i18n="label_proj_auto_approve">
-                ⚡ 自动确认 / 关闭沙箱 (Auto-Approve)
+                ⚡ Auto-Approve / Bypass Sandbox
               </label>
             </div>
           </div>
@@ -256,7 +254,7 @@
             <div class="checkbox-inline" style="margin-top: 2px;">
               <input type="checkbox" id="projSetActiveCheck" checked>
               <label for="projSetActiveCheck" data-i18n="label_proj_set_active">
-                设为当前默认活动项目 (远程链接默认进入)
+                Set as current active project (default for remote connection)
               </label>
             </div>
           </div>
@@ -269,8 +267,8 @@
 
         <div id="projErrorMsg" class="proj-error-msg" style="display: none;"></div>
         <div class="dash-modal-footer">
-          <button type="button" class="btn btn-secondary" id="btnCancelProjectModal" data-i18n="btn_cancel">取消</button>
-          <button type="submit" class="btn btn-primary" id="btnSaveProjectModal" data-i18n="btn_save_project">保存项目</button>
+          <button type="button" class="btn btn-secondary" id="btnCancelProjectModal" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveProjectModal" data-i18n="btn_save_project">Save Project</button>
         </div>
       </form>
     </div>

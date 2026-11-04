@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
@@ -19,25 +19,25 @@
   <header class="top-bar">
     <div class="status-indicator">
       <span class="status-dot online" id="statusDot"></span>
-      <button class="project-badge-btn" id="btnSwitchProject" title="切换项目会话 (多项目后台保持运行)">
+      <button class="project-badge-btn" id="btnSwitchProject" title="Switch Project Session (background sessions stay alive)">
         📂 <span id="sessionTitle" data-i18n="term_session_title">Terminal</span> ▾
       </button>
       <button class="agent-badge-btn" id="btnSwitchAgent" title="Switch Agent">
         🤖 <span id="agentNameText">Claude</span> ▾
       </button>
-      <button class="deploy-badge-btn" id="btnTopDeploy" title="选择部署应用与环境">
-        🚀 部署 ▾
+      <button class="deploy-badge-btn" id="btnTopDeploy" title="Select Deploy App & Environment" data-i18n="btn_top_deploy">
+        🚀 Deploy ▾
       </button>
     </div>
     <div class="top-actions">
-      <button class="icon-btn" id="btnInstallPwaTop" title="Install App / 安装到桌面" style="display: none;">📲</button>
+      <button class="icon-btn" id="btnInstallPwaTop" title="Install App (PWA)" style="display: none;">📲</button>
       <button class="icon-btn" id="btnRedrawScreen" title="Redraw Screen">🔄</button>
       <button class="icon-btn" id="btnThemeModal" title="Themes">🎨</button>
       <button class="icon-btn" id="btnInputHelper" title="Prompt / Text Input Helper">✏️</button>
       <button class="icon-btn" id="btnZoomOut" title="Zoom Out">A-</button>
       <button class="icon-btn" id="btnZoomIn" title="Zoom In">A+</button>
       <button class="icon-btn" id="btnToggleKeyboard" title="Toggle Vibe / Virtual Keyboard">✨</button>
-      <button class="icon-btn" id="btnToggleFullscreen" title="Toggle Fullscreen / 网页全屏">⛶</button>
+      <button class="icon-btn" id="btnToggleFullscreen" title="Toggle Fullscreen">⛶</button>
       <button class="icon-btn" id="btnAboutModal" title="About / Version Info">⚙️</button>
     </div>
   </header>
@@ -51,29 +51,29 @@
   <footer class="mobile-keyboard" id="mobileKeyboard">
     <!-- Vibe Coding 专属快捷操作胶囊条 (横向滑动，大拇指一触即发) -->
     <div class="key-row key-row-vibe" id="vibeRow">
-      <button class="vibe-pill vibe-yes" data-vibe="y" title="快速确认/允许 (y)">✅ Yes</button>
-      <button class="vibe-pill vibe-no" data-vibe="n" title="快速拒绝 (n)">❌ No</button>
-      <button class="vibe-pill vibe-primary" data-vibe="继续" title="让AI继续执行">▶️ 继续</button>
-      <button class="vibe-pill vibe-accent" data-vibe="帮我修复上面的报错并自测" title="一键修复报错">⚡ 修复</button>
-      <button class="vibe-pill vibe-accent" data-vibe="帮我编译构建当前项目并汇报结果" title="编译构建项目">🛠️ 编译</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/resume" title="恢复会话 (/resume)">🔄 /resume</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/model" title="切换模型 (/model)">🤖 /model</button>
-      <button class="vibe-pill vibe-secondary" data-vibe="运行测试并汇报结果" title="跑测试">🧪 测试</button>
-      <button class="vibe-pill vibe-secondary" data-vibe="帮我用简明commit message提交当前修改" title="提交代码">📝 提交</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/review" title="代码审查">🔍 Review</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/compact" title="压缩上下文">🧹 Compact</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/cost" title="Token开销">📊 Cost</button>
+      <button class="vibe-pill vibe-yes" data-vibe="y" title="Quick Confirm / Allow (y)">✅ Yes</button>
+      <button class="vibe-pill vibe-no" data-vibe="n" title="Quick Reject (n)">❌ No</button>
+      <button class="vibe-pill vibe-primary" data-vibe-id="continue" data-vibe="Continue" title="Continue execution">▶️ Continue</button>
+      <button class="vibe-pill vibe-accent" data-vibe-id="fix" data-vibe="Fix the error above and verify" title="Fix error">⚡ Fix</button>
+      <button class="vibe-pill vibe-accent" data-vibe-id="build" data-vibe="Build and compile the current project and report results" title="Compile & Build">🛠️ Build</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/resume" title="Resume session (/resume)">🔄 /resume</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/model" title="Switch model (/model)">🤖 /model</button>
+      <button class="vibe-pill vibe-secondary" data-vibe-id="test" data-vibe="Run tests and report results" title="Run tests">🧪 Test</button>
+      <button class="vibe-pill vibe-secondary" data-vibe-id="commit" data-vibe="Commit current changes with a concise commit message" title="Git Commit">📝 Commit</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/review" title="Code Review">🔍 Review</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/compact" title="Compact Context">🧹 Compact</button>
+      <button class="vibe-pill vibe-cmd" data-vibe="/cost" title="Token Cost">📊 Cost</button>
     </div>
 
     <!-- 控制、导航与快捷键排布 (数字0-9展开、保留上下箭头、斜线/、放大删除与回车) -->
     <div class="key-row key-row-nav">
       <button class="key-btn" data-key="Escape">ESC</button>
-      <button class="key-btn num-picker-btn" id="btnNumPicker" title="点击展开选择输入 0-9 数字">0-9 ▾</button>
-      <button class="key-btn ctrl-picker-btn" id="btnCtrlPicker" title="点击展开选择字母输入 Ctrl+ 组合键">Ctrl+ ▾</button>
+      <button class="key-btn num-picker-btn" id="btnNumPicker" title="Click to pick 0-9 number">0-9 ▾</button>
+      <button class="key-btn ctrl-picker-btn" id="btnCtrlPicker" title="Click to pick Ctrl+ shortcut">Ctrl+ ▾</button>
       <button class="key-btn arrow-btn" data-key="ArrowUp">↑</button>
       <button class="key-btn arrow-btn" data-key="ArrowDown">↓</button>
-      <button class="key-btn key-delete" id="btnKeyBackspace" data-key="Backspace" title="退格删除 (长按连续删除 / 长按1秒一键清空整行)">⌫</button>
-      <button class="key-btn key-action" data-key="Enter" title="回车换行/执行">↵</button>
+      <button class="key-btn key-delete" id="btnKeyBackspace" data-key="Backspace" title="Backspace (Hold to repeat / Hold 1s to clear entire line)">⌫</button>
+      <button class="key-btn key-action" data-key="Enter" title="Enter / Execute">↵</button>
     </div>
   </footer>
 
@@ -100,11 +100,11 @@
   <div class="modal-backdrop" id="projectSwitchModal" style="display: none;">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
-        <h3 data-i18n="modal_project_switch_title">📂 切换项目会话</h3>
+        <h3 data-i18n="modal_project_switch_title">📂 Switch Project Session</h3>
         <button class="close-btn" id="btnCloseProjectSwitchModal">×</button>
       </div>
       <div class="modal-body">
-        <p class="modal-tip" data-i18n="modal_project_switch_tip">点击即可秒级切换项目，原项目会话将继续在后台保持运行：</p>
+        <p class="modal-tip" data-i18n="modal_project_switch_tip">Click to switch project immediately; previous sessions stay running in the background:</p>
         <div class="agent-list-group" id="projectSwitchListGroup" style="max-height: 55vh; overflow-y: auto;">
           <!-- 动态加载后台配置的项目列表 -->
         </div>
@@ -116,7 +116,7 @@
   <div class="modal-backdrop" id="deploySelectModal" style="display: none;">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
-        <h3>🚀 选择部署应用与环境</h3>
+        <h3 data-i18n="modal_deploy_select_title">🚀 Select Deploy App & Environment</h3>
         <button class="close-btn" id="btnCloseDeploySelectModal">×</button>
       </div>
       <div class="modal-body">
@@ -125,8 +125,8 @@
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 8px; padding-top: 8px;">
-        <button class="btn btn-secondary" id="btnFallbackGenericDeploy" style="font-size: 12px;">直接发送通用部署提示词</button>
-        <button class="btn btn-outline" id="btnCloseDeployFooter" style="font-size: 12px;">取消</button>
+        <button class="btn btn-secondary" id="btnFallbackGenericDeploy" style="font-size: 12px;" data-i18n="btn_generic_deploy">Send Generic Deploy Prompt</button>
+        <button class="btn btn-outline" id="btnCloseDeployFooter" style="font-size: 12px;" data-i18n="btn_cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -214,11 +214,11 @@
   <div class="modal-backdrop" id="numModal" style="display: none;">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
-        <h3 data-i18n="modal_num_title">🔢 数字选择 (0-9)</h3>
+        <h3 data-i18n="modal_num_title">🔢 Number Picker (0-9)</h3>
         <button class="close-btn" id="btnCloseNumModal">×</button>
       </div>
       <div class="modal-body">
-        <p class="modal-tip" data-i18n="modal_num_tip">点击直接向终端发送数字：</p>
+        <p class="modal-tip" data-i18n="modal_num_tip">Tap to send digit to terminal immediately:</p>
         <div class="num-key-grid" id="numKeyGrid">
           <button class="num-key-btn" data-num="1">1</button>
           <button class="num-key-btn" data-num="2">2</button>
@@ -255,7 +255,7 @@
   <div class="modal-backdrop" id="aboutModal" style="display: none;">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
-        <h3 data-i18n="modal_about_title">ℹ️ 关于软件</h3>
+        <h3 data-i18n="modal_about_title">ℹ️ About Tim-Agent</h3>
         <button class="close-btn" id="btnCloseAboutModal">×</button>
       </div>
       <div class="modal-body" style="text-align: center; padding: 20px 16px;">
@@ -269,18 +269,18 @@
         </p>
         <div style="background: rgba(255,255,255,0.04); border: 1px solid #30363d; border-radius: 8px; padding: 10px; text-align: left; font-size: 12px; color: #c9d1d9; margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="color: #8b949e;" data-i18n="about_status">守护状态:</span>
-            <span style="color: #3fb950; font-weight: 600;" id="aboutDaemonStatus">运行正常 (Active)</span>
+            <span style="color: #8b949e;" data-i18n="about_status">Daemon Status:</span>
+            <span style="color: #3fb950; font-weight: 600;" id="aboutDaemonStatus" data-i18n="about_status_active">Active</span>
           </div>
           <div style="display: flex; justify-content: space-between;">
-            <span style="color: #8b949e;" data-i18n="about_uptime">已运行:</span>
+            <span style="color: #8b949e;" data-i18n="about_uptime">Uptime:</span>
             <span id="aboutUptime">-</span>
           </div>
         </div>
-        <button class="btn btn-secondary" id="btnInstallPwaModal" style="display: none; width: 100%; margin-bottom: 12px; font-size: 13px;" data-i18n="btn_install_pwa">📲 安装为本地应用 (PWA)</button>
+        <button class="btn btn-secondary" id="btnInstallPwaModal" style="display: none; width: 100%; margin-bottom: 12px; font-size: 13px;" data-i18n="btn_install_pwa">📲 Install as App (PWA)</button>
         <div style="display: flex; gap: 8px; justify-content: center;">
           <a href="https://github.com/tim-today/tim-agent" target="_blank" class="btn btn-secondary" style="font-size: 12px; text-decoration: none; padding: 6px 12px;">GitHub</a>
-          <button class="btn btn-primary" id="btnCheckUpdateTerminal" style="font-size: 12px; padding: 6px 12px;" data-i18n="btn_check_update">检查更新</button>
+          <button class="btn btn-primary" id="btnCheckUpdateTerminal" style="font-size: 12px; padding: 6px 12px;" data-i18n="btn_check_update">Check Updates</button>
         </div>
       </div>
     </div>
