@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	AppVersion     = "v2.1.2"
+	AppVersion     = "v2.1.3"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"
@@ -269,17 +269,137 @@ func generateRandomToken(length int) string {
 	return hex.EncodeToString(b)
 }
 
+func isPlaceholderProjects(projs []ProjectConfig) bool {
+	if len(projs) == 0 {
+		return true
+	}
+	if len(projs) > 1 {
+		return false
+	}
+	p := projs[0]
+	if len(p.DeployApps) > 0 {
+		return false
+	}
+	if p.ID != "" && p.ID != "proj-default" {
+		return false
+	}
+	home, _ := os.UserHomeDir()
+	if home != "" && NormalizeWorkDir(p.WorkDir) == NormalizeWorkDir(home) {
+		return true
+	}
+	return p.Name == "Default Project"
+}
+
+// mergeLegacyConfigSources 自动扫描并合并历史配置文件 (~/tim-agent.json, ./tim-agent.json, ~/.tim-agent/config.backup.json)，
+// 确保版本升级或工作目录切换时绝不丢失任何已配置的项目与部署信息。
+func mergeLegacyConfigSources(cfg *Config) bool {
+	home, _ := os.UserHomeDir()
+	var candidates []string
+	if home != "" {
+		candidates = append(candidates,
+			filepath.Join(home, "tim-agent.json"),
+			filepath.Join(home, ".tim-agent", "config.backup.json"),
+			filepath.Join(home, "Desktop", "tim-agent.json"),
+			filepath.Join(home, "Downloads", "tim-agent.json"),
+		)
+	}
+	if absLocal, err := filepath.Abs("tim-agent.json"); err == nil {
+		candidates = append(candidates, absLocal)
+	}
+
+	normSelf := NormalizeWorkDir(cfg.filePath)
+	seenPaths := map[string]bool{normSelf: true}
+
+	merged := false
+	for _, cand := range candidates {
+		normCand := NormalizeWorkDir(cand)
+		if normCand == "" || seenPaths[normCand] {
+			continue
+		}
+		seenPaths[normCand] = true
+
+		raw, err := os.ReadFile(cand)
+		if err != nil || len(raw) == 0 {
+			continue
+		}
+		var legacy ConfigData
+		if err := json.Unmarshal(raw, &legacy); err != nil {
+			continue
+		}
+		if len(legacy.Projects) == 0 || isPlaceholderProjects(legacy.Projects) {
+			continue
+		}
+
+		// 若当前配置仅包含自动生成的空默认项目 (如 /Users/tim)，直接完整恢复旧版配置中的所有项目与凭据
+		if isPlaceholderProjects(cfg.Projects) {
+			cfg.Projects = legacy.Projects
+			if legacy.ActiveProjectID != "" {
+				cfg.ActiveProjectID = legacy.ActiveProjectID
+			}
+			if legacy.Password != "" {
+				cfg.Password = legacy.Password
+			}
+			if legacy.AuthToken != "" {
+				cfg.AuthToken = legacy.AuthToken
+			}
+			if legacy.SelectedAgent != "" {
+				cfg.SelectedAgent = legacy.SelectedAgent
+			}
+			if len(legacy.CustomCommands) > 0 {
+				cfg.CustomCommands = legacy.CustomCommands
+			}
+			merged = true
+			continue
+		}
+
+		// 若当前配置已有部分项目，按工作目录增量合并缺失的项目或缺失的部署配置
+		dirIndex := make(map[string]int, len(cfg.Projects))
+		idSet := make(map[string]bool, len(cfg.Projects))
+		for i, ep := range cfg.Projects {
+			dirIndex[NormalizeWorkDir(ep.WorkDir)] = i
+			idSet[ep.ID] = true
+		}
+
+		for _, lp := range legacy.Projects {
+			normDir := NormalizeWorkDir(lp.WorkDir)
+			if normDir == "" {
+				continue
+			}
+			if idx, exists := dirIndex[normDir]; exists {
+				if len(cfg.Projects[idx].DeployApps) == 0 && len(lp.DeployApps) > 0 {
+					cfg.Projects[idx].DeployApps = lp.DeployApps
+					merged = true
+				}
+			} else {
+				// 跳过单纯自动生成的空占位项目
+				if isPlaceholderProjects([]ProjectConfig{lp}) {
+					continue
+				}
+				if lp.ID == "" || idSet[lp.ID] {
+					lp.ID = "proj-" + generateRandomToken(4)
+				}
+				idSet[lp.ID] = true
+				cfg.Projects = append(cfg.Projects, lp)
+				dirIndex[normDir] = len(cfg.Projects) - 1
+				merged = true
+			}
+		}
+	}
+
+	return merged
+}
+
 func getConfigPath() string {
 	home, err := os.UserHomeDir()
 	if err == nil && home != "" {
 		dir := filepath.Join(home, ".tim-agent")
 		if err := os.MkdirAll(dir, 0755); err == nil {
 			globalCfg := filepath.Join(dir, "config.json")
-			// 若全局配置尚不存在，自动迁移旧版遗留的 tim-agent.json（确保 CLI 与桌面 App 始终共享同一份配置）
+			// 若全局配置尚不存在，自动迁移旧版遗留的 ~/tim-agent.json
 			if _, statErr := os.Stat(globalCfg); os.IsNotExist(statErr) {
 				candidates := []string{
-					"tim-agent.json",
 					filepath.Join(home, "tim-agent.json"),
+					"tim-agent.json",
 				}
 				for _, legacy := range candidates {
 					if data, readErr := os.ReadFile(legacy); readErr == nil && len(data) > 0 {
@@ -379,8 +499,8 @@ func LoadConfig() (*Config, error) {
 		_ = cfg.Save()
 	}
 
-	// 初始化或修复多项目列表
-	needSaveProjects := false
+	// 自动合并找回旧版路径 (~/tim-agent.json 等) 或备份中的项目配置，防止升级后丢失项目
+	needSaveProjects := mergeLegacyConfigSources(cfg)
 	if len(cfg.Projects) == 0 {
 		defProj := defaultProjectFrom(cfg.WorkDir, cfg.SelectedAgent, cfg.AutoApprove)
 		cfg.Projects = []ProjectConfig{defProj}
@@ -473,7 +593,25 @@ func (c *Config) saveLocked() error {
 		_ = os.MkdirAll(dir, 0755)
 	}
 
-	return os.WriteFile(c.filePath, data, 0644)
+	if err := os.WriteFile(c.filePath, data, 0644); err != nil {
+		return err
+	}
+
+	// 当配置包含有效用户项目时，自动同步写入 ~/.tim-agent/config.backup.json 与 ~/tim-agent.json 双重防丢备份
+	if home, hErr := os.UserHomeDir(); hErr == nil && home != "" {
+		if !isPlaceholderProjects(c.Projects) {
+			backupPath := filepath.Join(home, ".tim-agent", "config.backup.json")
+			if NormalizeWorkDir(c.filePath) == NormalizeWorkDir(filepath.Join(home, ".tim-agent", "config.json")) {
+				_ = os.WriteFile(backupPath, data, 0600)
+				homeLegacyPath := filepath.Join(home, "tim-agent.json")
+				if _, statErr := os.Stat(homeLegacyPath); statErr == nil {
+					_ = os.WriteFile(homeLegacyPath, data, 0644)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *Config) syncTopFieldsFromActiveLocked() {
