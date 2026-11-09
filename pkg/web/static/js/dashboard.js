@@ -305,10 +305,18 @@
   const saveStatus = document.getElementById('saveStatus');
 
   async function fetchStatus() {
+    const statusBadge = document.querySelector('h1 .badge[data-i18n="status_running"]');
     try {
-      const res = await fetch('/api/status');
+      const res = await fetch('/api/status', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       currentStatus = data;
+      if (statusBadge) {
+        statusBadge.textContent = (I18N[currentLang] && I18N[currentLang].status_running) || 'Active';
+        statusBadge.style.background = '';
+        statusBadge.style.color = '';
+        statusBadge.style.borderColor = '';
+      }
       if (data.version) {
         if (appVersionBadge) appVersionBadge.textContent = data.version;
         if (footerVersionText) footerVersionText.textContent = data.version;
@@ -318,7 +326,13 @@
       renderSession(data.session);
       renderProjectsList(data.projects_status || (data.config && data.config.projects) || [], data.active_project_id);
     } catch (err) {
-      console.error('获取状态失败', err);
+      if (statusBadge) {
+        statusBadge.textContent = 'Reconnecting...';
+        statusBadge.style.background = 'rgba(248, 81, 73, 0.2)';
+        statusBadge.style.color = '#ff7b72';
+        statusBadge.style.borderColor = 'rgba(248, 81, 73, 0.5)';
+      }
+      console.error('Failed to fetch status:', err);
     }
   }
 
@@ -1358,6 +1372,25 @@
         btnInstallDesktopApp.textContent = origText;
       }
     });
+  }
+
+  // 清理控制面板可能残留的离线缓存与旧版 Service Worker，杜绝服务停止后浏览器仍从缓存打开假面板页面
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => reg.update().catch(() => {}));
+    }).catch(() => {});
+  }
+  if ('caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        caches.open(k).then(c => {
+          c.delete('/');
+          c.delete('/index.html');
+          c.delete('/js/dashboard.js');
+          c.delete('/css/dashboard.css');
+        }).catch(() => {});
+      });
+    }).catch(() => {});
   }
 
   // 初始加载

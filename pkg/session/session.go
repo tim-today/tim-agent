@@ -21,6 +21,24 @@ type WsMessage struct {
 	Rows uint16 `json:"rows,omitempty"`
 }
 
+// wsClient 封装带独立写锁的 WebSocket 连接，杜绝 gorilla/websocket 并发写导致的 panic 闪退
+type wsClient struct {
+	conn    *websocket.Conn
+	writeMu sync.Mutex
+}
+
+func (c *wsClient) WriteMessage(messageType int, data []byte) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
+	return c.conn.WriteMessage(messageType, data)
+}
+
+func (c *wsClient) WriteJSON(v any) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
+	return c.conn.WriteJSON(v)
+}
+
 // Session 代表一个独立常驻运行的终端会话
 type Session struct {
 	ID           string    `json:"id"`
@@ -39,7 +57,7 @@ type Session struct {
 
 	pty        PTYSession
 	buffer     *RingBuffer
-	clients    map[*websocket.Conn]bool
+	clients    map[*websocket.Conn]*wsClient
 	mu         sync.RWMutex
 	stopCh     chan struct{}
 	onActivity func(sessID string)
@@ -80,7 +98,7 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 		Lang:         lang,
 		pty:          ptySess,
 		buffer:       NewRingBuffer(1024 * 1024), // 1MB 输出缓存
-		clients:      make(map[*websocket.Conn]bool),
+		clients:      make(map[*websocket.Conn]*wsClient),
 		stopCh:       make(chan struct{}),
 	}
 
@@ -90,6 +108,11 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 	// 若指定了代理软件命令 (如 claude/codex/opcode/pi/gemini)，在 PTY 就绪后自动拉起
 	if initCmd != "" {
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[Session %s] initCmd 捕获异常: %v", s.ID, r)
+				}
+			}()
 			// 等待 Shell 完成 rc 脚本与环境加载
 			time.Sleep(600 * time.Millisecond)
 			msg := fmt.Sprintf("\r\n\x1b[32m[TimAgent] Starting Agent: %s (%s)...\x1b[0m\r\n", activeAgent, initCmd)
@@ -111,6 +134,11 @@ func newSession(id, name, shell, workDir, activeAgent, initCmd, lang string) (*S
 
 // readLoop 监听 PTY 输出
 func (s *Session) readLoop() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[Session %s] readLoop 捕获异常: %v", s.ID, r)
+		}
+	}()
 	buf := make([]byte, 4096)
 	for {
 		select {
@@ -151,10 +179,14 @@ func (s *Session) readLoop() {
 
 func (s *Session) broadcast(msgType int, data []byte) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	clients := make([]*wsClient, 0, len(s.clients))
+	for _, client := range s.clients {
+		clients = append(clients, client)
+	}
+	s.mu.RUnlock()
 
-	for conn := range s.clients {
-		if err := conn.WriteMessage(msgType, data); err != nil {
+	for _, client := range clients {
+		if err := client.WriteMessage(msgType, data); err != nil {
 			// 写入失败由各连接的读循环处理断开
 		}
 	}
@@ -174,8 +206,16 @@ func (s *Session) Touch() {
 
 // Attach 手机端或PC端连接该会话（支持断线重新连接并恢复现场）
 func (s *Session) Attach(conn *websocket.Conn) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[Session %s] Attach 捕获异常: %v", s.ID, r)
+		}
+	}()
+
+	client := &wsClient{conn: conn}
+
 	s.mu.Lock()
-	s.clients[conn] = true
+	s.clients[conn] = client
 	s.LastActiveAt = time.Now()
 	cb := s.onActivity
 	sessID := s.ID
@@ -197,23 +237,19 @@ func (s *Session) Attach(conn *websocket.Conn) {
 
 	// 0. 发送当前会话元信息 (前端据此同步顶部项目名与 Agent 状态)
 	if infoBytes, err := json.Marshal(infoPayload); err == nil {
-		_ = conn.WriteMessage(websocket.TextMessage, infoBytes)
+		_ = client.WriteMessage(websocket.TextMessage, infoBytes)
 	}
 
 	// 1. 发送最近的历史输出回放，秒级恢复屏幕现场
 	snapshot := s.buffer.Snapshot()
 	if len(snapshot) > 0 {
-		_ = conn.WriteMessage(websocket.BinaryMessage, snapshot)
+		_ = client.WriteMessage(websocket.BinaryMessage, snapshot)
 	}
 
 	// 2. 如果终端已退出，提醒
 	if !s.IsRunning {
 		termMsg := "\r\n\x1b[31m[TimAgent] Current session has ended, you can restart it in the control panel\x1b[0m\r\n"
 		switch s.Lang {
-		case "zh":
-			termMsg = "\r\n\x1b[31m[TimAgent] 当前会话已终止，可在控制台或顶部切换中重启\x1b[0m\r\n"
-		case "zh-TW":
-			termMsg = "\r\n\x1b[31m[TimAgent] 目前會話已終止，可在控制台重新啟動\x1b[0m\r\n"
 		case "ja":
 			termMsg = "\r\n\x1b[31m[TimAgent] セッションが終了しました。管理パネルから再起動できます\x1b[0m\r\n"
 		case "ko":
@@ -221,7 +257,7 @@ func (s *Session) Attach(conn *websocket.Conn) {
 		case "de":
 			termMsg = "\r\n\x1b[31m[TimAgent] Sitzung beendet, kann im Kontrollzentrum neu gestartet werden\x1b[0m\r\n"
 		}
-		_ = conn.WriteMessage(websocket.TextMessage, []byte(termMsg))
+		_ = client.WriteMessage(websocket.TextMessage, []byte(termMsg))
 	}
 
 	// 3. 处理客户端发来的输入和调整尺寸命令
@@ -258,7 +294,7 @@ func (s *Session) Attach(conn *websocket.Conn) {
 						s.mu.Unlock()
 					}
 				case "ping":
-					_ = conn.WriteJSON(WsMessage{Type: "pong"})
+					_ = client.WriteJSON(WsMessage{Type: "pong"})
 				}
 			} else {
 				// 普通纯文本输入

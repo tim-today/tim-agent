@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/tim-today/tim-agent/pkg/config"
+	"github.com/tim-today/tim-agent/pkg/daemon"
 	"github.com/tim-today/tim-agent/pkg/tray"
 )
 
@@ -89,42 +90,74 @@ func InitGUIEnvironment() {
 }
 
 // WakeExistingInstance 检测本机是否已有正在运行的 Tim-Agent 实例。
-// 若已有实例运行，则直接自动弹出其控制面板网页并返回 true（防止用户多次双击桌面图标拉起重复托盘）。
+// 若已有实例运行，则绝不多开、绝不覆盖进程、绝不修改端口，直接自动唤醒打开控制面板网页并返回 true。
 func WakeExistingInstance(publicPort int) bool {
-	client := &http.Client{Timeout: 350 * time.Millisecond}
+	client := &http.Client{Timeout: 1500 * time.Millisecond}
 
-	// 优先探测本地免密控制面板端口 (20997 ~ 21002)
-	for port := 20997; port <= 21002; port++ {
-		statusURL := fmt.Sprintf("http://127.0.0.1:%d/api/status", port)
+	probeAndOpen := func(checkPort, openPort int) bool {
+		if checkPort <= 0 {
+			return false
+		}
+		statusURL := fmt.Sprintf("http://127.0.0.1:%d/api/status", checkPort)
 		resp, err := client.Get(statusURL)
 		if err != nil {
-			continue
+			return false
 		}
 		var data map[string]any
 		decodeErr := json.NewDecoder(resp.Body).Decode(&data)
 		_ = resp.Body.Close()
-		if decodeErr == nil && data["version"] != nil && data["config"] != nil {
-			dashURL := fmt.Sprintf("http://127.0.0.1:%d/", port)
-			log.Printf("[TimAgent] 检测到本机实例已在运行，直接唤醒控制面板: %s", dashURL)
+		if decodeErr == nil && data["version"] != nil {
+			targetOpen := openPort
+			if targetOpen <= 0 {
+				targetOpen = checkPort
+			}
+			dashURL := fmt.Sprintf("http://127.0.0.1:%d/", targetOpen)
+			log.Printf("[TimAgent] 检测到本机实例已在运行，直接恢复并打开控制面板: %s", dashURL)
 			_ = tray.OpenURL(dashURL)
 			return true
 		}
+		return false
 	}
 
-	// 备用探测配置的共享端口
-	if publicPort > 0 {
-		statusURL := fmt.Sprintf("http://127.0.0.1:%d/api/status", publicPort)
-		if resp, err := client.Get(statusURL); err == nil {
-			var data map[string]any
-			decodeErr := json.NewDecoder(resp.Body).Decode(&data)
-			_ = resp.Body.Close()
-			if decodeErr == nil && data["version"] != nil {
-				dashURL := fmt.Sprintf("http://127.0.0.1:%d/", publicPort)
-				log.Printf("[TimAgent] 检测到本机实例已在端口 %d 运行，唤醒控制面板: %s", publicPort, dashURL)
-				_ = tray.OpenURL(dashURL)
+	// 1. 优先读取已记录的单实例运行信息 (~/.tim-agent/instance.json)
+	adminPort := 20997
+	if info, err := daemon.LoadInstanceInfo(); err == nil && info != nil {
+		if info.AdminPort > 0 {
+			adminPort = info.AdminPort
+		}
+		if info.PublicPort > 0 && publicPort <= 0 {
+			publicPort = info.PublicPort
+		}
+		if daemon.IsProcessAlive(info.PID) {
+			if probeAndOpen(adminPort, adminPort) {
+				return true
+			}
+			if probeAndOpen(info.PublicPort, adminPort) {
 				return true
 			}
 		}
+	}
+
+	// 2. 探测固定本地控制面板端口 (20997)
+	if probeAndOpen(20997, 20997) {
+		return true
+	}
+
+	// 3. 探测配置的共享终端端口 (默认 20996)
+	if publicPort > 0 && probeAndOpen(publicPort, 20997) {
+		return true
+	}
+
+	// 4. 检查工作进程排他文件锁：若已被其他正在启动或自愈中的实例持有，等待片刻后直接打开控制面板并退出
+	if lockFile, ok := daemon.AcquireSingleInstanceLock(); !ok {
+		time.Sleep(500 * time.Millisecond)
+		dashURL := fmt.Sprintf("http://127.0.0.1:%d/", adminPort)
+		log.Printf("[TimAgent] 检测到本机已有实例持有进程锁，直接打开控制面板: %s", dashURL)
+		_ = tray.OpenURL(dashURL)
+		return true
+	} else if lockFile != nil {
+		daemon.UnlockFile(lockFile)
+		_ = lockFile.Close()
 	}
 
 	return false

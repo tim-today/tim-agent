@@ -1,7 +1,7 @@
 // Tim-Agent 轻量自愈 Service Worker
 // 核心设计原则: 极简防陈旧缓存，网络优先(Network-First)，即时更新接管，确保多端版本实时一致
 
-const CACHE_VERSION = 'v2.1.1';
+const CACHE_VERSION = 'v2.1.2';
 const CACHE_NAME = 'tim-agent-cache-' + CACHE_VERSION;
 
 // 仅预缓存必须的终端基础库文件
@@ -59,13 +59,23 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. API 数据接口与登录接口：Network-Only，绝不进行本地缓存
-  if (url.pathname.startsWith('/api/') || req.method !== 'GET') {
+  // 2. API 数据接口、登录接口以及本机控制面板首页 (/, /js/dashboard.js, /css/dashboard.css)：
+  // 100% Network-Only，绝不缓存控制面板页面，防止服务停止时浏览器仍从离线缓存打开假的面板页面
+  if (
+    url.pathname === '/' ||
+    url.pathname === '/index.html' ||
+    url.pathname === '/js/dashboard.js' ||
+    url.pathname === '/css/dashboard.css' ||
+    url.pathname.startsWith('/api/') ||
+    req.method !== 'GET'
+  ) {
     return;
   }
 
-  // 3. 页面导航 (如 /terminal, /, /login) 与核心静态资源:
-  // 严格采用 Network-First (网络优先)，获取成功时更新本地副本，离线断网时降级到缓存
+  // 3. HTML 页面导航 (如 /terminal, /login): 直接走网络，不返回伪造离线缓存
+  if (req.mode === 'navigate') {
+    return;
+  }
   event.respondWith(
     fetch(req)
       .then(networkResponse => {

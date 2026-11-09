@@ -92,22 +92,29 @@ func (s *Server) PublicPort() int {
 }
 
 func (s *Server) Start() error {
-	// 1. 启动本地控制面板服务 (默认绑定 127.0.0.1:20997, 若占用则自动递增)
+	cfg := s.cfg.Get()
+	targetPort := cfg.Port
+	if targetPort <= 0 {
+		targetPort = 20996
+	}
+
+	// 1. 启动本地控制面板服务 (固定绑定 127.0.0.1:20997，绝不随意递增更改端口)
+	fixedAdminPort := 20997
+	if targetPort == 20997 {
+		fixedAdminPort = 20998
+	}
+
 	var adminLn net.Listener
 	var err error
-	startAdminPort := 20997
-	for port := startAdminPort; port < startAdminPort+100; port++ {
-		adminLn, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	for attempt := 0; attempt < 10; attempt++ {
+		adminLn, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", fixedAdminPort))
 		if err == nil {
 			break
 		}
+		time.Sleep(250 * time.Millisecond)
 	}
 	if adminLn == nil {
-		// 若范围内均被占用，回退到系统随机端口
-		adminLn, err = net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			return fmt.Errorf("绑定本地控制面板端口失败: %w", err)
-		}
+		return fmt.Errorf("绑定本地控制面板固定端口 127.0.0.1:%d 失败: %w", fixedAdminPort, err)
 	}
 
 	s.mu.Lock()
@@ -148,7 +155,7 @@ func (s *Server) Start() error {
 	}()
 	log.Printf("[TimAgent] 本地安全控制面板已就绪: http://127.0.0.1:%d/ (本机专属, 免密码)", s.adminPort)
 
-	// 2. 启动外部共享终端服务 (绑定 0.0.0.0:cfg.Port, 若占用则自动递增)
+	// 2. 启动外部共享终端服务 (固定绑定 0.0.0.0:cfg.Port，非用户特殊指定绝不自动篡改端口)
 	publicMux := http.NewServeMux()
 	publicMux.Handle("/css/", http.FileServer(web.GetStaticFS()))
 	publicMux.Handle("/js/", http.FileServer(web.GetStaticFS()))
@@ -176,29 +183,17 @@ func (s *Server) Start() error {
 	publicMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
 	publicMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
-	cfg := s.cfg.Get()
-	targetPort := cfg.Port
-	if targetPort <= 0 {
-		targetPort = 20996
-	}
-
 	var pubLn net.Listener
-	for port := targetPort; port < targetPort+100; port++ {
-		// 跳过已被本地管理端占用的端口
-		if port == s.adminPort {
-			continue
-		}
-		pubLn, err = net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	for attempt := 0; attempt < 10; attempt++ {
+		pubLn, err = net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", targetPort))
 		if err == nil {
-			if port != cfg.Port {
-				// 若递增了端口，同步更新配置中的当前实际端口
-				_ = s.cfg.Update(port, cfg.Password, cfg.Shell, cfg.WorkDir, cfg.SelectedAgent, cfg.Theme, cfg.Language, cfg.AutoApprove, cfg.KeepAlive, cfg.RemoteAccess, nil)
-			}
 			break
 		}
+		time.Sleep(250 * time.Millisecond)
 	}
 	if pubLn == nil {
-		return fmt.Errorf("未能成功绑定外部共享端口 (从 %d 开始均被占用): %w", targetPort, err)
+		_ = adminLn.Close()
+		return fmt.Errorf("未能绑定外部共享固定端口 %d: %w", targetPort, err)
 	}
 
 	actualPubPort := pubLn.Addr().(*net.TCPAddr).Port
@@ -306,7 +301,10 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 本机直接免密，或者远程鉴权成功
+	// 本机直接免密，或者远程鉴权成功 (禁用控制面板离线缓存，确保始终反映真实服务在线状态)
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 	if err := s.tmpl.ExecuteTemplate(w, "index.html", nil); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

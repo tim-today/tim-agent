@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -66,7 +68,8 @@ func main() {
 	flagAutoApprove := flag.Bool("auto-approve", false, "自动确认/关闭沙箱 (Claude/Codex免手动交互确认)")
 	flagRemote := flag.Bool("remote", false, "允许远程访问管理面板 (默认仅限本机127.0.0.1/localhost访问，开启需密码)")
 	flagNoOpen := flag.Bool("no-open", false, "启动后不自动打开浏览器")
-	flagDaemon := flag.Bool("daemon", false, "以独立 Supervisor 守护进程模式运行 (主进程自动监控与自愈重启)")
+	flagDaemon := flag.Bool("daemon", true, "默认开启 Supervisor 进程保护模式 (非手动退出自动重启恢复)")
+	flagNoDaemon := flag.Bool("no-daemon", false, "关闭 Supervisor 守护监控器 (仅单进程运行)")
 	flagInstallApp := flag.Bool("install-app", false, "一键生成并安装本机桌面 GUI 应用程序 (支持鼠标直接点开)")
 	flagPackMacApp := flag.String("pack-mac-app", "", "将可执行程序打包为 macOS .app 应用程序包 (指定输出 .app 路径)")
 	flagPackLinuxApp := flag.String("pack-linux-app", "", "将可执行程序打包为 Linux 桌面 GUI 应用目录 (指定输出目录路径)")
@@ -112,12 +115,6 @@ func main() {
 		return
 	}
 
-	// 若显式指定了 -daemon 守护模式，且当前非被监控子进程，则启动守护监控器
-	if *flagDaemon && !daemon.IsWorkerProcess() {
-		daemon.RunSupervisor()
-		return
-	}
-
 	// 1. 加载配置
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -148,10 +145,32 @@ func main() {
 
 	currentCfg := cfg.Get()
 
-	// 若用户通过鼠标再次双击桌面图标，且本机已有实例正在运行，则直接唤醒打开控制面板并退出当前重复进程
+	// 若本机已有实例正在运行，绝不多开、绝不覆盖进程、绝不修改端口，直接恢复并打开控制面板页面后退出
 	if !daemon.IsWorkerProcess() && appbundle.WakeExistingInstance(currentCfg.Port) {
 		return
 	}
+
+	// 默认启用 Supervisor 进程保护：监控工作子进程，一旦发生非手动异常闪退立即自动重启恢复
+	if *flagDaemon && !*flagNoDaemon && !daemon.IsWorkerProcess() {
+		daemon.RunSupervisor()
+		return
+	}
+
+	// 获取工作进程排他锁，防止任何并发多开覆盖
+	workerLock, locked := daemon.AcquireSingleInstanceLock()
+	if !locked {
+		if !daemon.IsRespawnedProcess() {
+			_ = tray.OpenURL("http://127.0.0.1:20997/")
+		}
+		return
+	}
+	defer func() {
+		daemon.ClearInstanceInfo()
+		if workerLock != nil {
+			daemon.UnlockFile(workerLock)
+			_ = workerLock.Close()
+		}
+	}()
 
 	activeProj := cfg.GetActiveProject()
 	initCmd := cfg.GetAgentCommand(activeProj.Agent, activeProj.AutoApprove)
@@ -168,53 +187,50 @@ func main() {
 		sess.AutoApprove = activeProj.AutoApprove
 	}
 
-	// 4. 启动 HTTP & WebSocket 服务 (带自愈守护循环，绝不因单一错误崩溃退出)
+	// 4. 启动 HTTP & WebSocket 服务 (固定端口监听，绝不因单一错误崩溃或乱改端口)
 	srv, err := server.NewServer(cfg)
 	if err != nil {
 		log.Fatalf("初始化 HTTP 服务失败: %v", err)
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[TimAgent 守护] HTTP 服务协程捕获异常: %v", r)
+			}
+		}()
 		for {
-			if err := srv.Start(); err != nil {
-				log.Printf("[TimAgent 守护] HTTP 服务连接断开: %v，1秒后自动恢复监听...", err)
-				time.Sleep(1 * time.Second)
-			} else {
+			err := srv.Start()
+			if err == nil || errors.Is(err, http.ErrServerClosed) {
 				return
 			}
+			log.Printf("[TimAgent 守护] HTTP 服务连接断开: %v，1秒后在原固定端口自动恢复监听...", err)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 
-	// 启动内部端口探活看门狗，确保外部端口和本地面板始终可以访问
-	watchdog := daemon.StartInternalWatchdog(
-		func() (int, int) {
-			return srv.PublicPort(), srv.AdminPort()
-		},
-		func() {
-			log.Printf("[TimAgent 守护] 看门狗探测到端口异常，执行自愈重启...")
-			_ = srv.Close()
-			go func() {
-				_ = srv.Start()
-			}()
-		},
-	)
-	defer watchdog.Stop()
-
 	// 等待本地控制面板端口就绪
-	for i := 0; i < 50; i++ {
-		if srv.AdminPort() > 0 {
+	for i := 0; i < 60; i++ {
+		if srv.AdminPort() > 0 && srv.PublicPort() > 0 {
 			break
 		}
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(25 * time.Millisecond)
 	}
 
 	adminPort := srv.AdminPort()
 	if adminPort == 0 {
-		adminPort = currentCfg.Port
+		adminPort = 20997
+	}
+	pubPort := srv.PublicPort()
+	if pubPort == 0 {
+		pubPort = currentCfg.Port
 	}
 
-	// 5. 自动弹出浏览器访问本机控制面板 (无需密码直接进入)
-	if currentCfg.AutoOpen && !*flagNoOpen {
+	// 记录当前运行实例的 PID 与固定端口信息
+	daemon.SaveInstanceInfo(adminPort, pubPort)
+
+	// 5. 自动弹出浏览器访问本机控制面板 (仅首次启动弹出，后台异常自愈重启时不重复弹窗打扰)
+	if currentCfg.AutoOpen && !*flagNoOpen && !daemon.IsRespawnedProcess() {
 		go func() {
 			time.Sleep(200 * time.Millisecond)
 			dashURL := fmt.Sprintf("http://127.0.0.1:%d/", adminPort)
@@ -256,8 +272,8 @@ func main() {
 			log.Printf("[TimAgent] 终端项目会话 [%s] 已重启\n", proj.Name)
 		},
 		OnExit: func() {
-			log.Println("[TimAgent] 正在退出服务...")
-			watchdog.Stop()
+			log.Println("[TimAgent] 收到用户手动退出指令，正在安全关闭服务...")
+			daemon.MarkIntentionalExit()
 			_ = srv.Close()
 			mgr.CloseAll()
 			os.Exit(0)

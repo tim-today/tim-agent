@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	AppVersion     = "v2.1.1"
+	AppVersion     = "v2.1.2"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"
@@ -270,25 +270,28 @@ func generateRandomToken(length int) string {
 }
 
 func getConfigPath() string {
-	localPath := "tim-agent.json"
-	// 优先使用当前目录下的 tim-agent.json
-	if _, err := os.Stat(localPath); err == nil {
-		return localPath
-	}
-	// 尝试在当前目录创建
-	if f, err := os.OpenFile(localPath, os.O_CREATE|os.O_RDWR, 0644); err == nil {
-		_ = f.Close()
-		return localPath
-	}
-
 	home, err := os.UserHomeDir()
-	if err == nil {
+	if err == nil && home != "" {
 		dir := filepath.Join(home, ".tim-agent")
 		if err := os.MkdirAll(dir, 0755); err == nil {
-			return filepath.Join(dir, "config.json")
+			globalCfg := filepath.Join(dir, "config.json")
+			// 若全局配置尚不存在，自动迁移旧版遗留的 tim-agent.json（确保 CLI 与桌面 App 始终共享同一份配置）
+			if _, statErr := os.Stat(globalCfg); os.IsNotExist(statErr) {
+				candidates := []string{
+					"tim-agent.json",
+					filepath.Join(home, "tim-agent.json"),
+				}
+				for _, legacy := range candidates {
+					if data, readErr := os.ReadFile(legacy); readErr == nil && len(data) > 0 {
+						_ = os.WriteFile(globalCfg, data, 0600)
+						break
+					}
+				}
+			}
+			return globalCfg
 		}
 	}
-	return localPath
+	return "tim-agent.json"
 }
 
 func LoadConfig() (*Config, error) {
@@ -371,7 +374,7 @@ func LoadConfig() (*Config, error) {
 		_ = cfg.Save()
 	}
 
-	if cfg.Port == 0 || cfg.Port == 8080 {
+	if cfg.Port == 0 || cfg.Port == 8080 || (cfg.Port >= 20997 && cfg.Port <= 21096) {
 		cfg.Port = 20996
 		_ = cfg.Save()
 	}
