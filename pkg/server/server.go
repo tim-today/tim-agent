@@ -130,6 +130,8 @@ func (s *Server) Start() error {
 	adminMux.HandleFunc("/favicon.ico", s.handleFavicon)
 	adminMux.HandleFunc("/", s.handleDashboard) // 本机直开控制面板，无需密码
 	adminMux.HandleFunc("/terminal", s.handleTerminal)
+	adminMux.HandleFunc("/login", s.handleLogin)
+	adminMux.HandleFunc("/api/login", s.handleAPILogin)
 	adminMux.HandleFunc("/api/status", s.handleAPIStatus)
 	adminMux.HandleFunc("/api/qrcode", s.handleAPIQRCode)
 	adminMux.HandleFunc("/api/config", s.handleAPIConfig)
@@ -349,15 +351,15 @@ func (s *Server) handleFavicon(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleTerminal(w http.ResponseWriter, r *http.Request) {
-	if !s.isAuthenticated(r) {
+	if !isLocalRequest(r) && !s.isAuthenticated(r) {
 		http.Redirect(w, r, "/login?redirect="+r.URL.RequestURI(), http.StatusFound)
 		return
 	}
 
-	// 如果是通过 token 访问，自动写入 cookie，后续操作免密
+	// 如果是本机访问或通过 token 访问，自动写入 cookie，后续操作免密
 	token := r.URL.Query().Get("token")
 	cfg := s.cfg.Get()
-	if token != "" && token == cfg.AuthToken {
+	if isLocalRequest(r) || (token != "" && token == cfg.AuthToken) {
 		http.SetCookie(w, &http.Cookie{
 			Name:     "tim_session",
 			Value:    cfg.AuthToken,
@@ -924,7 +926,7 @@ func (s *Server) handleAPISessionRestart(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleWSTerminal(w http.ResponseWriter, r *http.Request) {
-	if !s.isAuthenticated(r) {
+	if !isLocalRequest(r) && !s.isAuthenticated(r) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

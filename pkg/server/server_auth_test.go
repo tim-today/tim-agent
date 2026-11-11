@@ -27,13 +27,21 @@ func TestDashboardRemoteAccessRules(t *testing.T) {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 
-	// 1. 本机请求 (127.0.0.1) 访问 / -> 免密放行返回 200
+	// 1. 本机请求 (127.0.0.1) 访问 / 与 /terminal -> 免密放行返回 200
 	reqLocal := httptest.NewRequest("GET", "/", nil)
 	reqLocal.RemoteAddr = "127.0.0.1:54321"
 	recLocal := httptest.NewRecorder()
 	s.handleDashboard(recLocal, reqLocal)
 	if recLocal.Code != http.StatusOK {
 		t.Errorf("本地访问应直接放行(200)，实际状态码: %d", recLocal.Code)
+	}
+
+	reqLocalTerm := httptest.NewRequest("GET", "/terminal?session=proj-default", nil)
+	reqLocalTerm.RemoteAddr = "127.0.0.1:54321"
+	recLocalTerm := httptest.NewRecorder()
+	s.handleTerminal(recLocalTerm, reqLocalTerm)
+	if recLocalTerm.Code != http.StatusOK {
+		t.Errorf("本地控制面板点击 Open Terminal 应直接免密放行(200)，实际状态码: %d", recLocalTerm.Code)
 	}
 
 	// 2. 外部 IP 请求 (192.168.1.100)，未开启远程访问 -> 302 重定向至 /terminal

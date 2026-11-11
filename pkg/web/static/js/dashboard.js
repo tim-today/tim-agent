@@ -321,6 +321,10 @@
         if (appVersionBadge) appVersionBadge.textContent = data.version;
         if (footerVersionText) footerVersionText.textContent = data.version;
       }
+      const topTermLink = document.querySelector('a[data-i18n="btn_enter_terminal"]');
+      if (topTermLink && data.auth_token) {
+        topTermLink.href = '/terminal?token=' + encodeURIComponent(data.auth_token);
+      }
       renderNetworks(data.networks, data.auth_token);
       renderConfig(data.config);
       renderSession(data.session);
@@ -976,7 +980,8 @@
               body: JSON.stringify({ project_id: p.id })
             });
           } catch (_) {}
-          window.open('/terminal?session=' + encodeURIComponent(p.id), '_blank');
+          const tok = currentStatus && currentStatus.auth_token ? '&token=' + encodeURIComponent(currentStatus.auth_token) : '';
+          window.open('/terminal?session=' + encodeURIComponent(p.id) + tok, '_blank');
           fetchStatus();
         };
       }
