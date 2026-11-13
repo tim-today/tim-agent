@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	AppVersion     = "v2.1.6"
+	AppVersion     = "v2.1.7"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"

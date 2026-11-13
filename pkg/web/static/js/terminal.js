@@ -86,14 +86,30 @@
       about_uptime: "Uptime:",
       btn_check_update: "Check Updates",
       scroll_bottom_label: "Bottom",
-      modal_attach_title: "📎 Upload Image / File Delivery",
-      modal_attach_tip: "Files will be securely saved to temporary local directory, and absolute paths combined with prompt injected into terminal:",
-      attach_dropzone_title: "Tap to select local images or office docs (Multiple)",
-      attach_dropzone_hint: "Supports screenshots, images, PDF, Excel, Word, PPT (Code/Zip/Video not supported)",
-      attach_prompt_label: "File Instructions / Query Prompt",
+      vibe_attach_text: "📎 Attach",
+      vibe_attach_title: "Upload Images / Office Documents to Terminal",
+      modal_attach_title: "📎 Upload Images / Documents",
+      modal_attach_tip: "Files will be securely saved to PC temporary storage, and absolute paths with prompt will be injected into terminal:",
+      attach_dropzone_title: "Click or drop local images or documents (Multiple)",
+      attach_dropzone_hint: "Supports screenshots, photos, PDF, Excel, Word, PPT (Code/Zip/Video not allowed)",
+      attach_prompt_label: "Instructions / Prompt",
+      attach_required_tag: "* Required",
+      attach_prompt_placeholder: "e.g.: Please examine the error in screenshot and provide fix...",
+      attach_prompt_error: "⚠️ Prompt cannot be empty. Please enter instructions for the files.",
       btn_add_more_files: "+ Add More Files",
       btn_clear: "Clear",
       btn_send_terminal: "🚀 Send to Terminal",
+      attach_click_toggle: "Click to expand / collapse full path",
+      attach_click_expand: "Click to expand",
+      attach_click_collapse: "Click to collapse",
+      attach_btn_delete_file: "Delete file",
+      attach_uploading_title: "Securely uploading files to PC temporary directory...",
+      attach_uploading_hint: "Please wait a moment",
+      attach_btn_uploading: "⏳ Uploading...",
+      attach_err_no_files: "Please select at least one local image or office document to upload.",
+      attach_err_format: '⚠️ Unsupported file: "{name}". Only images and office docs (PDF, Word, Excel, PPT, TXT) are allowed. Code, zip archives, and videos are not supported.',
+      attach_err_upload_failed: "⚠️ Failed to upload file: ",
+      attach_prompt_prefix: "Please read file: ",
       vibes: {
         fix: { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
         continue: { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
@@ -165,14 +181,30 @@
       about_uptime: "稼働時間:",
       btn_check_update: "更新を確認",
       scroll_bottom_label: "最新へ",
-      modal_attach_title: "📎 画像/ファイル添付・送信",
+      vibe_attach_text: "📎 添付",
+      vibe_attach_title: "画像・オフィス文書を端末に送信",
+      modal_attach_title: "📎 画像 / ドキュメント添付・送信",
       modal_attach_tip: "ファイルはPCの一時ディレクトリに安全にアップロードされ、絶対パスとプロンプトが端末に入力されます:",
       attach_dropzone_title: "画像またはオフィス文書を選択 (複数選択可)",
       attach_dropzone_hint: "スクリーンショット、画像、PDF、Excel、Word、PPTに対応 (コード/ZIP/動画は非対応)",
       attach_prompt_label: "ファイル説明 / 質問プロンプト",
+      attach_required_tag: "* 必須",
+      attach_prompt_placeholder: "例：スクリーンショットのエラーを確認して修正案を提示してください...",
+      attach_prompt_error: "⚠️ プロンプトを入力してください。ファイルに関する説明や指示が必要です。",
       btn_add_more_files: "+ ファイルを追加",
       btn_clear: "クリア",
       btn_send_terminal: "🚀 端末に送信",
+      attach_click_toggle: "クリックしてフルパスを展開/折りたたむ",
+      attach_click_expand: "クリックして展開",
+      attach_click_collapse: "クリックして折りたたむ",
+      attach_btn_delete_file: "ファイルを削除",
+      attach_uploading_title: "PCの一時ディレクトリへ安全にアップロード中...",
+      attach_uploading_hint: "しばらくお待ちください",
+      attach_btn_uploading: "⏳ アップロード中...",
+      attach_err_no_files: "画像またはオフィス文書を1つ以上選択してください。",
+      attach_err_format: '⚠️ サポートされていないファイル形式です: "{name}"。画像およびオフィス文書(PDF/Word/Excel/PPT/TXT)のみ対応しています。コード、ZIP、動画などはアップロードできません。',
+      attach_err_upload_failed: "⚠️ アップロードに失敗しました: ",
+      attach_prompt_prefix: "次のファイルを読み込んでください: ",
       vibes: {
         fix: { text: '⚡ 修正', prompt: 'エラーを修正してテストしてください', title: 'エラー修正' },
         continue: { text: '▶️ 続行', prompt: '続行してください', title: '続行' },
@@ -244,14 +276,30 @@
       about_uptime: "가동 시간:",
       btn_check_update: "업데이트 확인",
       scroll_bottom_label: "맨 아래로",
-      modal_attach_title: "📎 이미지/파일 첨부 및 전송",
+      vibe_attach_text: "📎 첨부",
+      vibe_attach_title: "이미지 및 문서 터미널로 전송",
+      modal_attach_title: "📎 이미지 / 문서 파일 첨부 및 전송",
       modal_attach_tip: "파일이 PC 임시 디렉터리로 안전하게 업로드되고 절대 경로와 프롬프트가 터미널로 입력됩니다:",
       attach_dropzone_title: "이미지 또는 문서 파일 선택 (다중 선택 가능)",
       attach_dropzone_hint: "스크린샷, 이미지, PDF, Excel, Word, PPT 지원 (코드/압축파일/동영상 미지원)",
       attach_prompt_label: "파일 설명 / 질문 프롬프트",
+      attach_required_tag: "* 필수",
+      attach_prompt_placeholder: "예: 첨부된 스크린샷 오류를 분석하고 해결 방법을 제시해 주세요...",
+      attach_prompt_error: "⚠️ 프롬프트를 입력해 주세요. 파일에 대한 설명이나 지시가 필요합니다.",
       btn_add_more_files: "+ 파일 계속 추가",
       btn_clear: "비우기",
       btn_send_terminal: "🚀 터미널로 전송",
+      attach_click_toggle: "클릭하여 전체 경로 펼치기/접기",
+      attach_click_expand: "클릭하여 펼치기",
+      attach_click_collapse: "클릭하여 접기",
+      attach_btn_delete_file: "파일 삭제",
+      attach_uploading_title: "PC 임시 디렉터리로 안전하게 업로드 중...",
+      attach_uploading_hint: "잠시만 기다려 주세요",
+      attach_btn_uploading: "⏳ 업로드 중...",
+      attach_err_no_files: "업로드할 이미지나 문서 파일을 하나 이상 선택하세요.",
+      attach_err_format: '⚠️ 지원되지 않는 파일 형식입니다: "{name}". 이미지 및 오피스 문서(PDF/Word/Excel/PPT/TXT)만 지원되며, 코드, 압축파일, 동영상 등은 지원되지 않습니다.',
+      attach_err_upload_failed: "⚠️ 파일 업로드 실패: ",
+      attach_prompt_prefix: "다음 파일을 읽어주세요: ",
       vibes: {
         fix: { text: '⚡ 수정', prompt: '오류를 수정하고 자체 테스트를 수행하세요', title: '오류 수정' },
         continue: { text: '▶️ 계속', prompt: '계속 실행하세요', title: '계속' },
@@ -323,14 +371,30 @@
       about_uptime: "Laufzeit:",
       btn_check_update: "Updates prüfen",
       scroll_bottom_label: "Nach unten",
-      modal_attach_title: "📎 Bilder / Dateien anhängen",
+      vibe_attach_text: "📎 Anhang",
+      vibe_attach_title: "Bilder / Office-Dokumente an Terminal senden",
+      modal_attach_title: "📎 Bilder / Dokumente anhängen",
       modal_attach_tip: "Dateien werden sicher auf den PC hochgeladen und Pfade mit Prompt ans Terminal übergeben:",
       attach_dropzone_title: "Bilder oder Office-Dokumente auswählen (Mehrfachauswahl)",
       attach_dropzone_hint: "Unterstützt Screenshots, Bilder, PDF, Excel, Word, PPT (Code/Zip/Video nicht unterstützt)",
       attach_prompt_label: "Dateianweisungen / Prompt",
+      attach_required_tag: "* Erforderlich",
+      attach_prompt_placeholder: "z.B.: Bitte Fehler im Screenshot analysieren und Lösung vorschlagen...",
+      attach_prompt_error: "⚠️ Prompt darf nicht leer sein. Bitte Anweisungen für die Dateien eingeben.",
       btn_add_more_files: "+ Weitere Dateien hinzufügen",
       btn_clear: "Leeren",
       btn_send_terminal: "🚀 Ans Terminal senden",
+      attach_click_toggle: "Klicken, um vollständigen Pfad ein-/auszublenden",
+      attach_click_expand: "Klicken zum Aufklappen",
+      attach_click_collapse: "Klicken zum Zuklappen",
+      attach_btn_delete_file: "Datei löschen",
+      attach_uploading_title: "Lade Dateien sicher ins temporäre PC-Verzeichnis hoch...",
+      attach_uploading_hint: "Bitte einen Moment warten",
+      attach_btn_uploading: "⏳ Wird hochgeladen...",
+      attach_err_no_files: "Bitte wählen Sie mindestens ein Bild oder Office-Dokument aus.",
+      attach_err_format: '⚠️ Nicht unterstütztes Format: "{name}". Nur Bilder und Office-Dokumente (PDF, Word, Excel, PPT, TXT) sind erlaubt. Quellcode, Archive und Videos werden nicht unterstützt.',
+      attach_err_upload_failed: "⚠️ Fehler beim Hochladen: ",
+      attach_prompt_prefix: "Please read file: ",
       vibes: {
         fix: { text: '⚡ Reparieren', prompt: 'Fehler oben beheben und überprüfen', title: 'Fehler beheben' },
         continue: { text: '▶️ Weiter', prompt: 'Weiter ausführen', title: 'Weiter' },
@@ -355,6 +419,20 @@
       const key = el.getAttribute('data-i18n');
       if (dict[key]) {
         el.textContent = dict[key];
+      }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) {
+        el.setAttribute('placeholder', dict[key]);
+      }
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      const key = el.getAttribute('data-i18n-title');
+      if (dict[key]) {
+        el.setAttribute('title', dict[key]);
       }
     });
 
@@ -2398,6 +2476,8 @@
 
   function renderAttachFileList() {
     if (!attachFileList) return;
+    const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+
     if (attachedFiles.length === 0) {
       attachFileList.style.display = 'none';
       attachFileList.innerHTML = '';
@@ -2418,18 +2498,22 @@
       item.className = 'attach-file-item';
 
       const icon = getFileIcon(file.name);
+      const titleToggle = dict.attach_click_toggle || 'Click to expand / collapse full path';
+      const labelExpand = dict.attach_click_expand || 'Click to expand';
+      const titleDel = dict.attach_btn_delete_file || 'Delete file';
+
       item.innerHTML = `
         <div class="attach-file-icon">${icon}</div>
-        <div class="attach-file-info" title="点击展开/收起完整路径">
+        <div class="attach-file-info" title="${titleToggle}">
           <div class="attach-file-name">${escapeHtmlTerm(file.name)}</div>
           <div class="attach-file-meta">
             <span>${formatFileSize(file.size)}</span>
             <span>•</span>
-            <span style="color:#a371f7;">点击展开</span>
+            <span class="attach-expand-label" style="color:#a371f7;">${labelExpand}</span>
           </div>
           <div class="attach-file-path">${escapeHtmlTerm(file.path)}</div>
         </div>
-        <button type="button" class="attach-file-del" title="删除文件" data-idx="${index}">✕</button>
+        <button type="button" class="attach-file-del" title="${titleDel}" data-idx="${index}">✕</button>
       `;
 
       // 点击文件信息区域展开/折叠显示完整文件名与绝对路径
@@ -2437,9 +2521,11 @@
       if (infoEl) {
         infoEl.addEventListener('click', function () {
           this.classList.toggle('expanded');
-          const metaHint = this.querySelector('.attach-file-meta span:last-child');
+          const metaHint = this.querySelector('.attach-expand-label');
           if (metaHint) {
-            metaHint.textContent = this.classList.contains('expanded') ? '点击折叠' : '点击展开';
+            metaHint.textContent = this.classList.contains('expanded')
+              ? (dict.attach_click_collapse || 'Click to collapse')
+              : (dict.attach_click_expand || 'Click to expand');
           }
         });
       }
@@ -2463,13 +2549,15 @@
 
   async function uploadFiles(files) {
     if (!files || files.length === 0 || isUploadingFiles) return;
+    const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
 
     // 前端严格校验：仅允许图片及常用办公文档，拦截代码文件、压缩包、视频等
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       const ext = (f.name.split('.').pop() || '').toLowerCase();
       if (!ALLOWED_UPLOAD_EXTS.has(ext)) {
-        alert(`⚠️ 文件 "${f.name}" 格式不支持。\n\n仅支持图片(PNG/JPG等)及常用办公文档(PDF/Word/Excel/PPT/TXT)，不支持代码文件、压缩包或音视频等大文件。`);
+        const tpl = dict.attach_err_format || '⚠️ Unsupported file: "{name}". Only images and office documents (PDF, Word, Excel, PPT, TXT) are allowed.';
+        alert(tpl.replace('{name}', f.name));
         if (attachFileInput) attachFileInput.value = '';
         return;
       }
@@ -2481,12 +2569,12 @@
     if (attachDropzone) {
       attachDropzone.innerHTML = `
         <div class="attach-dropzone-icon">⏳</div>
-        <div class="attach-dropzone-title">正在安全上传文件到本地临时目录...</div>
-        <div class="attach-dropzone-hint">请稍候</div>
+        <div class="attach-dropzone-title">${dict.attach_uploading_title || 'Securely uploading files...'}</div>
+        <div class="attach-dropzone-hint">${dict.attach_uploading_hint || 'Please wait a moment'}</div>
       `;
     }
     if (btnAddMoreFiles) {
-      btnAddMoreFiles.textContent = '⏳ 上传中...';
+      btnAddMoreFiles.textContent = dict.attach_btn_uploading || '⏳ Uploading...';
       btnAddMoreFiles.disabled = true;
     }
     if (btnSendAttachToTerm) {
@@ -2505,13 +2593,13 @@
       });
 
       if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || '上传请求失败: HTTP ' + res.status);
+        const errJson = await res.json().catch(() => null);
+        throw new Error((errJson && errJson.error) || ('HTTP ' + res.status));
       }
 
       const data = await res.json();
       if (!data.success) {
-        throw new Error(data.error || '上传未成功');
+        throw new Error(data.error || 'Upload failed');
       }
 
       const newFiles = data.files || [];
@@ -2519,13 +2607,13 @@
       renderAttachFileList();
     } catch (err) {
       console.error('[Upload Error]', err);
-      alert('⚠️ 上传文件失败: ' + (err.message || '网络异常'));
+      const prefix = dict.attach_err_upload_failed || '⚠️ Failed to upload file: ';
+      alert(prefix + (err.message || 'Network error'));
     } finally {
       isUploadingFiles = false;
       if (attachDropzone) attachDropzone.innerHTML = originalDropzoneHtml;
       if (btnAddMoreFiles) {
-        const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
-        btnAddMoreFiles.textContent = dict.btn_add_more_files || '+ 继续添加文件';
+        btnAddMoreFiles.textContent = dict.btn_add_more_files || '+ Add More Files';
         btnAddMoreFiles.disabled = false;
       }
       if (btnSendAttachToTerm) {
@@ -2649,7 +2737,7 @@
       const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
 
       if (attachedFiles.length === 0) {
-        alert(dict.attach_err_no_files || '请至少选择一个本地图片或文件进行上传');
+        alert(dict.attach_err_no_files || 'Please select at least one local image or office document to upload.');
         if (attachFileInput) attachFileInput.click();
         return;
       }
@@ -2666,8 +2754,8 @@
         return;
       }
 
-      // 组合提示词: "请读取文件: /xxx/xx.jpg, /xxx/xx.xlsx\n\n提示词"
-      const prefix = currentUiLang === 'en' ? 'Please read file: ' : '请读取文件: ';
+      // 组合提示词: "Please read file: /path1, /path2\n\nPrompt"
+      const prefix = dict.attach_prompt_prefix || 'Please read file: ';
       const paths = attachedFiles.map(f => f.path).join(', ');
       const combined = `${prefix}${paths}\n\n${promptText}`;
 
