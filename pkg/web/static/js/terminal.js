@@ -85,6 +85,7 @@
       about_status_active: "Active",
       about_uptime: "Uptime:",
       btn_check_update: "Check Updates",
+      scroll_bottom_label: "Bottom",
       vibes: {
         fix: { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
         continue: { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
@@ -155,6 +156,7 @@
       about_status_active: "正常稼働中 (Active)",
       about_uptime: "稼働時間:",
       btn_check_update: "更新を確認",
+      scroll_bottom_label: "最新へ",
       vibes: {
         fix: { text: '⚡ 修正', prompt: 'エラーを修正してテストしてください', title: 'エラー修正' },
         continue: { text: '▶️ 続行', prompt: '続行してください', title: '続行' },
@@ -225,6 +227,7 @@
       about_status_active: "정상 실행 중 (Active)",
       about_uptime: "가동 시간:",
       btn_check_update: "업데이트 확인",
+      scroll_bottom_label: "맨 아래로",
       vibes: {
         fix: { text: '⚡ 수정', prompt: '오류를 수정하고 자체 테스트를 수행하세요', title: '오류 수정' },
         continue: { text: '▶️ 계속', prompt: '계속 실행하세요', title: '계속' },
@@ -295,6 +298,7 @@
       about_status_active: "Aktiv",
       about_uptime: "Laufzeit:",
       btn_check_update: "Updates prüfen",
+      scroll_bottom_label: "Nach unten",
       vibes: {
         fix: { text: '⚡ Reparieren', prompt: 'Fehler oben beheben und überprüfen', title: 'Fehler beheben' },
         continue: { text: '▶️ Weiter', prompt: 'Weiter ausführen', title: 'Weiter' },
@@ -559,7 +563,8 @@
     fontSize: fontSize,
     fontFamily: '"SF Mono", Monaco, Menlo, Consolas, "Courier New", monospace',
     theme: initialThemeObj.term,
-    allowProposedApi: true
+    allowProposedApi: true,
+    scrollback: 5000
   });
   applyTheme(currentThemeId);
 
@@ -576,6 +581,52 @@
   }
   fitAddon.fit();
 
+  // 字体大小调节公共方法
+  function updateFontSize(newSize) {
+    newSize = Math.max(10, Math.min(24, newSize));
+    if (newSize === fontSize) return;
+    fontSize = newSize;
+    term.options.fontSize = fontSize;
+    scheduleResize(true, 50);
+    localStorage.setItem('term_font_size', fontSize);
+  }
+
+  // 移动端快速回到底部悬浮胶囊控制
+  const btnScrollBottom = document.getElementById('btnScrollBottom');
+  const scrollBottomText = document.getElementById('scrollBottomText');
+
+  function updateScrollBottomBtn() {
+    if (!btnScrollBottom || !term.buffer || !term.buffer.active) return;
+    const b = term.buffer.active;
+    const linesAbove = b.baseY - b.viewportY;
+    if (linesAbove > 1) {
+      if (scrollBottomText) {
+        const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+        const label = dict.scroll_bottom_label || 'Bottom';
+        scrollBottomText.textContent = `${label} (${linesAbove})`;
+      }
+      btnScrollBottom.style.display = 'inline-flex';
+    } else {
+      btnScrollBottom.style.display = 'none';
+    }
+  }
+
+  if (btnScrollBottom) {
+    btnScrollBottom.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      term.scrollToBottom();
+      updateScrollBottomBtn();
+    });
+  }
+
+  term.onScroll(function () {
+    updateScrollBottomBtn();
+  });
+
+  // 标记是否刚刚发生触摸手势滑动，防止手势松开时误触发 click 弹起软键盘
+  let justScrolled = false;
+
   // 点击终端视口或辅助区域唤起系统输入法
   function triggerSystemKeyboard() {
     if (term.textarea) {
@@ -584,12 +635,253 @@
     term.focus();
   }
 
-  // 移动端点击终端视口唤起输入法
+  // 移动端点击终端视口唤起输入法 (如果刚发生滑动手势则不弹软键盘)
   if (terminalEl) {
     terminalEl.addEventListener('click', function () {
+      if (justScrolled) return;
       triggerSystemKeyboard();
     });
   }
+
+  // 移动端触屏流畅手势滚动与惯性阻尼控制器 (双轨支持: 普通终端缓冲区 + 全屏程序/Codex CLI Alternate Buffer 鼠标滚轮原生派发)
+  function setupTouchScroll() {
+    const container = document.getElementById('terminalContainer') || terminalEl;
+    if (!container) return;
+
+    let startY = 0;
+    let startX = 0;
+    let lastY = 0;
+    let lastTime = 0;
+    let velocityY = 0;
+    let isScrolling = false;
+    let hasMoved = false;
+    let inertiaRaf = null;
+    let currentTouchX = 0;
+    let currentTouchY = 0;
+    let accumulatedNormalDelta = 0;
+
+    // 双指手势 Pinch 缩放字体
+    let startPinchDist = 0;
+    let initialPinchFontSize = fontSize;
+
+    function stopInertia() {
+      if (inertiaRaf) {
+        cancelAnimationFrame(inertiaRaf);
+        inertiaRaf = null;
+      }
+    }
+
+    function getCellHeight() {
+      try {
+        const h = term._core && term._core._renderService && term._core._renderService.dimensions && term._core._renderService.dimensions.actualCellHeight;
+        if (h && h > 8 && h < 60) return h;
+      } catch (_) {}
+      return Math.max(14, fontSize * 1.3);
+    }
+
+    // 核心：合成并向终端派发标准 WheelEvent，使得手机触摸手势在任何场景（包括 Codex CLI/vim 等全屏程序）下完全等同于 PC 鼠标滚轮
+    function dispatchWheelToTerm(deltaPixels, clientX, clientY) {
+      const target = term.element || (terminalEl ? terminalEl.querySelector('.xterm') : null) || terminalEl;
+      if (!target) return;
+
+      const cx = (typeof clientX === 'number' && clientX > 0) ? clientX : (window.innerWidth / 2);
+      const cy = (typeof clientY === 'number' && clientY > 0) ? clientY : (window.innerHeight / 2);
+
+      // 手指向下拉 (deltaPixels > 0) -> 向上查看历史 (PC 滚轮向上滚 deltaY < 0)
+      // 手指向上推 (deltaPixels < 0) -> 向下查看最新 (PC 滚轮向下滚 deltaY > 0)
+      const wheelDeltaY = -deltaPixels;
+
+      try {
+        const ev = new WheelEvent('wheel', {
+          deltaY: wheelDeltaY,
+          deltaX: 0,
+          deltaZ: 0,
+          deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+          clientX: cx,
+          clientY: cy,
+          screenX: cx,
+          screenY: cy,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        target.dispatchEvent(ev);
+      } catch (e) {
+        try {
+          const ev = document.createEvent('WheelEvent');
+          ev.initWebKitWheelEvent(0, wheelDeltaY, window, cx, cy, cx, cy, false, false, false, false);
+          target.dispatchEvent(ev);
+        } catch (_) {}
+      }
+    }
+
+    // 执行滚动分发
+    function performScrollStep(dy, clientX, clientY) {
+      if (!dy) return;
+
+      const isAlternate = term.buffer && term.buffer.active && term.buffer.active.type === 'alternate';
+      const hasMouseTracking = term.modes && term.modes.mouseTrackingMode && term.modes.mouseTrackingMode !== 'none';
+      const noScrollback = term.buffer && term.buffer.active && term.buffer.active.baseY === 0;
+
+      if (isAlternate || hasMouseTracking || noScrollback) {
+        // 全屏交互程序 / TUI (如 Codex CLI、vim、less、htop) 或当前无历史缓冲区时：派发标准原生 WheelEvent
+        // 放大 1.35 倍移动距离，让手机大拇指翻阅更加灵敏轻松
+        dispatchWheelToTerm(dy * 1.35, clientX, clientY);
+      } else {
+        // 普通终端命令行模式 (bash/zsh 等有历史回溯缓冲区的会话)：直接驱动缓冲区滚动
+        const cellH = getCellHeight();
+        accumulatedNormalDelta += dy;
+        if (Math.abs(accumulatedNormalDelta) >= cellH) {
+          const lines = Math.trunc(accumulatedNormalDelta / cellH);
+          accumulatedNormalDelta -= lines * cellH;
+          term.scrollLines(-lines);
+          updateScrollBottomBtn();
+        }
+      }
+    }
+
+    // 捕获阶段拦截 touchstart
+    container.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) {
+        stopInertia();
+        const t = e.touches[0];
+        startY = t.clientY;
+        startX = t.clientX;
+        lastY = startY;
+        currentTouchX = startX;
+        currentTouchY = startY;
+        lastTime = performance.now();
+        velocityY = 0;
+        accumulatedNormalDelta = 0;
+        isScrolling = false;
+        hasMoved = false;
+      } else if (e.touches.length === 2) {
+        stopInertia();
+        isScrolling = false;
+        hasMoved = true;
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        startPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        initialPinchFontSize = fontSize;
+      }
+    }, { capture: true, passive: true });
+
+    // 捕获阶段拦截 touchmove
+    container.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        const curY = t.clientY;
+        const curX = t.clientX;
+        const totalDy = curY - startY;
+
+        currentTouchX = curX;
+        currentTouchY = curY;
+
+        if (!isScrolling) {
+          // 只要纵向滑行超过 5px，即判定为滚动浏览意图（放宽限制，适应手机大拇指圆弧滑动）
+          if (Math.abs(totalDy) > 5) {
+            isScrolling = true;
+            hasMoved = true;
+          }
+        }
+
+        if (isScrolling) {
+          // 彻底阻止浏览器默认下拉刷新以及 xterm 原生 touchmove 的干扰
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+          e.stopPropagation();
+
+          const now = performance.now();
+          const dt = Math.max(1, now - lastTime);
+          const dy = curY - lastY;
+
+          const instV = dy / dt;
+          velocityY = velocityY * 0.3 + instV * 0.7;
+
+          lastY = curY;
+          lastTime = now;
+
+          performScrollStep(dy, curX, curY);
+        }
+      } else if (e.touches.length === 2 && startPinchDist > 0) {
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const curDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const ratio = curDist / startPinchDist;
+        let targetSize = Math.round(initialPinchFontSize * ratio);
+        targetSize = Math.max(10, Math.min(26, targetSize));
+        if (targetSize !== fontSize) {
+          updateFontSize(targetSize);
+        }
+      }
+    }, { capture: true, passive: false });
+
+    // 捕获阶段拦截 touchend
+    container.addEventListener('touchend', function () {
+      if (hasMoved) {
+        justScrolled = true;
+        setTimeout(function () {
+          justScrolled = false;
+        }, 350);
+      }
+
+      if (isScrolling) {
+        isScrolling = false;
+        const now = performance.now();
+        // 抬手速度达到阈值，触发物理惯性减速滑动
+        if (now - lastTime < 120 && Math.abs(velocityY) > 0.12) {
+          startInertiaScroll(velocityY, currentTouchX, currentTouchY);
+        }
+      }
+    }, { capture: true, passive: true });
+
+    container.addEventListener('touchcancel', function () {
+      isScrolling = false;
+      stopInertia();
+    }, { capture: true, passive: true });
+
+    // 物理惯性阻尼滑行动画
+    function startInertiaScroll(initialV, clientX, clientY) {
+      stopInertia();
+      let v = initialV;
+      const friction = 0.93;
+      let lastFrameTime = performance.now();
+
+      function frame(now) {
+        const dt = Math.min(32, now - lastFrameTime);
+        lastFrameTime = now;
+
+        v *= Math.pow(friction, dt / 16.6);
+        if (Math.abs(v) < 0.03) {
+          inertiaRaf = null;
+          updateScrollBottomBtn();
+          return;
+        }
+
+        // 普通缓冲区下进行边界检测
+        if (term.buffer && term.buffer.active && term.buffer.active.type === 'normal') {
+          const b = term.buffer.active;
+          if ((v > 0 && b.viewportY <= 0) || (v < 0 && b.viewportY >= b.baseY)) {
+            inertiaRaf = null;
+            updateScrollBottomBtn();
+            return;
+          }
+        }
+
+        const frameDy = v * dt;
+        performScrollStep(frameDy, clientX, clientY);
+
+        inertiaRaf = requestAnimationFrame(frame);
+      }
+
+      inertiaRaf = requestAnimationFrame(frame);
+    }
+  }
+
+  setupTouchScroll();
 
   // 监听 Visual Viewport 动态计算软键盘弹出高度，实现虚拟键盘栏贴合输入法键盘顶部
   function setupVisualViewportSync() {
@@ -913,40 +1205,149 @@
     if (ctrlModal) ctrlModal.style.display = 'none';
   }
 
-  function sendCtrlKey(char) {
-    if (!char) return;
-    const code = char.toUpperCase().charCodeAt(0) - 64;
-    if (code >= 1 && code <= 26) {
-      sendInput(String.fromCharCode(code));
+  // 组合键选择弹窗逻辑 (支持 Ctrl / Alt / Shift 至少选1个，可任意多选)
+  let selectedMods = {
+    ctrl: true,
+    alt: false,
+    shift: false
+  };
+
+  const chipCtrl = document.getElementById('chipCtrl');
+  const chipAlt = document.getElementById('chipAlt');
+  const chipShift = document.getElementById('chipShift');
+  const modPreviewPrefix = document.getElementById('modPreviewPrefix');
+  const ctrlDigitsGrid = document.getElementById('ctrlDigitsGrid');
+
+  function updateModUI() {
+    if (chipCtrl) chipCtrl.classList.toggle('active', selectedMods.ctrl);
+    if (chipAlt) chipAlt.classList.toggle('active', selectedMods.alt);
+    if (chipShift) chipShift.classList.toggle('active', selectedMods.shift);
+
+    const parts = [];
+    if (selectedMods.ctrl) parts.push('Ctrl');
+    if (selectedMods.alt) parts.push('Alt');
+    if (selectedMods.shift) parts.push('Shift');
+    const prefix = parts.length > 0 ? (parts.join('+') + '+') : 'None+';
+
+    if (modPreviewPrefix) {
+      modPreviewPrefix.textContent = prefix;
+    }
+
+    // 动态同步高频卡片的标题显示
+    document.querySelectorAll('[data-char-title]').forEach(function (el) {
+      const ch = el.getAttribute('data-char-title').toUpperCase();
+      el.textContent = prefix + ch;
+    });
+  }
+
+  function toggleMod(modName) {
+    const key = modName.toLowerCase();
+    const countActive = (selectedMods.ctrl ? 1 : 0) + (selectedMods.alt ? 1 : 0) + (selectedMods.shift ? 1 : 0);
+    // 至少选一个：如果当前只有一个被选中，且用户尝试取消，则不允许取消
+    if (selectedMods[key] && countActive <= 1) {
+      return;
+    }
+    selectedMods[key] = !selectedMods[key];
+    updateModUI();
+  }
+
+  // 合成标准终端控制序列
+  function buildModifierSequence(char) {
+    if (!char) return '';
+    const upper = char.toUpperCase();
+    const isLetter = upper >= 'A' && upper <= 'Z';
+    const { ctrl, alt, shift } = selectedMods;
+
+    // 1. 纯 Ctrl + 字母 (A-Z) -> 标准 ASCII 1~26 控制字符
+    if (ctrl && !alt && !shift && isLetter) {
+      return String.fromCharCode(upper.charCodeAt(0) - 64);
+    }
+
+    // 2. 纯 Alt + 字符 (A-Z 或 0-9) -> ESC + char
+    if (!ctrl && alt && !shift) {
+      return '\x1b' + char.toLowerCase();
+    }
+
+    // 3. Ctrl + Alt + 字母 -> ESC + Ctrl控制字符
+    if (ctrl && alt && !shift && isLetter) {
+      return '\x1b' + String.fromCharCode(upper.charCodeAt(0) - 64);
+    }
+
+    // 4. 纯 Shift + 字符
+    if (!ctrl && !alt && shift) {
+      return isLetter ? upper : char;
+    }
+
+    // 5. 复合修饰组合 (例如 Ctrl+Shift, Ctrl+Alt+Shift, Ctrl+数字, Alt+Shift 等)
+    // 采用标准 xterm modifyOtherKeys 规范: CSI 27 ; <mod> ; <ascii> ~
+    // mod = 1 + (Shift ? 1 : 0) + (Alt ? 2 : 0) + (Ctrl ? 4 : 0)
+    let mod = 1;
+    if (shift) mod += 1;
+    if (alt) mod += 2;
+    if (ctrl) mod += 4;
+
+    const ascii = (shift && isLetter) ? upper.charCodeAt(0) : char.charCodeAt(0);
+    return '\x1b[27;' + mod + ';' + ascii + '~';
+  }
+
+  function sendComboChar(char) {
+    const seq = buildModifierSequence(char);
+    if (seq) {
+      sendInput(seq);
     }
     closeCtrlModal();
     term.focus();
   }
 
   function initCtrlPicker() {
+    // 绑定修饰键切换按键
+    if (chipCtrl) chipCtrl.onclick = function (e) { e.preventDefault(); toggleMod('ctrl'); };
+    if (chipAlt) chipAlt.onclick = function (e) { e.preventDefault(); toggleMod('alt'); };
+    if (chipShift) chipShift.onclick = function (e) { e.preventDefault(); toggleMod('shift'); };
+
+    // 生成 0-9 数字按钮
+    if (ctrlDigitsGrid) {
+      ctrlDigitsGrid.innerHTML = '';
+      for (let d = 0; d <= 9; d++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ctrl-digit-btn';
+        btn.textContent = d;
+        btn.onclick = function (e) {
+          e.preventDefault();
+          sendComboChar(String(d));
+        };
+        ctrlDigitsGrid.appendChild(btn);
+      }
+    }
+
+    // 生成 A-Z 字母按钮
     if (ctrlAlphaGrid) {
       ctrlAlphaGrid.innerHTML = '';
       for (let i = 65; i <= 90; i++) {
         const char = String.fromCharCode(i);
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'ctrl-alpha-btn';
         btn.textContent = char;
-        btn.title = '发送 Ctrl+' + char;
         btn.onclick = function (e) {
           e.preventDefault();
-          sendCtrlKey(char.toLowerCase());
+          sendComboChar(char.toLowerCase());
         };
         ctrlAlphaGrid.appendChild(btn);
       }
     }
 
-    document.querySelectorAll('.ctrl-preset-card[data-ctrl]').forEach(function (card) {
+    // 高频快捷功能卡片
+    document.querySelectorAll('.ctrl-preset-card[data-char]').forEach(function (card) {
       card.onclick = function (e) {
         e.preventDefault();
-        const ch = this.getAttribute('data-ctrl');
-        sendCtrlKey(ch);
+        const ch = this.getAttribute('data-char');
+        sendComboChar(ch);
       };
     });
+
+    updateModUI();
   }
 
   initCtrlPicker();
@@ -1035,6 +1436,10 @@
         case 'ArrowDown': sendInput('\x1b[B'); break;
         case 'ArrowRight': sendInput('\x1b[C'); break;
         case 'ArrowLeft': sendInput('\x1b[D'); break;
+        case 'Home': sendInput(term.modes && term.modes.applicationCursorKeysMode ? '\x1bOH' : '\x1b[H'); break;
+        case 'End': sendInput(term.modes && term.modes.applicationCursorKeysMode ? '\x1bOF' : '\x1b[F'); break;
+        case 'Slash': sendInput('/'); break;
+        case 'Backslash': sendInput('\\'); break;
       }
       term.focus();
     });
@@ -1651,21 +2056,11 @@
 
   // 字体大小调节
   document.getElementById('btnZoomIn').addEventListener('click', function () {
-    if (fontSize < 24) {
-      fontSize += 2;
-      term.options.fontSize = fontSize;
-      scheduleResize(true, 50);
-      localStorage.setItem('term_font_size', fontSize);
-    }
+    updateFontSize(fontSize + 2);
   });
 
   document.getElementById('btnZoomOut').addEventListener('click', function () {
-    if (fontSize > 10) {
-      fontSize -= 2;
-      term.options.fontSize = fontSize;
-      scheduleResize(true, 50);
-      localStorage.setItem('term_font_size', fontSize);
-    }
+    updateFontSize(fontSize - 2);
   });
 
   // 切换虚拟键盘显隐

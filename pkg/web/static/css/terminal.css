@@ -254,35 +254,91 @@ body.dark-theme {
   overflow: hidden;
   background-color: #000000;
   box-sizing: border-box;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #terminal {
   width: 100%;
   height: 100%;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .xterm {
   padding: 4px;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .xterm .xterm-viewport {
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  touch-action: none;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 4px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 移动端快速回到底部悬浮胶囊 */
+.scroll-bottom-pill {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  background: rgba(22, 27, 34, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(88, 166, 255, 0.45);
+  color: #58a6ff;
+  border-radius: 18px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  z-index: 40;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.scroll-bottom-pill:active {
+  background: rgba(48, 54, 61, 0.95);
+  transform: scale(0.94);
+}
+
+.scroll-bottom-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.scroll-bottom-text {
+  font-size: 11px;
+  letter-spacing: 0.3px;
 }
 
 /* 手机端定制虚拟键盘工具栏 */
 .mobile-keyboard {
   background-color: var(--header-bg);
   border-top: 1px solid var(--border-color);
-  padding: 6px 8px;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  padding: 4px 6px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
   transform: translateY(calc(-1 * var(--kb-offset, 0px)));
   transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), max-height 0.2s ease;
@@ -300,143 +356,149 @@ body.dark-theme {
   width: 100%;
 }
 
-.key-row-nav {
-  display: flex;
-  flex-wrap: nowrap;
-  white-space: nowrap;
+.key-row-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.1fr 1fr 1fr 1fr 1.2fr;
   gap: 3px;
   width: 100%;
 }
 
-.key-row-nav .key-btn {
-  flex: 1 1 0;
+.key-row-grid .key-btn {
+  height: 32px;
   min-width: 0;
-  height: 38px;
   background: var(--btn-bg);
   color: var(--text-main);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 5px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Monaco, Menlo, monospace;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
   letter-spacing: -0.2px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   touch-action: manipulation;
-  padding: 0 1px;
+  padding: 0;
+  transition: all 0.12s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.key-btn:active {
+.key-row-grid .key-btn:active {
   background: var(--accent-blue);
   color: #ffffff;
-  transform: scale(0.94);
+  transform: scale(0.93);
 }
 
-.key-row-nav .num-picker-btn {
-  flex: 1.2 1 0;
-  min-width: 0;
-  background: rgba(234, 179, 8, 0.18) !important;
+/* 0-9 数字面板唤起按钮 (第二行第1列) */
+.key-row-grid .num-picker-btn {
+  background: rgba(234, 179, 8, 0.16) !important;
   color: #facc15 !important;
-  border-color: rgba(234, 179, 8, 0.5) !important;
-  font-size: 12px;
+  border-color: rgba(234, 179, 8, 0.45) !important;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 0 1px;
   white-space: nowrap;
 }
-
-.num-picker-btn:active {
+.key-row-grid .num-picker-btn:active {
   background: #facc15 !important;
   color: #0d1117 !important;
 }
 
-.key-row-nav .ctrl-picker-btn {
-  flex: 1.35 1 0;
-  min-width: 0;
-  background: rgba(88, 166, 255, 0.2);
-  color: #58a6ff;
-  border-color: rgba(88, 166, 255, 0.5);
-  font-size: 11px;
+/* Ctrl+ 快捷选择按钮 (第二行第2列) */
+.key-row-grid .ctrl-picker-btn {
+  background: rgba(88, 166, 255, 0.18) !important;
+  color: #58a6ff !important;
+  border-color: rgba(88, 166, 255, 0.45) !important;
+  font-size: 10px;
   font-weight: 700;
-  padding: 0 1px;
   white-space: nowrap;
 }
-
-.ctrl-picker-btn:active {
-  background: #58a6ff;
-  color: #ffffff;
+.key-row-grid .ctrl-picker-btn:active {
+  background: #58a6ff !important;
+  color: #ffffff !important;
 }
 
-.key-row-nav .cmd-slash-btn {
-  flex: 1 1 0;
-  background: rgba(56, 189, 248, 0.18) !important;
+/* TAB 按键 (第三行第1列) */
+.key-row-grid .tab-key-btn {
+  background: rgba(56, 189, 248, 0.16) !important;
   color: #38bdf8 !important;
-  border-color: rgba(56, 189, 248, 0.5) !important;
-  font-weight: 800 !important;
-  font-size: 16px !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  font-size: 10.5px;
+  font-weight: 700;
 }
-
-.cmd-slash-btn:active {
+.key-row-grid .tab-key-btn:active {
   background: #38bdf8 !important;
   color: #0f172a !important;
 }
 
-.key-row-nav .kb-trigger-btn {
-  flex: 1 1 0;
-  background: rgba(163, 113, 247, 0.2) !important;
-  color: #d2a8ff !important;
-  border-color: rgba(163, 113, 247, 0.5) !important;
-  font-size: 15px !important;
+/* 斜杠 / 按键 (第三行第2列) */
+.key-row-grid .slash-key-btn {
+  background: rgba(139, 148, 158, 0.16) !important;
+  color: #e6edf3 !important;
+  border-color: rgba(139, 148, 158, 0.35) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
 }
-
-.kb-trigger-btn:active {
-  background: #a371f7 !important;
+.key-row-grid .slash-key-btn:active {
+  background: #388bfd !important;
   color: #ffffff !important;
 }
 
-.key-btn.toggle-key.active {
-  background: var(--accent-orange);
-  color: #ffffff;
-  border-color: #f7a35c;
-  box-shadow: 0 0 6px var(--accent-orange);
+/* HOME / END 导航按键 (第二行第3、5列) */
+.key-row-grid .nav-key-btn {
+  background: rgba(139, 148, 158, 0.16) !important;
+  color: #c9d1d9 !important;
+  border-color: rgba(139, 148, 158, 0.35) !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.key-row-grid .nav-key-btn:active {
+  background: #6e7681 !important;
+  color: #ffffff !important;
 }
 
-.arrow-btn {
-  font-size: 16px;
+/* 方向箭头按键 (↑ / ← / ↓ / →) */
+.key-row-grid .arrow-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f0f6fc !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  font-size: 14px !important;
   font-weight: 700;
 }
-
-/* 高亮回车按键 (Enter) - 适当放大保持左右平衡对齐 */
-.key-action {
-  flex: 1.45 1 0 !important;
-  background: #238636 !important;
+.key-row-grid .arrow-btn:active {
+  background: #388bfd !important;
   color: #ffffff !important;
-  border-color: #2ea043 !important;
-  font-weight: 800 !important;
-  font-size: 17px !important;
-  box-shadow: 0 1px 4px rgba(35, 134, 54, 0.4);
+  border-color: #58a6ff !important;
 }
 
-.key-action:active {
-  background: #2ea043 !important;
-  transform: scale(0.92);
-}
-
-/* 高亮删除退格按键 (Backspace / Delete) - 适当放大保持左右平衡对齐 */
-.key-delete {
-  flex: 1.45 1 0 !important;
+/* 删除退格键 (⌫ - 第二行第6列) */
+.key-row-grid .key-delete {
   background: rgba(248, 81, 73, 0.22) !important;
   color: #ff7b72 !important;
   border-color: rgba(248, 81, 73, 0.55) !important;
-  font-weight: 800 !important;
-  font-size: 16px !important;
-  box-shadow: 0 1px 4px rgba(248, 81, 73, 0.25);
+  font-size: 14px !important;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(248, 81, 73, 0.2);
 }
-
-.key-delete:active {
+.key-row-grid .key-delete:active {
   background: #f85149 !important;
   color: #ffffff !important;
+  transform: scale(0.92);
+}
+
+/* 回车执行键 (↵ - 第三行第6列) */
+.key-row-grid .key-action {
+  background: #238636 !important;
+  color: #ffffff !important;
+  border-color: #2ea043 !important;
+  font-size: 15px !important;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(35, 134, 54, 0.35);
+}
+.key-row-grid .key-action:active {
+  background: #2ea043 !important;
   transform: scale(0.92);
 }
 
@@ -483,6 +545,17 @@ body.dark-theme {
 
 .vibe-pill:active {
   transform: scale(0.93);
+}
+
+.vibe-esc {
+  background: rgba(139, 148, 158, 0.22);
+  color: #f0f6fc;
+  border-color: rgba(139, 148, 158, 0.45);
+  font-weight: 700;
+}
+.vibe-esc:active {
+  background: #6e7681;
+  color: #ffffff;
 }
 
 .vibe-yes {
@@ -793,7 +866,114 @@ body.dark-theme {
   line-height: 1.2;
 }
 
-/* Ctrl+ 快捷组合键选择弹窗 */
+/* Ctrl+ / Alt / Shift 快捷组合键选择弹窗 */
+.mod-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(22, 27, 34, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+}
+
+.mod-chips-group {
+  display: flex;
+  gap: 6px;
+}
+
+.mod-toggle-chip {
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.mod-toggle-chip:active {
+  transform: scale(0.94);
+}
+
+.mod-toggle-chip.active {
+  background: rgba(56, 189, 248, 0.22);
+  color: #38bdf8;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+}
+
+.mod-preview-box {
+  display: flex;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Monaco, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px dashed rgba(88, 166, 255, 0.4);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.mod-preview-placeholder {
+  color: #8b949e;
+  animation: blink-cur 1s infinite;
+}
+
+@keyframes blink-cur {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.ctrl-sub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.ctrl-sub-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.ctrl-digits-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.ctrl-digit-btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--border-color);
+  color: #facc15;
+  border-radius: 6px;
+  height: 34px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Monaco, Menlo, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ctrl-digit-btn:active {
+  background: #facc15;
+  color: #0d1117;
+  transform: scale(0.92);
+}
+
 .ctrl-presets-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

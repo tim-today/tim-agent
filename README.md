@@ -41,7 +41,7 @@ When coding with AI CLI agents (`Claude Code`, `OpenAI Codex`, `Gemini CLI`, etc
 
 **Tim-Agent solves this with a radical zero-friction architecture:**
 
-1. 📱 **No Mobile App Installation Required**: No App Store downloads, no APK installations, and no third-party mobile client registration. Simply scan the QR code with your phone camera to take over your live terminal directly in your mobile browser (with optional 1-tap PWA home-screen install and a dedicated 2-row Vibe Coding touch keyboard).
+1. 📱 **No Mobile App Installation Required**: No App Store downloads, no APK installations, and no third-party mobile client registration. Simply scan the QR code with your phone camera to take over your live terminal directly in your mobile browser (with optional 1-tap PWA home-screen install, native momentum touch scrolling for Codex/full-screen CLIs, and an ergonomic 3-row Vibe Coding touch keyboard with a versatile Ctrl/Alt/Shift multi-modifier picker).
 2. 🛡️ **No API Keys or Tokens Required**: Never asks for, stores, or proxies your Anthropic, OpenAI, or Google API keys. Zero configuration overhead and zero risk of API token leakage.
 3. 💻 **No Cloud Server Deployment Required**: Runs 100% locally on your own Mac, Windows, or Linux workstation (`localhost` + LAN / Tailscale). No VPS purchase, no cloud relay, and 100% inheritance of your local Git credentials, SSH keys, compilers, Docker daemon, and shell environment.
 4. 🤖 **100% Authentic Official CLI Agents (Live Updates Supported)**: Directly drives official first-party CLIs (**Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi**) inside a native local PTY. Whenever official CLIs release new features or updates, you update them normally and get 100% of the raw, uncompromised official experience.
@@ -103,7 +103,7 @@ Tim-Agent serves the shared terminal on port `20996`. To connect from your phone
 ### 🎯 コアコンセプト：なぜ Tim-Agent なのか？
 **Tim-Agent は、PC・スマートフォン・長時間タスク間の「同期ズレや引き継ぎの分断」をゼロにするために設計されました。**
 
-1. 📱 **スマホアプリのインストール不要**: App Store や APK のダウンロードは一切不要。スマホのカメラで QR コードを読み取るだけで、モバイルブラウザから即座にライブ端末を引き継げます（Vibe Coding 専用2段タッチキーボード＆PWA対応）。
+1. 📱 **スマホアプリのインストール不要**: App Store や APK のダウンロードは一切不要。スマホのカメラで QR コードを読み取るだけで、モバイルブラウザから即座にライブ端末を引き継げます（Codex/全画面CLIの慣性タッチスクロール対応、Ctrl/Alt/Shift多重選択ピッカー＆3段対称Vibe Codingタッチキーボード、PWA対応）。
 2. 🛡️ **API トークン設定不要・漏洩リスクゼロ**: API キーの入力・保存・プロキシは一切不要です。
 3. 💻 **クラウドサーバー構築不要**: お使いの Mac / Windows / Linux マシン上で 100% ローカル稼働し、ローカルの Git 認証や SSH 鍵、開発環境をそのまま継承します。
 4. 🤖 **公式ファーストパーティ CLI Agent をそのまま駆動（随時アップデート対応）**: **Claude Code**、**OpenAI Codex**、**Google Gemini**、**Opcode**、**Pi** などの公式 CLI をネイティブ PTY で直接実行。公式ツールのアップデートにも即座に追従し、100% 本物の操作感を維持します。
@@ -127,7 +127,7 @@ go run github.com/tim-today/tim-agent@latest -install-app
 ### 🎯 핵심 철학: 왜 Tim-Agent인가?
 **Tim-Agent는 PC 워크스테이션, 스마트폰, 그리고 장시간 실행되는 AI 작업 간의 동기화 단절 문제를 완벽하게 해결합니다.**
 
-1. 📱 **모바일 앱 설치 불필요**: 별도의 모바일 앱 다운로드 없이 스마트폰 카메라로 QR 코드만 스캔하면 모바일 브라우저에서 즉시 터미널 세션을 이어받을 수 있습니다.
+1. 📱 **모바일 앱 설치 불필요**: 별도의 모바일 앱 다운로드 없이 스마트폰 카메라로 QR 코드만 스캔하면 모바일 브라우저에서 즉시 터미널 세션을 이어받을 수 있습니다 (Codex/전체화면 CLI 관성 터치 스크롤 지원, Ctrl/Alt/Shift 다중 선택 피커 및 인체공학적 3열 대칭 Vibe Coding 터치 키보드, PWA 지원).
 2. 🛡️ **API 토큰/키 입력 불필요**: LLM API Key를 요구하거나 중계하지 않아 토큰 유출 위험이 전혀 없습니다.
 3. 💻 **클라우드 서버 배포 불필요**: 사용자의 Mac / Windows / Linux PC에서 100% 로컬로 구동되며 로컬 Git 자격 증명과 개발 환경을 그대로 사용합니다.
 4. 🤖 **검증된 공식 CLI Agent 100% 순정 구동 및 실시간 업데이트 호환**: **Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi** 등 공식 클라이언트를 네이티브 PTY에서 직접 구동하며 공식 CLI 업데이트를 그대로 지원합니다.
@@ -151,7 +151,7 @@ go run github.com/tim-today/tim-agent@latest -install-app
 ### 🎯 Kernphilosophie: Warum Tim-Agent?
 **Tim-Agent beseitigt die Synchronisationslücke zwischen Desktop-Workstation, Smartphone und langlaufenden KI-Entwicklungsaufgaben:**
 
-1. 📱 **Keine Mobile-App-Installation erforderlich**: Kein App-Store-Download nötig – einfach den QR-Code scannen und direkt im mobilen Browser weiterarbeiten.
+1. 📱 **Keine Mobile-App-Installation erforderlich**: Kein App-Store-Download nötig – einfach den QR-Code scannen und direkt im mobilen Browser weiterarbeiten (inkl. nativer trägheitsgedämpfter Touch-Scroll-Unterstützung für Codex/Vollbild-CLIs, flexiblem Ctrl/Alt/Shift-Kombi-Picker und ergonomischer 3-zeiliger Vibe-Coding-Touch-Tastatur, PWA-fähig).
 2. 🛡️ **Keine API-Keys oder Tokens erforderlich**: Keine Eingabe, Speicherung oder Weiterleitung sensibler LLM-API-Schlüssel.
 3. 💻 **Keine Cloud-Server-Bereitstellung erforderlich**: Läuft zu 100 % lokal auf Ihrem Mac, Windows- oder Linux-PC und nutzt Ihre native Entwicklungsumgebung.
 4. 🤖 **100 % originale, offizielle CLI-Agenten (inkl. Live-Updates)**: Steuert offizielle First-Party-CLIs (**Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi**) direkt in einem echten lokalen PTY – volle Kompatibilität mit offiziellen CLI-Updates für ein unverfälschtes Originalerlebnis.

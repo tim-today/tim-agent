@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-title" content="TimAgent">
   <link rel="apple-touch-icon" href="/img/icon-192.png">
   <link rel="icon" type="image/png" href="/img/icon.png">
-  <link rel="stylesheet" href="/css/xterm.css">
-  <link rel="stylesheet" href="/css/terminal.css">
+  <link rel="stylesheet" href="/css/xterm.css?v=2.1.8">
+  <link rel="stylesheet" href="/css/terminal.css?v=2.1.8">
 </head>
 <body class="dark-theme">
   <!-- 顶部状态栏与工具条 -->
@@ -45,34 +45,46 @@
   <!-- xterm 终端主视口 -->
   <main class="terminal-container" id="terminalContainer">
     <div id="terminal"></div>
+    <!-- 移动端向上翻看历史时的悬浮快速回到底部按钮 -->
+    <button class="scroll-bottom-pill" id="btnScrollBottom" title="Scroll to bottom" style="display: none;">
+      <span class="scroll-bottom-icon">⬇</span>
+      <span class="scroll-bottom-text" id="scrollBottomText">Bottom</span>
+    </button>
   </main>
 
   <!-- 手机端定制虚拟键盘工具栏 -->
   <footer class="mobile-keyboard" id="mobileKeyboard">
-    <!-- Vibe Coding 专属快捷操作胶囊条 (横向滑动，大拇指一触即发) -->
+    <!-- 第一行: Vibe Coding & 快捷操作胶囊条 (沿用配色+icon+文字) -->
     <div class="key-row key-row-vibe" id="vibeRow">
+      <button class="vibe-pill vibe-esc" data-key="Escape" title="Escape (ESC)">⎋ ESC</button>
       <button class="vibe-pill vibe-yes" data-vibe="y" title="Quick Confirm / Allow (y)">✅ Yes</button>
       <button class="vibe-pill vibe-no" data-vibe="n" title="Quick Reject (n)">❌ No</button>
       <button class="vibe-pill vibe-primary" data-vibe-id="continue" data-vibe="Continue" title="Continue execution">▶️ Continue</button>
-      <button class="vibe-pill vibe-accent" data-vibe-id="fix" data-vibe="Fix the error above and verify" title="Fix error">⚡ Fix</button>
-      <button class="vibe-pill vibe-accent" data-vibe-id="build" data-vibe="Build and compile the current project and report results" title="Compile & Build">🛠️ Build</button>
       <button class="vibe-pill vibe-cmd" data-vibe="/resume" title="Resume session (/resume)">🔄 /resume</button>
       <button class="vibe-pill vibe-cmd" data-vibe="/model" title="Switch model (/model)">🤖 /model</button>
-      <button class="vibe-pill vibe-secondary" data-vibe-id="test" data-vibe="Run tests and report results" title="Run tests">🧪 Test</button>
-      <button class="vibe-pill vibe-secondary" data-vibe-id="commit" data-vibe="Commit current changes with a concise commit message" title="Git Commit">📝 Commit</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/review" title="Code Review">🔍 Review</button>
       <button class="vibe-pill vibe-cmd" data-vibe="/compact" title="Compact Context">🧹 Compact</button>
-      <button class="vibe-pill vibe-cmd" data-vibe="/cost" title="Token Cost">📊 Cost</button>
+      <button class="vibe-pill vibe-accent" data-vibe-id="build" data-vibe="Build and compile the current project and report results" title="Compile & Build">🛠️ Build</button>
+      <button class="vibe-pill vibe-accent" data-vibe-id="fix" data-vibe="Fix the error above and verify" title="Fix error">⚡ Fix</button>
+      <button class="vibe-pill vibe-secondary" data-vibe-id="commit" data-vibe="Commit current changes with a concise commit message" title="Git Commit">📝 Commit</button>
     </div>
 
-    <!-- 控制、导航与快捷键排布 (数字0-9展开、保留上下箭头、斜线/、放大删除与回车) -->
-    <div class="key-row key-row-nav">
-      <button class="key-btn" data-key="Escape">ESC</button>
+    <!-- 第二行: 0-9, Ctrl+ ▾, HOME  ↑  END 删除 (配色+文本符号) -->
+    <div class="key-row key-row-grid key-row-2">
       <button class="key-btn num-picker-btn" id="btnNumPicker" title="Click to pick 0-9 number">0-9 ▾</button>
-      <button class="key-btn ctrl-picker-btn" id="btnCtrlPicker" title="Click to pick Ctrl+ shortcut">Ctrl+ ▾</button>
-      <button class="key-btn arrow-btn" data-key="ArrowUp">↑</button>
-      <button class="key-btn arrow-btn" data-key="ArrowDown">↓</button>
+      <button class="key-btn ctrl-picker-btn" id="btnCtrlPicker" title="Click to pick Ctrl / Alt / Shift shortcut">Ctrl+ ▾</button>
+      <button class="key-btn nav-key-btn" data-key="Home" title="Home (Start of line)">HOME</button>
+      <button class="key-btn arrow-btn" data-key="ArrowUp" title="Up Arrow">↑</button>
+      <button class="key-btn nav-key-btn" data-key="End" title="End (End of line)">END</button>
       <button class="key-btn key-delete" id="btnKeyBackspace" data-key="Backspace" title="Backspace (Hold to repeat / Hold 1s to clear entire line)">⌫</button>
+    </div>
+
+    <!-- 第三行: TAB  /  左边箭头 向下箭头 向右箭头 回车 (配色+文本符号) -->
+    <div class="key-row key-row-grid key-row-3">
+      <button class="key-btn tab-key-btn" data-key="Tab" title="Tab (Autocomplete)">TAB</button>
+      <button class="key-btn slash-key-btn" data-key="Slash" title="Slash (/)">/</button>
+      <button class="key-btn arrow-btn" data-key="ArrowLeft" title="Left Arrow">←</button>
+      <button class="key-btn arrow-btn" data-key="ArrowDown" title="Down Arrow">↓</button>
+      <button class="key-btn arrow-btn" data-key="ArrowRight" title="Right Arrow">→</button>
       <button class="key-btn key-action" data-key="Enter" title="Enter / Execute">↵</button>
     </div>
   </footer>
@@ -157,51 +169,71 @@
   <div class="modal-backdrop" id="ctrlModal" style="display: none;">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
-        <h3 data-i18n="modal_ctrl_title">⌨️ Ctrl+ Shortcuts</h3>
+        <h3 data-i18n="modal_ctrl_title">⌨️ Key Combination Picker</h3>
         <button class="close-btn" id="btnCloseCtrlModal">×</button>
       </div>
       <div class="modal-body">
-        <p class="modal-tip" data-i18n="modal_ctrl_tip">Click to send shortcut immediately and close modal:</p>
+        <p class="modal-tip" data-i18n="modal_ctrl_tip">Toggle Ctrl/Alt/Shift modifier(s), then tap any key to send:</p>
+
+        <!-- 修饰键选择栏 (Ctrl / Alt / Shift - 至少选1个，可多选) -->
+        <div class="mod-selector-bar">
+          <div class="mod-chips-group">
+            <button type="button" class="mod-toggle-chip active" id="chipCtrl" data-mod="Ctrl">Ctrl</button>
+            <button type="button" class="mod-toggle-chip" id="chipAlt" data-mod="Alt">Alt</button>
+            <button type="button" class="mod-toggle-chip" id="chipShift" data-mod="Shift">Shift</button>
+          </div>
+          <div class="mod-preview-box">
+            <span class="mod-preview-prefix" id="modPreviewPrefix">Ctrl+</span><span class="mod-preview-placeholder">_</span>
+          </div>
+        </div>
 
         <!-- 高频快捷功能卡片 -->
-        <div class="ctrl-presets-grid">
-          <button class="ctrl-preset-card ctrl-hotkey-danger" data-ctrl="c">
-            <span class="ctrl-key-title">Ctrl+C</span>
+        <div class="ctrl-presets-grid" id="ctrlPresetsGrid">
+          <button class="ctrl-preset-card ctrl-hotkey-danger" data-char="c">
+            <span class="ctrl-key-title" data-char-title="c">Ctrl+C</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_c_desc">Interrupt</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="d">
-            <span class="ctrl-key-title">Ctrl+D</span>
+          <button class="ctrl-preset-card" data-char="d">
+            <span class="ctrl-key-title" data-char-title="d">Ctrl+D</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_d_desc">EOF / Exit</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="z">
-            <span class="ctrl-key-title">Ctrl+Z</span>
+          <button class="ctrl-preset-card" data-char="z">
+            <span class="ctrl-key-title" data-char-title="z">Ctrl+Z</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_z_desc">Suspend</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="l">
-            <span class="ctrl-key-title">Ctrl+L</span>
+          <button class="ctrl-preset-card" data-char="l">
+            <span class="ctrl-key-title" data-char-title="l">Ctrl+L</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_l_desc">Redraw</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="r">
-            <span class="ctrl-key-title">Ctrl+R</span>
+          <button class="ctrl-preset-card" data-char="r">
+            <span class="ctrl-key-title" data-char-title="r">Ctrl+R</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_r_desc">Search</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="a">
-            <span class="ctrl-key-title">Ctrl+A</span>
+          <button class="ctrl-preset-card" data-char="a">
+            <span class="ctrl-key-title" data-char-title="a">Ctrl+A</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_a_desc">Line Start</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="e">
-            <span class="ctrl-key-title">Ctrl+E</span>
+          <button class="ctrl-preset-card" data-char="e">
+            <span class="ctrl-key-title" data-char-title="e">Ctrl+E</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_e_desc">Line End</span>
           </button>
-          <button class="ctrl-preset-card" data-ctrl="u">
-            <span class="ctrl-key-title">Ctrl+U</span>
+          <button class="ctrl-preset-card" data-char="u">
+            <span class="ctrl-key-title" data-char-title="u">Ctrl+U</span>
             <span class="ctrl-key-desc" data-i18n="ctrl_u_desc">Delete Line</span>
           </button>
         </div>
 
+        <!-- 0-9 数字快速选择行 -->
+        <div class="ctrl-sub-section">
+          <div class="ctrl-sub-title">0-9 Digits:</div>
+          <div class="ctrl-digits-grid" id="ctrlDigitsGrid">
+            <!-- 0~9 数字按钮 -->
+          </div>
+        </div>
+
         <!-- 全字母 A-Z 快速点选键盘 -->
-        <div class="ctrl-alpha-section">
-          <div class="ctrl-alpha-title" data-i18n="ctrl_alpha_title">Other Letters (Ctrl + A~Z):</div>
+        <div class="ctrl-sub-section">
+          <div class="ctrl-sub-title" data-i18n="ctrl_alpha_title">A~Z Letters:</div>
           <div class="ctrl-alpha-grid" id="ctrlAlphaGrid">
             <!-- 动态生成 26 个字母按钮 -->
           </div>
@@ -262,7 +294,7 @@
         <div style="font-size: 38px; margin-bottom: 8px;">🚀</div>
         <h2 style="margin: 0 0 6px 0; font-size: 20px; color: #58a6ff;">Tim-Agent</h2>
         <div style="display: inline-block; padding: 2px 10px; background: rgba(56,139,253,0.15); border: 1px solid #388bfd; border-radius: 12px; font-size: 13px; font-weight: 600; color: #58a6ff; margin-bottom: 12px;">
-          <span id="appVersionText">v2.1.4</span>
+          <span id="appVersionText">v2.1.5</span>
         </div>
         <p style="font-size: 13px; color: #8b949e; line-height: 1.5; margin: 0 0 16px 0;" data-i18n="about_desc">
           Native GUI Terminal Agent & Mobile Vibe Coding Hub
@@ -286,8 +318,8 @@
     </div>
   </div>
 
-  <script src="/js/xterm.js"></script>
-  <script src="/js/addon-fit.js"></script>
-  <script src="/js/terminal.js"></script>
+  <script src="/js/xterm.js?v=2.1.8"></script>
+  <script src="/js/addon-fit.js?v=2.1.8"></script>
+  <script src="/js/terminal.js?v=2.1.8"></script>
 </body>
 </html>
