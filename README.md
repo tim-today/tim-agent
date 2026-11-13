@@ -42,14 +42,15 @@ When coding with AI CLI agents (`Claude Code`, `OpenAI Codex`, `Gemini CLI`, etc
 **Tim-Agent solves this with a radical zero-friction architecture:**
 
 1. 📱 **No Mobile App Installation Required**: No App Store downloads, no APK installations, and no third-party mobile client registration. Simply scan the QR code with your phone camera to take over your live terminal directly in your mobile browser (with optional 1-tap PWA home-screen install, native momentum touch scrolling for Codex/full-screen CLIs, and an ergonomic 3-row Vibe Coding touch keyboard with a versatile Ctrl/Alt/Shift multi-modifier picker).
-2. 🛡️ **No API Keys or Tokens Required**: Never asks for, stores, or proxies your Anthropic, OpenAI, or Google API keys. Zero configuration overhead and zero risk of API token leakage.
-3. 💻 **No Cloud Server Deployment Required**: Runs 100% locally on your own Mac, Windows, or Linux workstation (`localhost` + LAN / Tailscale). No VPS purchase, no cloud relay, and 100% inheritance of your local Git credentials, SSH keys, compilers, Docker daemon, and shell environment.
-4. 🤖 **100% Authentic Official CLI Agents (Live Updates Supported)**: Directly drives official first-party CLIs (**Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi**) inside a native local PTY. Whenever official CLIs release new features or updates, you update them normally and get 100% of the raw, uncompromised official experience.
-5. 🔄 **Persistent Sessions & Seamless PC ↔ Mobile Bidirectional Handoff**:
+2. 📎 **Mobile Image & Office Document Attachment Helper for CLI Agents**: Since command-line agents (`Claude Code`, `OpenAI Codex`, etc.) cannot directly paste mobile clipboard images, Tim-Agent allows you to securely upload photos, screenshots, and standard office documents (PDF, Word, Excel, PPT) from your phone into a temporary directory on your PC (excluding code files, zip archives, or heavy videos). It then automatically combines the absolute server paths with your prompt instructions and injects them into the terminal (`📎 Attach` pill), enabling seamless screenshot Q&A and file delivery on the go!
+3. 🛡️ **No API Keys or Tokens Required**: Never asks for, stores, or proxies your Anthropic, OpenAI, or Google API keys. Zero configuration overhead and zero risk of API token leakage.
+4. 💻 **No Cloud Server Deployment Required**: Runs 100% locally on your own Mac, Windows, or Linux workstation (`localhost` + LAN / Tailscale). No VPS purchase, no cloud relay, and 100% inheritance of your local Git credentials, SSH keys, compilers, Docker daemon, and shell environment.
+5. 🤖 **100% Authentic Official CLI Agents (Live Updates Supported)**: Directly drives official first-party CLIs (**Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi**) inside a native local PTY. Whenever official CLIs release new features or updates, you update them normally and get 100% of the raw, uncompromised official experience.
+6. 🔄 **Persistent Sessions & Seamless PC ↔ Mobile Bidirectional Handoff**:
    - **PC → Mobile**: Start a task on your desktop, walk away, and immediately monitor, approve prompts, or continue prompting from your phone.
    - **Mobile → PC**: Kick off or guide a task from your phone while on the go, then sit back down at your workstation and continue in the exact same live session.
    - **Multi-Project Background Keep-Alive**: Manage multiple isolated project directories (`WorkDir`). Switching projects in the top bar (`📂 Project ▾`) keeps previous project sessions running concurrently in the background, while new remote connections automatically route to your most recently active session.
-6. 🚀 **Built-in Multi-Project & Multi-Environment Deploy Configuration (Zero-Plaintext Vault)**:
+7. 🚀 **Built-in Multi-Project & Multi-Environment Deploy Configuration (Zero-Plaintext Vault)**:
    - Configure multiple deployment applications per project (e.g., **Frontend Web**, **Backend API**, **Mobile APK**, **Docker**) and multiple target environments (**Production**, **Staging**, **Local Test**).
    - Supports **SSH / SCP / Rsync**, **FTP / SFTP**, and **Local Build Scripts**, direct **SSH Private Key text pasting**, **1-click connectivity & auth testing (`🔌 Test`)**, custom multi-line deploy prompts, and ignore-file lists.
    - **Zero-Plaintext Security**: Server passwords and private keys are isolated inside `~/.tim-agent/vault/` (`0600` permissions) — never written into your project repo and never printed in plaintext in the AI conversation. Clicking `🚀 Deploy ▾` in the terminal top bar lets you switch and trigger multi-environment deployments & tests anytime.
@@ -104,11 +105,12 @@ Tim-Agent serves the shared terminal on port `20996`. To connect from your phone
 **Tim-Agent は、PC・スマートフォン・長時間タスク間の「同期ズレや引き継ぎの分断」をゼロにするために設計されました。**
 
 1. 📱 **スマホアプリのインストール不要**: App Store や APK のダウンロードは一切不要。スマホのカメラで QR コードを読み取るだけで、モバイルブラウザから即座にライブ端末を引き継げます（Codex/全画面CLIの慣性タッチスクロール対応、Ctrl/Alt/Shift多重選択ピッカー＆3段対称Vibe Codingタッチキーボード、PWA対応）。
-2. 🛡️ **API トークン設定不要・漏洩リスクゼロ**: API キーの入力・保存・プロキシは一切不要です。
-3. 💻 **クラウドサーバー構築不要**: お使いの Mac / Windows / Linux マシン上で 100% ローカル稼働し、ローカルの Git 認証や SSH 鍵、開発環境をそのまま継承します。
-4. 🤖 **公式ファーストパーティ CLI Agent をそのまま駆動（随時アップデート対応）**: **Claude Code**、**OpenAI Codex**、**Google Gemini**、**Opcode**、**Pi** などの公式 CLI をネイティブ PTY で直接実行。公式ツールのアップデートにも即座に追従し、100% 本物の操作感を維持します。
-5. 🔄 **永続セッション＆ PC ↔ スマホ双方向シームレス引き継ぎ**: PC で始めた作業を外出先でスマホから即座に引き継ぎ、スマホで進めた進捗をデスクに戻ってそのまま PC で再開可能。複数プロジェクトのバックグラウンド並行維持にも対応。
-6. 🚀 **マルチプロジェクト＆マルチ環境デプロイ設定 (ゼロ平文 Vault)**: プロジェクトごとに複数のデプロイアプリと複数環境（本番・ステージング・テスト）を設定可能。SSH 秘密鍵テキスト貼り付け、ワンクリック接続テスト（`🔌 Test`）、カスタムプロンプト、除外ファイル指定を備え、認証情報は `~/.tim-agent/vault/` (`0600`) に安全隔離。端末上部の `🚀 Deploy ▾` から平文パスワードを一切露出せずにいつでもマルチ環境デプロイ・テストを実行できます。
+2. 📎 **CLI Agent 向けスマホ添付ファイル＆画像送信ヘルパー**: スマホから直接クリップボード画像を貼り付けられない CLI 端末に対し、画像やスクリーンショット、一般的なオフィス文書（PDF、Word、Excel、PPT）を安全に PC の一時ディレクトリへアップロード。絶対パスと質問プロンプトを自動合成して端末に送信可能（コードファイルやZIP、動画等の大容量ファイルは除外）。
+3. 🛡️ **API トークン設定不要・漏洩リスクゼロ**: API キーの入力・保存・プロキシは一切不要です。
+4. 💻 **クラウドサーバー構築不要**: お使いの Mac / Windows / Linux マシン上で 100% ローカル稼働し、ローカルの Git 認証や SSH 鍵、開発環境をそのまま継承します。
+5. 🤖 **公式ファーストパーティ CLI Agent をそのまま駆動（随時アップデート対応）**: **Claude Code**、**OpenAI Codex**、**Google Gemini**、**Opcode**、**Pi** などの公式 CLI をネイティブ PTY で直接実行。公式ツールのアップデートにも即座に追従し、100% 本物の操作感を維持します。
+6. 🔄 **永続セッション＆ PC ↔ スマホ双方向シームレス引き継ぎ**: PC で始めた作業を外出先でスマホから即座に引き継ぎ、スマホで進めた進捗をデスクに戻ってそのまま PC で再開可能。複数プロジェクトのバックグラウンド並行維持にも対応。
+7. 🚀 **マルチプロジェクト＆マルチ環境デプロイ設定 (ゼロ平文 Vault)**: プロジェクトごとに複数のデプロイアプリと複数環境（本番・ステージング・テスト）を設定可能。SSH 秘密鍵テキスト貼り付け、ワンクリック接続テスト（`🔌 Test`）、カスタムプロンプト、除外ファイル指定を備え、認証情報は `~/.tim-agent/vault/` (`0600`) に安全隔離。端末上部の `🚀 Deploy ▾` から平文パスワードを一切露出せずにいつでもマルチ環境デプロイ・テストを実行できます。
 
 ### ⚡ クイックスタート
 ```bash
@@ -128,11 +130,12 @@ go run github.com/tim-today/tim-agent@latest -install-app
 **Tim-Agent는 PC 워크스테이션, 스마트폰, 그리고 장시간 실행되는 AI 작업 간의 동기화 단절 문제를 완벽하게 해결합니다.**
 
 1. 📱 **모바일 앱 설치 불필요**: 별도의 모바일 앱 다운로드 없이 스마트폰 카메라로 QR 코드만 스캔하면 모바일 브라우저에서 즉시 터미널 세션을 이어받을 수 있습니다 (Codex/전체화면 CLI 관성 터치 스크롤 지원, Ctrl/Alt/Shift 다중 선택 피커 및 인체공학적 3열 대칭 Vibe Coding 터치 키보드, PWA 지원).
-2. 🛡️ **API 토큰/키 입력 불필요**: LLM API Key를 요구하거나 중계하지 않아 토큰 유출 위험이 전혀 없습니다.
-3. 💻 **클라우드 서버 배포 불필요**: 사용자의 Mac / Windows / Linux PC에서 100% 로컬로 구동되며 로컬 Git 자격 증명과 개발 환경을 그대로 사용합니다.
-4. 🤖 **검증된 공식 CLI Agent 100% 순정 구동 및 실시간 업데이트 호환**: **Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi** 등 공식 클라이언트를 네이티브 PTY에서 직접 구동하며 공식 CLI 업데이트를 그대로 지원합니다.
-5. 🔄 **세션 영구 유지 & PC ↔ 스마트폰 양방향 무중단 이어하기**: PC에서 진행하던 작업을 외출 중 스마트폰에서 바로 이어받아 승인·제어하고, 스마트폰에서 진행한 작업을 다시 PC에서 끊김 없이 이어갈 수 있습니다.
-6. 🚀 **다중 프로젝트 & 다중 환경 배포 구성 (Zero-Plaintext Vault)**: 프로젝트별 다중 앱 및 다중 환경(운영/스테이징/테스트) 배포 설정, SSH 개인키 직접 붙여넣기, 원클릭 연결 테스트(`🔌 Test`), 사용자 정의 프롬프트 및 무시 파일 설정을 지원합니다. 모든 비밀번호와 키는 `~/.tim-agent/vault/`(`0600`)에 격리 저장되며 상단 `🚀 Deploy ▾` 버튼으로 언제든 안전하게 배포 및 테스트를 수행할 수 있습니다.
+2. 📎 **CLI Agent 전용 모바일 첨부파일 및 이미지 질문 도우미**: 모바일 클립보드 이미지를 직접 붙여넣기 어려운 CLI 환경을 위해, 스마트폰에서 사진·스크린샷 및 일반 문서(PDF, Word, Excel, PPT)를 PC 임시 디렉터리로 안전하게 업로드하고 절대 경로와 질문 프롬프트를 자동 결합하여 터미널로 주입합니다 (코드/압축/영상 등 대용량 파일 제외).
+3. 🛡️ **API 토큰/키 입력 불필요**: LLM API Key를 요구하거나 중계하지 않아 토큰 유출 위험이 전혀 없습니다.
+4. 💻 **클라우드 서버 배포 불필요**: 사용자의 Mac / Windows / Linux PC에서 100% 로컬로 구동되며 로컬 Git 자격 증명과 개발 환경을 그대로 사용합니다.
+5. 🤖 **검증된 공식 CLI Agent 100% 순정 구동 및 실시간 업데이트 호환**: **Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi** 등 공식 클라이언트를 네이티브 PTY에서 직접 구동하며 공식 CLI 업데이트를 그대로 지원합니다.
+6. 🔄 **세션 영구 유지 & PC ↔ 스마트폰 양방향 무중단 이어하기**: PC에서 진행하던 작업을 외출 중 스마트폰에서 바로 이어받아 승인·제어하고, 스마트폰에서 진행한 작업을 다시 PC에서 끊김 없이 이어갈 수 있습니다.
+7. 🚀 **다중 프로젝트 & 다중 환경 배포 구성 (Zero-Plaintext Vault)**: 프로젝트별 다중 앱 및 다중 환경(운영/스테이징/테스트) 배포 설정, SSH 개인키 직접 붙여넣기, 원클릭 연결 테스트(`🔌 Test`), 사용자 정의 프롬프트 및 무시 파일 설정을 지원합니다. 모든 비밀번호와 키는 `~/.tim-agent/vault/`(`0600`)에 격리 저장되며 상단 `🚀 Deploy ▾` 버튼으로 언제든 안전하게 배포 및 테스트를 수행할 수 있습니다.
 
 ### ⚡ 빠른 시작
 ```bash
@@ -152,11 +155,12 @@ go run github.com/tim-today/tim-agent@latest -install-app
 **Tim-Agent beseitigt die Synchronisationslücke zwischen Desktop-Workstation, Smartphone und langlaufenden KI-Entwicklungsaufgaben:**
 
 1. 📱 **Keine Mobile-App-Installation erforderlich**: Kein App-Store-Download nötig – einfach den QR-Code scannen und direkt im mobilen Browser weiterarbeiten (inkl. nativer trägheitsgedämpfter Touch-Scroll-Unterstützung für Codex/Vollbild-CLIs, flexiblem Ctrl/Alt/Shift-Kombi-Picker und ergonomischer 3-zeiliger Vibe-Coding-Touch-Tastatur, PWA-fähig).
-2. 🛡️ **Keine API-Keys oder Tokens erforderlich**: Keine Eingabe, Speicherung oder Weiterleitung sensibler LLM-API-Schlüssel.
-3. 💻 **Keine Cloud-Server-Bereitstellung erforderlich**: Läuft zu 100 % lokal auf Ihrem Mac, Windows- oder Linux-PC und nutzt Ihre native Entwicklungsumgebung.
-4. 🤖 **100 % originale, offizielle CLI-Agenten (inkl. Live-Updates)**: Steuert offizielle First-Party-CLIs (**Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi**) direkt in einem echten lokalen PTY – volle Kompatibilität mit offiziellen CLI-Updates für ein unverfälschtes Originalerlebnis.
-5. 🔄 **Dauerhafte Sitzungen & nahtlose PC ↔ Smartphone Übergabe**: Übernehmen Sie laufende PC-Aufgaben unterwegs sofort auf dem Smartphone und setzen Sie den Fortschritt vom Smartphone später nahtlos am PC fort.
-6. 🚀 **Integriertes Multi-Projekt- & Multi-Umgebungs-Deployment (Zero-Plaintext Vault)**: Konfigurieren Sie mehrere Deploy-Apps und Umgebungen (Produktion, Staging, Test) pro Projekt – mit SSH-Key-Text-Einfügen, 1-Klick-Verbindungstest (`🔌 Test`), eigenen Prompts und Ignore-Listen. Zugangsdaten bleiben sicher isoliert unter `~/.tim-agent/vault/` (`0600`).
+2. 📎 **Mobile Datei- & Bildanhang-Assistent für CLI-Agenten**: Da CLI-Agenten nicht direkt auf die mobile Zwischenablage zugreifen können, ermöglicht Tim-Agent das sichere Hochladen von Fotos, Screenshots und Standard-Office-Dokumenten (PDF, Word, Excel, PPT) auf Ihren PC. Absolute Pfade und Prompts werden automatisch kombiniert und ans Terminal übergeben (ohne Quellcode, ZIPs oder Videos).
+3. 🛡️ **Keine API-Keys oder Tokens erforderlich**: Keine Eingabe, Speicherung oder Weiterleitung sensibler LLM-API-Schlüssel.
+4. 💻 **Keine Cloud-Server-Bereitstellung erforderlich**: Läuft zu 100 % lokal auf Ihrem Mac, Windows- oder Linux-PC und nutzt Ihre native Entwicklungsumgebung.
+5. 🤖 **100 % originale, offizielle CLI-Agenten (inkl. Live-Updates)**: Steuert offizielle First-Party-CLIs (**Claude Code**, **OpenAI Codex**, **Google Gemini**, **Opcode**, **Pi**) direkt in einem echten lokalen PTY – volle Kompatibilität mit offiziellen CLI-Updates für ein unverfälschtes Originalerlebnis.
+6. 🔄 **Dauerhafte Sitzungen & nahtlose PC ↔ Smartphone Übergabe**: Übernehmen Sie laufende PC-Aufgaben unterwegs sofort auf dem Smartphone und setzen Sie den Fortschritt vom Smartphone später nahtlos am PC fort.
+7. 🚀 **Integriertes Multi-Projekt- & Multi-Umgebungs-Deployment (Zero-Plaintext Vault)**: Konfigurieren Sie mehrere Deploy-Apps und Umgebungen (Produktion, Staging, Test) pro Projekt – mit SSH-Key-Text-Einfügen, 1-Klick-Verbindungstest (`🔌 Test`), eigenen Prompts und Ignore-Listen. Zugangsdaten bleiben sicher isoliert unter `~/.tim-agent/vault/` (`0600`).
 
 ### ⚡ Schnellstart
 ```bash

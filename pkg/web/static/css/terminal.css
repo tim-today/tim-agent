@@ -558,6 +558,17 @@ body.dark-theme {
   color: #ffffff;
 }
 
+.vibe-attach {
+  background: rgba(163, 113, 247, 0.22);
+  color: #d2a8ff;
+  border-color: rgba(163, 113, 247, 0.48);
+  font-weight: 600;
+}
+.vibe-attach:active {
+  background: #8957e5;
+  color: #ffffff;
+}
+
 .vibe-yes {
   background: rgba(46, 160, 67, 0.25);
   color: #3fb950;
@@ -1101,4 +1112,191 @@ body.dark-theme {
   color: #ffffff;
   transform: scale(0.92);
 }
+
+/* 手机附件上传与提问模态框 (Attach Modal) */
+.attach-dropzone {
+  border: 2px dashed rgba(163, 113, 247, 0.45);
+  background: rgba(163, 113, 247, 0.05);
+  border-radius: 10px;
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.attach-dropzone:hover,
+.attach-dropzone:active,
+.attach-dropzone.dragover {
+  border-color: #a371f7;
+  background: rgba(163, 113, 247, 0.12);
+  transform: scale(0.99);
+}
+
+.attach-dropzone-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.attach-dropzone-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #d2a8ff;
+  margin-bottom: 4px;
+}
+
+.attach-dropzone-hint {
+  font-size: 11.5px;
+  color: #8b949e;
+}
+
+.attach-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-right: 2px;
+}
+
+.attach-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.attach-file-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(163, 113, 247, 0.35);
+}
+
+.attach-file-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.attach-file-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.attach-file-name {
+  color: #f0f6fc;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.attach-file-info.expanded .attach-file-name {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.attach-file-meta {
+  color: #8b949e;
+  font-size: 11px;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attach-file-path {
+  display: none;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Monaco, Menlo, monospace;
+  font-size: 10.5px;
+  color: #a371f7;
+  word-break: break-all;
+  margin-top: 3px;
+}
+
+.attach-file-info.expanded .attach-file-path {
+  display: block;
+}
+
+.attach-file-del {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.attach-file-del:hover,
+.attach-file-del:active {
+  background: rgba(248, 81, 73, 0.2);
+  color: #ff7b72;
+}
+
+.attach-prompt-section {
+  margin-top: 12px;
+}
+
+.attach-prompt-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c9d1d9;
+}
+
+.attach-required-tag {
+  color: #ff7b72;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#attachPromptInput {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.45;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 64px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#attachPromptInput:focus {
+  border-color: #a371f7;
+  box-shadow: 0 0 0 2px rgba(163, 113, 247, 0.25);
+}
+
+#attachPromptInput.has-error {
+  border-color: #f85149 !important;
+  box-shadow: 0 0 0 2px rgba(248, 81, 73, 0.3) !important;
+}
+
+.attach-prompt-error {
+  color: #ff7b72;
+  font-size: 11.5px;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
 

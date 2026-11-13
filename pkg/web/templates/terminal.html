@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-title" content="TimAgent">
   <link rel="apple-touch-icon" href="/img/icon-192.png">
   <link rel="icon" type="image/png" href="/img/icon.png">
-  <link rel="stylesheet" href="/css/xterm.css?v=2.1.8">
-  <link rel="stylesheet" href="/css/terminal.css?v=2.1.8">
+  <link rel="stylesheet" href="/css/xterm.css?v=2.1.6">
+  <link rel="stylesheet" href="/css/terminal.css?v=2.1.6">
 </head>
 <body class="dark-theme">
   <!-- 顶部状态栏与工具条 -->
@@ -57,6 +57,7 @@
     <!-- 第一行: Vibe Coding & 快捷操作胶囊条 (沿用配色+icon+文字) -->
     <div class="key-row key-row-vibe" id="vibeRow">
       <button class="vibe-pill vibe-esc" data-key="Escape" title="Escape (ESC)">⎋ ESC</button>
+      <button class="vibe-pill vibe-attach" id="btnOpenAttachModal" title="Upload Image / File to Terminal">📎 附件</button>
       <button class="vibe-pill vibe-yes" data-vibe="y" title="Quick Confirm / Allow (y)">✅ Yes</button>
       <button class="vibe-pill vibe-no" data-vibe="n" title="Quick Reject (n)">❌ No</button>
       <button class="vibe-pill vibe-primary" data-vibe-id="continue" data-vibe="Continue" title="Continue execution">▶️ Continue</button>
@@ -88,6 +89,49 @@
       <button class="key-btn key-action" data-key="Enter" title="Enter / Execute">↵</button>
     </div>
   </footer>
+
+  <!-- 手机端图片/文件附件上传与提示词助手弹窗 -->
+  <div class="modal-backdrop" id="attachModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="modal_attach_title">📎 上传图片 / 文件交付</h3>
+        <button class="close-btn" id="btnCloseAttachModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-tip" data-i18n="modal_attach_tip">文件将安全上传到电脑临时目录，并自动将绝对路径与提示词注入终端：</p>
+
+        <!-- 隐藏的真实文件选择控件，仅限图片和常用办公文档，支持多选 -->
+        <input type="file" id="attachFileInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt" multiple style="display: none;">
+
+        <!-- 拖放 / 点击选择触发卡片 -->
+        <div class="attach-dropzone" id="attachDropzone">
+          <div class="attach-dropzone-icon">📁</div>
+          <div class="attach-dropzone-title" data-i18n="attach_dropzone_title">点击选择本地图片或常用办公文档 (支持多选)</div>
+          <div class="attach-dropzone-hint" data-i18n="attach_dropzone_hint">支持截图、照片、PDF、Excel、Word、PPT (不支持代码/视频/压缩包)</div>
+        </div>
+
+        <!-- 已上传文件列表容器 -->
+        <div class="attach-file-list" id="attachFileList" style="display: none;">
+          <!-- 动态渲染上传文件行 -->
+        </div>
+
+        <!-- 提示词输入区域 (必填) -->
+        <div class="attach-prompt-section">
+          <label class="attach-prompt-label">
+            <span data-i18n="attach_prompt_label">文件说明 / 提问提示词</span>
+            <span class="attach-required-tag">* 必填</span>
+          </label>
+          <textarea id="attachPromptInput" rows="3" placeholder="例如：请查看并分析上述截图报错的原因，并给出修复方案..."></textarea>
+          <div class="attach-prompt-error" id="attachPromptError" style="display: none;">⚠️ 提示词不能为空，请输入针对文件的说明或任务要求</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnAddMoreFiles" style="display: none;" data-i18n="btn_add_more_files">+ 继续添加文件</button>
+        <button class="btn btn-secondary" id="btnClearAttachFiles" style="display: none;" data-i18n="btn_clear">清空</button>
+        <button class="btn btn-primary" id="btnSendAttachToTerm" data-i18n="btn_send_terminal">🚀 发送到终端</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 大段文字/Prompt输入助手抽屉模态框 -->
   <div class="modal-backdrop" id="inputModal" style="display: none;">
@@ -294,7 +338,7 @@
         <div style="font-size: 38px; margin-bottom: 8px;">🚀</div>
         <h2 style="margin: 0 0 6px 0; font-size: 20px; color: #58a6ff;">Tim-Agent</h2>
         <div style="display: inline-block; padding: 2px 10px; background: rgba(56,139,253,0.15); border: 1px solid #388bfd; border-radius: 12px; font-size: 13px; font-weight: 600; color: #58a6ff; margin-bottom: 12px;">
-          <span id="appVersionText">v2.1.5</span>
+          <span id="appVersionText">v2.1.6</span>
         </div>
         <p style="font-size: 13px; color: #8b949e; line-height: 1.5; margin: 0 0 16px 0;" data-i18n="about_desc">
           Native GUI Terminal Agent & Mobile Vibe Coding Hub
@@ -318,8 +362,8 @@
     </div>
   </div>
 
-  <script src="/js/xterm.js?v=2.1.8"></script>
-  <script src="/js/addon-fit.js?v=2.1.8"></script>
-  <script src="/js/terminal.js?v=2.1.8"></script>
+  <script src="/js/xterm.js?v=2.1.6"></script>
+  <script src="/js/addon-fit.js?v=2.1.6"></script>
+  <script src="/js/terminal.js?v=2.1.6"></script>
 </body>
 </html>

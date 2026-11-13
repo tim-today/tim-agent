@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -144,6 +145,7 @@ func (s *Server) Start() error {
 	adminMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	adminMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
 	adminMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
+	adminMux.HandleFunc("/api/upload", s.handleAPIUpload)
 	adminMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
 	s.adminSrv = &http.Server{
@@ -183,6 +185,7 @@ func (s *Server) Start() error {
 	publicMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	publicMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
 	publicMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
+	publicMux.HandleFunc("/api/upload", s.handleAPIUpload)
 	publicMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
 	var pubLn net.Listener
@@ -1207,6 +1210,148 @@ func (s *Server) handleAPIProjectDeployTest(w http.ResponseWriter, r *http.Reque
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"ok":      true,
 		"message": fmt.Sprintf("✅ SSH connection & authentication succeeded (%s@%s:%d, %dms)", user, host, port, time.Since(start).Milliseconds()),
+	})
+}
+
+// UploadedFileInfo 返回前端的上传文件详细信息
+type UploadedFileInfo struct {
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+	Path string `json:"path"`
+}
+
+// 仅允许图片及常用办公格式 (PDF, Word, Excel, PPT, TXT)
+var allowedUploadDocExtensions = map[string]bool{
+	// 常用图片
+	".png": true, ".jpg": true, ".jpeg": true, ".gif": true,
+	".webp": true, ".bmp": true, ".svg": true, ".ico": true,
+	".heic": true, ".heif": true, ".avif": true,
+	// PDF
+	".pdf": true,
+	// Word 与文本文档
+	".doc": true, ".docx": true, ".rtf": true, ".odt": true, ".txt": true,
+	// Excel 与表格
+	".xls": true, ".xlsx": true, ".csv": true, ".tsv": true,
+	// PPT 演示文稿
+	".ppt": true, ".pptx": true,
+}
+
+func isAllowedUploadExt(ext string) bool {
+	return allowedUploadDocExtensions[strings.ToLower(strings.TrimSpace(ext))]
+}
+
+// handleAPIUpload 处理手机端或Web端上传图片/文件到电脑宿主机本地临时目录
+func (s *Server) handleAPIUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !isLocalRequest(r) && !s.isAuthenticated(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// 限制单个多文件上传请求最大 30MB (不支持视频/压缩包等大文件)
+	if err := r.ParseMultipartForm(30 << 20); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "文件体积过大或解析失败。仅支持单次最大 30MB 的图片及常用办公文件",
+		})
+		return
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.TempDir()
+	}
+	dateDir := time.Now().Format("20060102")
+	uploadDir := filepath.Join(home, ".tim-agent", "uploads", dateDir)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   fmt.Sprintf("Failed to create upload dir: %v", err),
+		})
+		return
+	}
+
+	form := r.MultipartForm
+	if form == nil || form.File == nil {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "未找到上传的文件",
+		})
+		return
+	}
+
+	var uploadedFiles []UploadedFileInfo
+	for _, fileHeaders := range form.File {
+		for _, fileHeader := range fileHeaders {
+			origName := filepath.Base(fileHeader.Filename)
+			if origName == "" || origName == "." || origName == "/" {
+				origName = fmt.Sprintf("upload_%d", time.Now().UnixNano())
+			}
+
+			ext := filepath.Ext(origName)
+			// 严格校验文件后缀格式，拦截代码文件、压缩包、视频等
+			if !isAllowedUploadExt(ext) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"success": false,
+					"error":   fmt.Sprintf("文件 [%s] 格式不支持。仅支持图片(PNG/JPG等)及常用办公格式(PDF/Word/Excel/PPT/TXT)，不支持代码文件、压缩包或音视频等大文件", origName),
+				})
+				return
+			}
+
+			file, err := fileHeader.Open()
+			if err != nil {
+				continue
+			}
+
+			// 如果同名文件已存在，自动追加序号避免覆盖
+			destPath := filepath.Join(uploadDir, origName)
+			nameOnly := strings.TrimSuffix(origName, ext)
+			counter := 1
+			for {
+				if _, err := os.Stat(destPath); os.IsNotExist(err) {
+					break
+				}
+				destPath = filepath.Join(uploadDir, fmt.Sprintf("%s_%d%s", nameOnly, counter, ext))
+				counter++
+			}
+
+			dst, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				file.Close()
+				continue
+			}
+
+			size, err := io.Copy(dst, file)
+			file.Close()
+			dst.Close()
+			if err != nil {
+				continue
+			}
+
+			absPath, _ := filepath.Abs(destPath)
+			uploadedFiles = append(uploadedFiles, UploadedFileInfo{
+				Name: filepath.Base(destPath),
+				Size: size,
+				Path: absPath,
+			})
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"success": true,
+		"files":   uploadedFiles,
 	})
 }
 

@@ -86,6 +86,14 @@
       about_uptime: "Uptime:",
       btn_check_update: "Check Updates",
       scroll_bottom_label: "Bottom",
+      modal_attach_title: "📎 Upload Image / File Delivery",
+      modal_attach_tip: "Files will be securely saved to temporary local directory, and absolute paths combined with prompt injected into terminal:",
+      attach_dropzone_title: "Tap to select local images or office docs (Multiple)",
+      attach_dropzone_hint: "Supports screenshots, images, PDF, Excel, Word, PPT (Code/Zip/Video not supported)",
+      attach_prompt_label: "File Instructions / Query Prompt",
+      btn_add_more_files: "+ Add More Files",
+      btn_clear: "Clear",
+      btn_send_terminal: "🚀 Send to Terminal",
       vibes: {
         fix: { text: '⚡ Fix', prompt: 'Fix the error above and verify', title: 'Fix error' },
         continue: { text: '▶️ Continue', prompt: 'Continue', title: 'Continue execution' },
@@ -157,6 +165,14 @@
       about_uptime: "稼働時間:",
       btn_check_update: "更新を確認",
       scroll_bottom_label: "最新へ",
+      modal_attach_title: "📎 画像/ファイル添付・送信",
+      modal_attach_tip: "ファイルはPCの一時ディレクトリに安全にアップロードされ、絶対パスとプロンプトが端末に入力されます:",
+      attach_dropzone_title: "画像またはオフィス文書を選択 (複数選択可)",
+      attach_dropzone_hint: "スクリーンショット、画像、PDF、Excel、Word、PPTに対応 (コード/ZIP/動画は非対応)",
+      attach_prompt_label: "ファイル説明 / 質問プロンプト",
+      btn_add_more_files: "+ ファイルを追加",
+      btn_clear: "クリア",
+      btn_send_terminal: "🚀 端末に送信",
       vibes: {
         fix: { text: '⚡ 修正', prompt: 'エラーを修正してテストしてください', title: 'エラー修正' },
         continue: { text: '▶️ 続行', prompt: '続行してください', title: '続行' },
@@ -228,6 +244,14 @@
       about_uptime: "가동 시간:",
       btn_check_update: "업데이트 확인",
       scroll_bottom_label: "맨 아래로",
+      modal_attach_title: "📎 이미지/파일 첨부 및 전송",
+      modal_attach_tip: "파일이 PC 임시 디렉터리로 안전하게 업로드되고 절대 경로와 프롬프트가 터미널로 입력됩니다:",
+      attach_dropzone_title: "이미지 또는 문서 파일 선택 (다중 선택 가능)",
+      attach_dropzone_hint: "스크린샷, 이미지, PDF, Excel, Word, PPT 지원 (코드/압축파일/동영상 미지원)",
+      attach_prompt_label: "파일 설명 / 질문 프롬프트",
+      btn_add_more_files: "+ 파일 계속 추가",
+      btn_clear: "비우기",
+      btn_send_terminal: "🚀 터미널로 전송",
       vibes: {
         fix: { text: '⚡ 수정', prompt: '오류를 수정하고 자체 테스트를 수행하세요', title: '오류 수정' },
         continue: { text: '▶️ 계속', prompt: '계속 실행하세요', title: '계속' },
@@ -299,6 +323,14 @@
       about_uptime: "Laufzeit:",
       btn_check_update: "Updates prüfen",
       scroll_bottom_label: "Nach unten",
+      modal_attach_title: "📎 Bilder / Dateien anhängen",
+      modal_attach_tip: "Dateien werden sicher auf den PC hochgeladen und Pfade mit Prompt ans Terminal übergeben:",
+      attach_dropzone_title: "Bilder oder Office-Dokumente auswählen (Mehrfachauswahl)",
+      attach_dropzone_hint: "Unterstützt Screenshots, Bilder, PDF, Excel, Word, PPT (Code/Zip/Video nicht unterstützt)",
+      attach_prompt_label: "Dateianweisungen / Prompt",
+      btn_add_more_files: "+ Weitere Dateien hinzufügen",
+      btn_clear: "Leeren",
+      btn_send_terminal: "🚀 Ans Terminal senden",
       vibes: {
         fix: { text: '⚡ Reparieren', prompt: 'Fehler oben beheben und überprüfen', title: 'Fehler beheben' },
         continue: { text: '▶️ Weiter', prompt: 'Weiter ausführen', title: 'Weiter' },
@@ -2309,6 +2341,347 @@
           }
         });
       }
+    });
+  }
+
+  // ==================== 手机端图片/文件附件上传与提示词助手 ====================
+  const btnOpenAttachModal = document.getElementById('btnOpenAttachModal');
+  const attachModal = document.getElementById('attachModal');
+  const btnCloseAttachModal = document.getElementById('btnCloseAttachModal');
+  const attachFileInput = document.getElementById('attachFileInput');
+  const attachDropzone = document.getElementById('attachDropzone');
+  const attachFileList = document.getElementById('attachFileList');
+  const attachPromptInput = document.getElementById('attachPromptInput');
+  const attachPromptError = document.getElementById('attachPromptError');
+  const btnAddMoreFiles = document.getElementById('btnAddMoreFiles');
+  const btnClearAttachFiles = document.getElementById('btnClearAttachFiles');
+  const btnSendAttachToTerm = document.getElementById('btnSendAttachToTerm');
+
+  let attachedFiles = []; // 存储 { name, size, path }
+  let isUploadingFiles = false;
+
+  const ALLOWED_UPLOAD_EXTS = new Set([
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'ico', 'heic', 'heif', 'avif',
+    'pdf',
+    'doc', 'docx', 'rtf', 'odt', 'txt',
+    'xls', 'xlsx', 'csv', 'tsv',
+    'ppt', 'pptx'
+  ]);
+
+  function getFileIcon(filename) {
+    const ext = (String(filename || '').split('.').pop() || '').toLowerCase();
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'heic', 'heif', 'avif'].includes(ext)) {
+      return '🖼️';
+    }
+    if (['xls', 'xlsx', 'csv', 'tsv'].includes(ext)) {
+      return '📊';
+    }
+    if (['pdf'].includes(ext)) {
+      return '📑';
+    }
+    if (['doc', 'docx', 'rtf', 'odt', 'txt'].includes(ext)) {
+      return '📝';
+    }
+    if (['ppt', 'pptx'].includes(ext)) {
+      return '📽️';
+    }
+    return '📄';
+  }
+
+  function formatFileSize(bytes) {
+    if (!bytes || bytes <= 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  function renderAttachFileList() {
+    if (!attachFileList) return;
+    if (attachedFiles.length === 0) {
+      attachFileList.style.display = 'none';
+      attachFileList.innerHTML = '';
+      if (btnAddMoreFiles) btnAddMoreFiles.style.display = 'none';
+      if (btnClearAttachFiles) btnClearAttachFiles.style.display = 'none';
+      if (attachDropzone) attachDropzone.style.display = 'block';
+      return;
+    }
+
+    attachFileList.style.display = 'flex';
+    if (btnAddMoreFiles) btnAddMoreFiles.style.display = 'inline-block';
+    if (btnClearAttachFiles) btnClearAttachFiles.style.display = 'inline-block';
+    if (attachDropzone) attachDropzone.style.display = 'none';
+
+    attachFileList.innerHTML = '';
+    attachedFiles.forEach((file, index) => {
+      const item = document.createElement('div');
+      item.className = 'attach-file-item';
+
+      const icon = getFileIcon(file.name);
+      item.innerHTML = `
+        <div class="attach-file-icon">${icon}</div>
+        <div class="attach-file-info" title="点击展开/收起完整路径">
+          <div class="attach-file-name">${escapeHtmlTerm(file.name)}</div>
+          <div class="attach-file-meta">
+            <span>${formatFileSize(file.size)}</span>
+            <span>•</span>
+            <span style="color:#a371f7;">点击展开</span>
+          </div>
+          <div class="attach-file-path">${escapeHtmlTerm(file.path)}</div>
+        </div>
+        <button type="button" class="attach-file-del" title="删除文件" data-idx="${index}">✕</button>
+      `;
+
+      // 点击文件信息区域展开/折叠显示完整文件名与绝对路径
+      const infoEl = item.querySelector('.attach-file-info');
+      if (infoEl) {
+        infoEl.addEventListener('click', function () {
+          this.classList.toggle('expanded');
+          const metaHint = this.querySelector('.attach-file-meta span:last-child');
+          if (metaHint) {
+            metaHint.textContent = this.classList.contains('expanded') ? '点击折叠' : '点击展开';
+          }
+        });
+      }
+
+      // 单条删除按钮
+      const delBtn = item.querySelector('.attach-file-del');
+      if (delBtn) {
+        delBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          const idx = parseInt(this.getAttribute('data-idx'), 10);
+          if (!isNaN(idx) && idx >= 0 && idx < attachedFiles.length) {
+            attachedFiles.splice(idx, 1);
+            renderAttachFileList();
+          }
+        });
+      }
+
+      attachFileList.appendChild(item);
+    });
+  }
+
+  async function uploadFiles(files) {
+    if (!files || files.length === 0 || isUploadingFiles) return;
+
+    // 前端严格校验：仅允许图片及常用办公文档，拦截代码文件、压缩包、视频等
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const ext = (f.name.split('.').pop() || '').toLowerCase();
+      if (!ALLOWED_UPLOAD_EXTS.has(ext)) {
+        alert(`⚠️ 文件 "${f.name}" 格式不支持。\n\n仅支持图片(PNG/JPG等)及常用办公文档(PDF/Word/Excel/PPT/TXT)，不支持代码文件、压缩包或音视频等大文件。`);
+        if (attachFileInput) attachFileInput.value = '';
+        return;
+      }
+    }
+
+    isUploadingFiles = true;
+
+    const originalDropzoneHtml = attachDropzone ? attachDropzone.innerHTML : '';
+    if (attachDropzone) {
+      attachDropzone.innerHTML = `
+        <div class="attach-dropzone-icon">⏳</div>
+        <div class="attach-dropzone-title">正在安全上传文件到本地临时目录...</div>
+        <div class="attach-dropzone-hint">请稍候</div>
+      `;
+    }
+    if (btnAddMoreFiles) {
+      btnAddMoreFiles.textContent = '⏳ 上传中...';
+      btnAddMoreFiles.disabled = true;
+    }
+    if (btnSendAttachToTerm) {
+      btnSendAttachToTerm.disabled = true;
+    }
+
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || '上传请求失败: HTTP ' + res.status);
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || '上传未成功');
+      }
+
+      const newFiles = data.files || [];
+      attachedFiles = attachedFiles.concat(newFiles);
+      renderAttachFileList();
+    } catch (err) {
+      console.error('[Upload Error]', err);
+      alert('⚠️ 上传文件失败: ' + (err.message || '网络异常'));
+    } finally {
+      isUploadingFiles = false;
+      if (attachDropzone) attachDropzone.innerHTML = originalDropzoneHtml;
+      if (btnAddMoreFiles) {
+        const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+        btnAddMoreFiles.textContent = dict.btn_add_more_files || '+ 继续添加文件';
+        btnAddMoreFiles.disabled = false;
+      }
+      if (btnSendAttachToTerm) {
+        btnSendAttachToTerm.disabled = false;
+      }
+      if (attachFileInput) {
+        attachFileInput.value = ''; // 重置以便重复选择同名文件
+      }
+    }
+  }
+
+  function openAttachModal() {
+    if (!attachModal) return;
+    attachModal.style.display = 'flex';
+    if (attachPromptError) attachPromptError.style.display = 'none';
+    if (attachPromptInput) {
+      attachPromptInput.classList.remove('has-error');
+      if (attachedFiles.length > 0) {
+        setTimeout(() => attachPromptInput.focus(), 150);
+      }
+    }
+  }
+
+  function closeAttachModal() {
+    if (!attachModal) return;
+    attachModal.style.display = 'none';
+    if (attachPromptError) attachPromptError.style.display = 'none';
+    if (attachPromptInput) attachPromptInput.classList.remove('has-error');
+  }
+
+  if (btnOpenAttachModal) {
+    btnOpenAttachModal.addEventListener('click', function (e) {
+      e.preventDefault();
+      openAttachModal();
+    });
+  }
+
+  if (btnCloseAttachModal) {
+    btnCloseAttachModal.addEventListener('click', closeAttachModal);
+  }
+
+  if (attachModal) {
+    attachModal.addEventListener('click', function (e) {
+      if (e.target === attachModal) {
+        closeAttachModal();
+      }
+    });
+  }
+
+  if (attachDropzone && attachFileInput) {
+    attachDropzone.addEventListener('click', function () {
+      attachFileInput.click();
+    });
+
+    // 拖拽支持 (兼容电脑与支持拖拽设备)
+    ['dragenter', 'dragover'].forEach(eventName => {
+      attachDropzone.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        attachDropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      attachDropzone.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        attachDropzone.classList.remove('dragover');
+      });
+    });
+
+    attachDropzone.addEventListener('drop', function (e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        uploadFiles(dt.files);
+      }
+    });
+  }
+
+  if (btnAddMoreFiles && attachFileInput) {
+    btnAddMoreFiles.addEventListener('click', function () {
+      attachFileInput.click();
+    });
+  }
+
+  if (attachFileInput) {
+    attachFileInput.addEventListener('change', function () {
+      if (this.files && this.files.length > 0) {
+        uploadFiles(this.files);
+      }
+    });
+  }
+
+  if (btnClearAttachFiles) {
+    btnClearAttachFiles.addEventListener('click', function () {
+      attachedFiles = [];
+      renderAttachFileList();
+      if (attachFileInput) attachFileInput.value = '';
+    });
+  }
+
+  if (attachPromptInput) {
+    attachPromptInput.addEventListener('input', function () {
+      if (this.value.trim()) {
+        this.classList.remove('has-error');
+        if (attachPromptError) attachPromptError.style.display = 'none';
+      }
+    });
+
+    // 支持快捷键 Cmd+Enter 或 Ctrl+Enter 快速发送
+    attachPromptInput.addEventListener('keydown', function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (btnSendAttachToTerm) btnSendAttachToTerm.click();
+      }
+    });
+  }
+
+  if (btnSendAttachToTerm) {
+    btnSendAttachToTerm.addEventListener('click', function () {
+      const dict = TERM_I18N[currentUiLang] || TERM_I18N.en;
+
+      if (attachedFiles.length === 0) {
+        alert(dict.attach_err_no_files || '请至少选择一个本地图片或文件进行上传');
+        if (attachFileInput) attachFileInput.click();
+        return;
+      }
+
+      const promptText = attachPromptInput ? attachPromptInput.value.trim() : '';
+      if (!promptText) {
+        if (attachPromptInput) {
+          attachPromptInput.classList.add('has-error');
+          attachPromptInput.focus();
+        }
+        if (attachPromptError) {
+          attachPromptError.style.display = 'block';
+        }
+        return;
+      }
+
+      // 组合提示词: "请读取文件: /xxx/xx.jpg, /xxx/xx.xlsx\n\n提示词"
+      const prefix = currentUiLang === 'en' ? 'Please read file: ' : '请读取文件: ';
+      const paths = attachedFiles.map(f => f.path).join(', ');
+      const combined = `${prefix}${paths}\n\n${promptText}`;
+
+      // 发送到终端并回车执行
+      sendInput(combined + '\r');
+      term.focus();
+
+      // 清理状态并关闭模态框
+      attachedFiles = [];
+      renderAttachFileList();
+      if (attachPromptInput) attachPromptInput.value = '';
+      if (attachPromptError) attachPromptError.style.display = 'none';
+      if (attachFileInput) attachFileInput.value = '';
+      closeAttachModal();
     });
   }
 
