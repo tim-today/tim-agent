@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/tim-today/tim-agent/pkg/autostart"
 )
 
 const (
-	AppVersion     = "v2.1.7"
+	AppVersion     = "v2.1.8"
 	GitHubRepoURL  = "https://github.com/tim-today/tim-agent"
 	GitHubReleases = "https://github.com/tim-today/tim-agent/releases"
 	GitHubAPIURL   = "https://api.github.com/repos/tim-today/tim-agent/releases/latest"
@@ -81,6 +83,7 @@ type ConfigData struct {
 	Theme           string          `json:"theme"`             // 终端配色方案
 	Language        string          `json:"language"`          // 界面语言: "en" (默认) 或 "zh"
 	KeepAlive       bool            `json:"keep_alive"`
+	AutoStart       bool            `json:"autostart"`         // 开机自动启动服务
 	AutoOpen        bool            `json:"auto_open"`
 	ActiveProjectID string          `json:"active_project_id"` // 当前/最近操作的项目会话ID
 	Projects        []ProjectConfig `json:"projects"`          // 多项目配置列表
@@ -247,13 +250,24 @@ func DefaultConfig() *Config {
 	}
 }
 
-// generateRandomPassword 生成无歧义字符的高可读性随机密码 (排除 0, O, 1, l, I)
+// SanitizePassword 过滤并格式化密码：仅允许数字 0-9 与英文字母 A-Z (小写字母自动转换为大写字母)
+func SanitizePassword(pwd string) string {
+	var sb strings.Builder
+	for _, r := range strings.ToUpper(strings.TrimSpace(pwd)) {
+		if (r >= '0' && r <= '9') || (r >= 'A' && r <= 'Z') {
+			sb.WriteRune(r)
+		}
+	}
+	return sb.String()
+}
+
+// generateRandomPassword 生成仅包含数字 0-9 和大写英文字母 A-Z 的随机密码
 func generateRandomPassword(length int) string {
-	const charset = "23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, length)
 	randBytes := make([]byte, length)
 	if _, err := rand.Read(randBytes); err != nil {
-		return "tim88888"
+		return "TIM88888"
 	}
 	for i := 0; i < length; i++ {
 		b[i] = charset[int(randBytes[i])%len(charset)]
@@ -440,6 +454,12 @@ func LoadConfig() (*Config, error) {
 	if cfg.Password == "" {
 		cfg.Password = generateRandomPassword(8)
 		_ = cfg.Save()
+	} else {
+		clean := SanitizePassword(cfg.Password)
+		if clean != "" && clean != cfg.Password {
+			cfg.Password = clean
+			_ = cfg.Save()
+		}
 	}
 
 	if cfg.AuthToken == "" {
@@ -634,13 +654,18 @@ func (c *Config) syncTopFieldsFromActiveLocked() {
 	c.AutoApprove = c.Projects[0].AutoApprove
 }
 
-func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme, language string, autoApprove, keepAlive, remoteAccess bool, commands []CommandItem) error {
+func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme, language string, autoApprove, keepAlive, autoStart, remoteAccess bool, commands []CommandItem) error {
 	c.mu.Lock()
 	if port > 0 && port < 65536 {
 		c.Port = port
 	}
 	if password != "" {
-		c.Password = password
+		clean := SanitizePassword(password)
+		if clean != "" {
+			c.Password = clean
+		} else if c.Password == "" {
+			c.Password = generateRandomPassword(8)
+		}
 	} else if c.Password == "" {
 		c.Password = generateRandomPassword(8)
 	}
@@ -664,6 +689,8 @@ func (c *Config) Update(port int, password, shell, workDir, selectedAgent, theme
 	}
 	c.AutoApprove = autoApprove
 	c.KeepAlive = keepAlive
+	c.AutoStart = autoStart
+	_ = autostart.Set(autoStart)
 	c.RemoteAccess = remoteAccess
 	if commands != nil {
 		c.CustomCommands = commands
@@ -917,6 +944,7 @@ func (c *Config) Get() ConfigData {
 			out.Projects[i] = pCopy
 		}
 	}
+	out.AutoStart = autostart.IsEnabled()
 	return out
 }
 

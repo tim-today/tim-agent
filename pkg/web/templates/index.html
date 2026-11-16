@@ -19,7 +19,7 @@
     <header class="app-header">
       <div class="brand">
         <span class="logo-icon">⚡</span>
-        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v2.1.7</span></h1>
+        <h1>Tim-Agent <span class="badge" data-i18n="status_running">Active</span> <span class="version-badge" id="appVersionBadge">v2.1.8</span></h1>
       </div>
       <div class="header-right">
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="btn btn-secondary btn-icon-only" title="GitHub Official Repository" id="btnGitHubLink">
@@ -128,10 +128,10 @@
             <div class="form-item">
               <label for="cfgPassword" data-i18n="label_password">Access Password (Terminal Security):</label>
               <div style="display: flex; gap: 6px;">
-                <input type="text" id="cfgPassword" placeholder="Password" class="form-input" style="flex: 1;" required>
+                <input type="text" id="cfgPassword" placeholder="Password" class="form-input" style="flex: 1; text-transform: uppercase;" autocomplete="off" autocapitalize="characters" required>
                 <button type="button" id="btnRegenPwd" class="btn btn-sm btn-secondary" title="Generate random password" data-i18n="btn_regen_pwd">🎲 Random</button>
               </div>
-              <small data-i18n="hint_password">Saved permanently in mobile/PC browser after first entry</small>
+              <small data-i18n="hint_password">0-9 & A-Z only. Automatically uppercase. Saved in browser after entry.</small>
             </div>
           </div>
 
@@ -185,6 +185,14 @@
               </label>
               <small data-i18n="hint_keep_alive">Keep tasks running after disconnection</small>
             </div>
+            <div class="form-item switch-item">
+              <label data-i18n="label_autostart">Auto-Start on Boot:</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfgAutoStart">
+                <span class="slider"></span>
+              </label>
+              <small data-i18n="hint_autostart">Launch service automatically on system boot or login</small>
+            </div>
           </div>
 
           <div class="form-footer">
@@ -198,7 +206,7 @@
     <!-- 底部页脚 -->
     <footer class="app-footer">
       <div class="footer-left">
-        <span>Tim-Agent <span id="footerVersionText">v2.1.7</span></span>
+        <span>Tim-Agent <span id="footerVersionText">v2.1.8</span></span>
         <span class="dot-sep">•</span>
         <a href="https://github.com/tim-today/tim-agent" target="_blank" class="footer-link">GitHub Repository</a>
         <span class="dot-sep">•</span>

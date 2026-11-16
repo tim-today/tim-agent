@@ -250,7 +250,7 @@ func main() {
 		OnLanguageChange: func(newLang string) {
 			c := cfg.Get()
 			if c.Language != newLang {
-				_ = cfg.Update(c.Port, c.Password, c.Shell, c.WorkDir, c.SelectedAgent, c.Theme, newLang, c.AutoApprove, c.KeepAlive, c.RemoteAccess, nil)
+				_ = cfg.Update(c.Port, c.Password, c.Shell, c.WorkDir, c.SelectedAgent, c.Theme, newLang, c.AutoApprove, c.KeepAlive, c.AutoStart, c.RemoteAccess, nil)
 				log.Printf("[TimAgent] 语言已通过托盘切换为: %s\n", newLang)
 			}
 		},

@@ -74,7 +74,7 @@
     <h2 class="login-title" id="loginTitle">Tim-Agent Terminal Access</h2>
     <p class="login-subtitle" id="loginSubtitle">Protected by password. Automatically remembered in browser.</p>
     <form id="loginForm">
-      <input type="password" id="passwordInput" class="input-field" placeholder="Password" autofocus required>
+      <input type="password" id="passwordInput" class="input-field" placeholder="Password" style="text-transform: uppercase;" autocomplete="off" autocapitalize="characters" autofocus required>
       <div style="margin-bottom: 14px; font-size: 12px; color: #3fb950; text-align: left;" id="loginHint">
         ✓ Remember login state automatically
       </div>
@@ -136,24 +136,34 @@
     document.getElementById('btnLogin').textContent = dict.btn;
     err.textContent = dict.err_pwd;
 
+    // 自动将字母输入转换为大写，并限制仅允许 0-9 与 A-Z
+    pwd.addEventListener('input', function() {
+      const upper = this.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+      if (this.value !== upper) {
+        this.value = upper;
+      }
+    });
+
     // 自动读取之前已保存的密码
     const saved = localStorage.getItem('tim_saved_password');
     if (saved) {
-      pwd.value = saved;
+      pwd.value = saved.toUpperCase().replace(/[^0-9A-Z]/g, '');
     }
 
     form.onsubmit = async function(e) {
       e.preventDefault();
       err.style.display = 'none';
+      const cleanVal = pwd.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+      pwd.value = cleanVal;
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: pwd.value })
+          body: JSON.stringify({ password: cleanVal })
         });
         const data = await res.json();
         if (data.ok) {
-          localStorage.setItem('tim_saved_password', pwd.value);
+          localStorage.setItem('tim_saved_password', cleanVal);
           const redirect = new URLSearchParams(window.location.search).get('redirect') || '/terminal';
           window.location.href = redirect;
         } else {

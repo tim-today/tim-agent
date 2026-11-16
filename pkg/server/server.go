@@ -21,6 +21,7 @@ import (
 	"github.com/skip2/go-qrcode"
 
 	"github.com/tim-today/tim-agent/pkg/appbundle"
+	"github.com/tim-today/tim-agent/pkg/autostart"
 	"github.com/tim-today/tim-agent/pkg/config"
 	"github.com/tim-today/tim-agent/pkg/network"
 	"github.com/tim-today/tim-agent/pkg/session"
@@ -145,6 +146,7 @@ func (s *Server) Start() error {
 	adminMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	adminMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
 	adminMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
+	adminMux.HandleFunc("/api/autostart", s.handleAPIAutoStart)
 	adminMux.HandleFunc("/api/upload", s.handleAPIUpload)
 	adminMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
@@ -185,6 +187,7 @@ func (s *Server) Start() error {
 	publicMux.HandleFunc("/api/sessions/restart", s.handleAPISessionRestart)
 	publicMux.HandleFunc("/api/version/check", s.handleAPIVersionCheck)
 	publicMux.HandleFunc("/api/app/install", s.handleAPIAppInstall)
+	publicMux.HandleFunc("/api/autostart", s.handleAPIAutoStart)
 	publicMux.HandleFunc("/api/upload", s.handleAPIUpload)
 	publicMux.HandleFunc("/ws/terminal", s.handleWSTerminal)
 
@@ -400,7 +403,8 @@ func (s *Server) handleAPILogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cfg := s.cfg.Get()
-	if cfg.Password == "" || subtle.ConstantTimeCompare([]byte(req.Password), []byte(cfg.Password)) == 1 {
+	cleanPwd := config.SanitizePassword(req.Password)
+	if cfg.Password == "" || subtle.ConstantTimeCompare([]byte(cleanPwd), []byte(cfg.Password)) == 1 {
 		http.SetCookie(w, &http.Cookie{
 			Name:     "tim_session",
 			Value:    cfg.AuthToken,
@@ -643,6 +647,7 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 		Language      string `json:"language"`
 		AutoApprove   bool   `json:"auto_approve"`
 		KeepAlive     bool   `json:"keep_alive"`
+		AutoStart     *bool  `json:"autostart"`
 		RemoteAccess  bool   `json:"remote_access"`
 	}
 
@@ -661,7 +666,12 @@ func (s *Server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 		targetLang = oldCfg.Language
 	}
 
-	err := s.cfg.Update(req.Port, req.Password, req.Shell, req.WorkDir, req.SelectedAgent, req.Theme, targetLang, req.AutoApprove, req.KeepAlive, req.RemoteAccess, nil)
+	targetAutoStart := autostart.IsEnabled()
+	if req.AutoStart != nil {
+		targetAutoStart = *req.AutoStart
+	}
+
+	err := s.cfg.Update(req.Port, req.Password, req.Shell, req.WorkDir, req.SelectedAgent, req.Theme, targetLang, req.AutoApprove, req.KeepAlive, targetAutoStart, req.RemoteAccess, nil)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": err.Error()})
@@ -982,6 +992,30 @@ func (s *Server) handleAPIAppInstall(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"ok":   true,
 		"path": installedPath,
+	})
+}
+
+// handleAPIAutoStart 查询或切换系统开机自动启动服务
+func (s *Server) handleAPIAutoStart(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAdminAuth(w, r) {
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		var req struct {
+			Enabled bool `json:"enabled"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+			_ = autostart.Set(req.Enabled)
+			cfg := s.cfg.Get()
+			_ = s.cfg.Update(cfg.Port, cfg.Password, cfg.Shell, cfg.WorkDir, cfg.SelectedAgent, cfg.Theme, cfg.Language, cfg.AutoApprove, cfg.KeepAlive, req.Enabled, cfg.RemoteAccess, nil)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":      true,
+		"enabled": autostart.IsEnabled(),
 	})
 }
 

@@ -27,7 +27,7 @@
       hint_port: "Restart required after changing port",
       label_password: "Access Password (Terminal Security):",
       btn_regen_pwd: "🎲 Random",
-      hint_password: "Saved permanently in mobile/PC browser after first entry",
+      hint_password: "0-9 & A-Z only. Automatically uppercase. Saved in browser after entry.",
       label_workdir: "Bound Working Directory (WorkDir):",
       hint_workdir: "Security isolation: terminal & agent run in this directory",
       label_agent: "CLI Agent Preset:",
@@ -38,6 +38,10 @@
       label_language: "UI Language:",
       label_keep_alive: "Session Keep-Alive:",
       hint_keep_alive: "Keep tasks running after disconnection",
+      label_autostart: "Auto-Start on Boot:",
+      hint_autostart: "Launch service automatically on system boot or login",
+      autostart_enabled_tip: "Auto-start on boot enabled",
+      autostart_disabled_tip: "Auto-start on boot removed",
       btn_save_config: "Save Settings",
       saving_text: "Saving...",
       saved_text: "Settings saved!",
@@ -118,7 +122,7 @@
       hint_port: "ポート変更後は再起動が必要",
       label_password: "アクセスパスワード (端末保護):",
       btn_regen_pwd: "🎲 ランダム生成",
-      hint_password: "初回入力後ブラウザに自動保存されます",
+      hint_password: "0-9およびA-Z大文字のみ。入力時に自動で大文字変換されます。",
       label_workdir: "バインド作業ディレクトリ (WorkDir):",
       hint_workdir: "セキュリティ分離: 端末とAgentはこのディレクトリで実行されます",
       label_agent: "CLI Agent プリセット:",
@@ -129,6 +133,10 @@
       label_language: "UI 言語 (Language):",
       label_keep_alive: "セッション常駐保持:",
       hint_keep_alive: "切断後もバックグラウンドでタスクを継続実行",
+      label_autostart: "OS起動時に自動起動:",
+      hint_autostart: "システム再起動またはログイン時にバックグラウンドで自動起動",
+      autostart_enabled_tip: "自動起動を有効にしました",
+      autostart_disabled_tip: "自動起動を解除しました",
       btn_save_config: "設定を保存",
       saving_text: "保存中...",
       saved_text: "設定を保存しました！",
@@ -176,7 +184,7 @@
       hint_port: "포트 변경 후 재시작 필요",
       label_password: "접속 비밀번호 (터미널 보안):",
       btn_regen_pwd: "🎲 무작위 생성",
-      hint_password: "최초 입력 시 브라우저에 영구 저장됩니다",
+      hint_password: "0-9 및 A-Z 대문자만 허용. 입력 시 자동 대문자 변환됩니다.",
       label_workdir: "바인딩 작업 디렉토리 (WorkDir):",
       hint_workdir: "보안 격리: 터미널과 Agent는 이 디렉토리에서 실행됩니다",
       label_agent: "CLI Agent 프리셋:",
@@ -187,6 +195,10 @@
       label_language: "UI 언어 (Language):",
       label_keep_alive: "세션 유지 (Keep-Alive):",
       hint_keep_alive: "연결이 끊겨도 백그라운드에서 작업 계속 유지",
+      label_autostart: "부팅 시 자동 시작:",
+      hint_autostart: "시스템 재부팅 또는 로그인 시 백그라운드 자동 실행",
+      autostart_enabled_tip: "자동 시작이 활성화되었습니다",
+      autostart_disabled_tip: "자동 시작이 해제되었습니다",
       btn_save_config: "설정 저장",
       saving_text: "저장 중...",
       saved_text: "설정이 저장되었습니다!",
@@ -234,7 +246,7 @@
       hint_port: "Neustart nach Portänderung erforderlich",
       label_password: "Zugriffskennwort (Terminalsicherheit):",
       btn_regen_pwd: "🎲 Zufall",
-      hint_password: "Wird nach Ersteingabe dauerhaft im Browser gespeichert",
+      hint_password: "Nur 0-9 & A-Z. Wird bei Eingabe automatisch in Großbuchstaben umgewandelt.",
       label_workdir: "Arbeitsverzeichnis (WorkDir):",
       hint_workdir: "Sicherheitsisolation: Terminal & Agent laufen in diesem Verzeichnis",
       label_agent: "CLI Agent Preset:",
@@ -245,6 +257,10 @@
       label_language: "Sprache (Language):",
       label_keep_alive: "Sitzung aufrechterhalten:",
       hint_keep_alive: "Aufgaben nach Trennung weiter ausführen",
+      label_autostart: "Automatisch beim Systemstart starten:",
+      hint_autostart: "Dienst automatisch bei Systemneustart oder Anmeldung ausführen",
+      autostart_enabled_tip: "Autostart aktiviert",
+      autostart_disabled_tip: "Autostart entfernt",
       btn_save_config: "Einstellungen speichern",
       saving_text: "Speichern...",
       saved_text: "Einstellungen gespeichert!",
@@ -301,6 +317,7 @@
   const cfgPassword = document.getElementById('cfgPassword');
   const cfgShell = document.getElementById('cfgShell');
   const cfgKeepAlive = document.getElementById('cfgKeepAlive');
+  const cfgAutoStart = document.getElementById('cfgAutoStart');
   const cfgLanguage = document.getElementById('cfgLanguage');
   const saveStatus = document.getElementById('saveStatus');
 
@@ -487,6 +504,9 @@
     const lang = cfg.language || currentLang || 'en';
     applyLanguage(lang);
     if (document.activeElement !== cfgKeepAlive) cfgKeepAlive.checked = cfg.keep_alive;
+    if (cfgAutoStart && document.activeElement !== cfgAutoStart) {
+      cfgAutoStart.checked = Boolean(cfg.autostart);
+    }
     if (cfgRemoteAccess) {
       cfgRemoteAccess.checked = !!cfg.remote_access;
       updateRemoteAccessBadge(!!cfg.remote_access);
@@ -1214,6 +1234,52 @@
   }
 
   const btnRegenPwd = document.getElementById('btnRegenPwd');
+  if (cfgPassword) {
+    // 限制仅允许数字 0-9 与英文字母 A-Z，若输入字母自动转换为大写
+    cfgPassword.addEventListener('input', function () {
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      const upper = this.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+      if (this.value !== upper) {
+        this.value = upper;
+        if (start !== null && end !== null) {
+          this.setSelectionRange(start, end);
+        }
+      }
+    });
+  }
+
+  // 开机自动启动开关即时切换
+  if (cfgAutoStart) {
+    cfgAutoStart.addEventListener('change', async function () {
+      const enabled = this.checked;
+      const dict = I18N[currentLang] || I18N.en;
+      try {
+        const res = await fetch('/api/autostart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enabled })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          this.checked = Boolean(data.enabled);
+          if (saveStatus) {
+            saveStatus.textContent = enabled
+              ? (dict.autostart_enabled_tip || 'Auto-start on boot enabled')
+              : (dict.autostart_disabled_tip || 'Auto-start on boot removed');
+            setTimeout(() => {
+              if (saveStatus.textContent.includes('Auto-start') || saveStatus.textContent.includes('自動起動') || saveStatus.textContent.includes('자동 시작') || saveStatus.textContent.includes('Autostart')) {
+                saveStatus.textContent = '';
+              }
+            }, 3000);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to toggle autostart:', err);
+      }
+    });
+  }
+
   btnRegenPwd.addEventListener('click', async function () {
     const confirmMsg = I18N[currentLang].confirm_regen || 'Generate a new random access password?';
     if (!confirm(confirmMsg)) return;
@@ -1265,7 +1331,7 @@
 
     const payload = {
       port: parseInt(cfgPort.value, 10),
-      password: cfgPassword.value,
+      password: (cfgPassword.value || '').toUpperCase().replace(/[^0-9A-Z]/g, ''),
       shell: cfgShell.value,
       work_dir: cfgWorkDir ? cfgWorkDir.value.trim() : ((currentStatus && currentStatus.config && currentStatus.config.work_dir) || ''),
       selected_agent: cfgAgent.value,
@@ -1273,6 +1339,7 @@
       theme: cfgTheme ? cfgTheme.value : 'github-dark',
       language: cfgLanguage ? cfgLanguage.value : currentLang,
       keep_alive: cfgKeepAlive.checked,
+      autostart: cfgAutoStart ? cfgAutoStart.checked : false,
       remote_access: cfgRemoteAccess ? cfgRemoteAccess.checked : false
     };
 
